@@ -1,78 +1,140 @@
 # 🎓 EduAI - Plataforma de Ensino Inteligente
 
-Aplicação desktop para aprendizado personalizado, construída em Python com PyQt6.
+Uma aplicação desktop moderna e intuitiva para aprendizado personalizado, desenvolvida em Python com PyQt6.
 
-## ✨ Principais recursos
+## ✨ Características
 
-- 🔎 Busca com IA (simulada) para sugerir “aulas” baseadas na sua pergunta
-- 🧭 Layout responsivo (1 ou 2 colunas), início maximizado e alinhamentos ajustados
-- 🗂️ Histórico de buscas (limitado aos 3 itens mais recentes)
-- 💡 Dicas rápidas na lateral
-- 🖼️ Ícones Font Awesome via `qtawesome` (pretos por padrão)
-- ❓ Botão de ajuda “sticky” no canto inferior direito
+- 🎨 **Interface Moderna**: Design elegante com tema escuro e botões coloridos
+- 🔍 **Busca Inteligente**: Sistema de busca para encontrar aulas personalizadas
+- 📚 **Aulas Simuladas**: Gera conteúdo educacional baseado nas perguntas do usuário
+- 📋 **Histórico**: Mantém registro das buscas realizadas
+- 💡 **Dicas Interativas**: Sugestões para melhorar a experiência de aprendizado
+- ⚙️ **Personalização**: Opções de tema e configurações
+- ❓ Botão de ajuda "sticky" no canto inferior direito
 
-## 🚀 Executando localmente (Windows)
+## 🚀 Como Executar
 
-### Pré‑requisitos
+### Pré-requisitos
+
 - Python 3.10+ recomendado
+- PyQt6
+- qtawesome
 
-### Passo a passo
-1) Crie o ambiente virtual
-```powershell
-python -m venv .venv
-```
+### Instalação e Execução
 
-2) (Opcional) Se houver erro de certificado ao instalar pacotes, aponte o `SSL_CERT_FILE` para o certifi do venv:
-```powershell
-$env:SSL_CERT_FILE="$PWD\.venv\Lib\site-packages\pip\_vendor\certifi\cacert.pem"
-$env:REQUESTS_CA_BUNDLE=$env:SSL_CERT_FILE
-```
+1. **Clone ou baixe o projeto**
+   ```bash
+   git clone https://github.com/RyanBezerra/TCC-secreto.git
+   cd TCC-secreto
+   ```
 
-3) Instale as dependências
-```powershell
-.\.venv\Scripts\python -m pip install -r requirements.txt
-```
+2. **Instale as dependências**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4) Rode o app
-```powershell
-.\.venv\Scripts\python .\app.py
-```
+3. **Execute a aplicação**
+   ```bash
+   python app.py
+   ```
 
-## 🧩 Como usar
+## 🎯 Como Usar
 
-1) Digite uma pergunta no campo de busca (ex.: “Como resolver equações do 2º grau?”)
-2) Clique em “Buscar”
-3) Veja o conteúdo simulado na área “Selecionar aula”
-4) Consulte o “Histórico de Buscas” (máx. 3 entradas) e as “Dicas”
+1. **Faça uma pergunta**: Digite sua dúvida no campo de busca
+   - Exemplo: "Como resolver equações do segundo grau?"
+   - Seja específico para melhores resultados
 
-## 📁 Estrutura
+2. **Busque a aula**: Clique em "🚀 Buscar Aula"
+
+3. **Explore o conteúdo**: A aplicação gerará uma aula personalizada com:
+   - Objetivos de aprendizagem
+   - Conteúdo estruturado
+   - Exercícios práticos
+   - Dicas de estudo
+
+4. **Use as funcionalidades**:
+   - **Histórico**: Veja suas buscas anteriores (máx. 3 entradas)
+   - **Dicas**: Acesse sugestões para melhorar sua experiência
+   - **Ajuda**: Consulte o botão de ajuda "sticky" no canto inferior direito
+
+## 🛠️ Funcionalidades
+
+### Área Principal
+
+- **Campo de Busca**: Digite suas perguntas educacionais
+- **Área de Aula**: Visualize o conteúdo gerado
+- **Histórico**: Acesse buscas anteriores
+
+### Botões de Ação
+
+- **🔄 Buscar**: Encontra a melhor aula para sua pergunta
+- **📖 Histórico**: Mostra suas últimas 3 buscas
+- **💡 Dicas**: Sugestões para melhorar o aprendizado
+
+### Interface Responsiva
+
+- **Layout Adaptativo**: Alterna entre 1 e 2 colunas baseado na largura da janela
+- **Escala Inteligente**: Ajusta margens e tamanhos baseado na resolução da tela
+- **Botão de Ajuda Sticky**: Sempre visível no canto inferior direito
+
+## 📁 Estrutura do Projeto
 
 ```
 TCC-secreto/
 ├── app.py              # Aplicação principal (PyQt6)
-├── requirements.txt    # Dependências (PyQt6, qtawesome)
-└── README.md           # Documentação
+├── allwidgets.py       # Widgets adicionais
+├── requirements.txt    # Dependências
+├── treeviewdata.json  # Dados para visualização
+└── README.md          # Documentação
 ```
 
-## 🛠️ Tecnologias
+## 🎨 Tecnologias Utilizadas
 
-- Python 3.x
-- PyQt6 (widgets, layouts, estilos)
-- QtAwesome (ícones Font Awesome)
+- **Python 3.x**: Linguagem principal
+- **PyQt6**: Interface gráfica moderna
+- **QtAwesome**: Ícones Font Awesome
+- **Grid Layout**: Sistema de layout responsivo
 
-## 🔧 Notas de implementação
+## 🔧 Desenvolvimento
 
-- O app inicia maximizado e usa `QGridLayout` para organizar: barra de busca no topo; abaixo, “Selecionar aula” à esquerda e painel lateral (Histórico/Dica) à direita.
-- O histórico é truncado para os últimos 3 itens.
-- O botão de ajuda é posicionado de forma “sticky” via `resizeEvent`.
+### Estrutura do Código
 
-## 🚧 Ideias futuras
+- `EduAIApp`: Classe principal da aplicação
+- `_build_ui()`: Constrói a interface do usuário
+- `_on_search()`: Processa as buscas
+- `_generate_mock_lesson()`: Gera conteúdo educacional simulado
+- `_update_responsive_layout()`: Gerencia layout responsivo
 
-- Integração com IA real para gerar aulas
-- Persistência de histórico
-- Exportação de conteúdo
-- Tema claro/escuro com alternância
+### Personalização
+
+A aplicação pode ser facilmente personalizada:
+
+- Cores e temas
+- Funcionalidades adicionais
+- Integração com APIs de IA real
+- Banco de dados para persistência
+- O botão de ajuda é posicionado de forma "sticky" via `resizeEvent`
+
+## 🚧 Melhorias Futuras
+
+- [ ] Integração com APIs de IA real (OpenAI, etc.)
+- [ ] Sistema de login e perfis de usuário
+- [ ] Banco de dados para persistência
+- [ ] Exportação de aulas em PDF
+- [ ] Sistema de avaliação e feedback
+- [ ] Múltiplos idiomas
+- [ ] Modo offline com conteúdo pré-carregado
+- [ ] Tema claro/escuro com alternância
 
 ## 📝 Licença
 
-Projeto acadêmico (TCC) para demonstração de UI e UX com PyQt6.
+Este projeto foi desenvolvido como parte do TCC (Trabalho de Conclusão de Curso).
+
+## 👨‍💻 Autor
+
+Desenvolvido para demonstrar conceitos de interface gráfica e aplicações educacionais.
+
+---
+
+**🎓 Aprenda de forma inteligente e personalizada com o EduAI!**
+
