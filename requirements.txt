@@ -1,0 +1,12 @@
+# EduAI - Plataforma de Ensino Inteligente
+# Dependências do projeto
+
+# PyQt6 - Framework moderno para interface gráfica
+PyQt6>=6.4.0
+
+# Ícones Font Awesome para PyQt
+qtawesome>=1.3.1
+
+# Para desenvolvimento (opcional)
+# pip install pillow  # Para manipulação de imagens (se necessário no futuro)
+# pip install requests  # Para requisições HTTP (se integrar com APIs)
