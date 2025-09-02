@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendamentos - PME Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/agendamentos.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <i data-feather="briefcase"></i>
+        <div class="brand-text">
+          <span class="brand-title">PME Manager</span>
+          <span class="brand-sub">Sistema Inteligente</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="dashboard.html"><i data-feather="home"></i>Dashboard</a>
+        <a href="#"><i data-feather="calendar"></i>Cronograma</a>
+        <a class="active" href="agendamentos.html"><i data-feather="users"></i>Agendamentos</a>
+        <a href="#"><i data-feather="cpu"></i>Insights IA</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="#" class="nav-link sidebar-settings-link"><i data-feather="settings"></i>Configurações</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="agendamentos-header">
+        <div class="header-left">
+          <h1 class="page-title">Agendamentos</h1>
+          <p class="page-sub">Gerencie consultas e serviços</p>
+        </div>
+        <div class="header-right">
+          <button class="btn-primary">
+            <i data-feather="plus"></i>
+            Novo Agendamento
+          </button>
+        </div>
+      </div>
+      
+      <div class="search-filter-bar">
+        <div class="search-container">
+          <input type="text" placeholder="Buscar por cliente ou serviço..." class="search-input">
+          <i data-feather="search" class="search-icon"></i>
+        </div>
+        <div class="right-controls">
+          <div class="date-selector">
+            <i data-feather="calendar"></i>
+            <span class="current-date">02 / 09 / 2025</span>
+          </div>
+          <button class="filter-btn">
+            <i data-feather="filter"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="agendamentos-content">
+        <div class="agendamentos-grid">
+          <!-- Painel de Horários Disponíveis -->
+          <div class="card horarios-panel">
+            <div class="panel-header">
+              <i data-feather="clock"></i>
+              <h3>Horários Disponíveis</h3>
+            </div>
+            <div class="horarios-list">
+              <div class="horario-item">
+                <span class="horario-time">00:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">01:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">02:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">03:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">04:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">05:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">06:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">07:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">08:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">09:00</span>
+                <button class="horario-status ocupado">Ocupado</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">10:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">10:30</span>
+                <button class="horario-status ocupado">Ocupado</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">11:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">12:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">13:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">14:00</span>
+                <button class="horario-status ocupado">Ocupado</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">15:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">16:00</span>
+                <button class="horario-status ocupado">Ocupado</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">17:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">18:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">19:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">20:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">21:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">22:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+              <div class="horario-item">
+                <span class="horario-time">23:00</span>
+                <button class="horario-status livre">Livre</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Painel de Agendamentos do Dia -->
+          <div class="card agendamentos-panel">
+            <div class="panel-header">
+              <i data-feather="user"></i>
+              <h3>Agendamentos do Dia</h3>
+            </div>
+            <div class="agendamentos-list">
+              <!-- Agendamento 1 -->
+              <div class="agendamento-card">
+                <div class="agendamento-header">
+                  <h4 class="cliente-nome">Ana Silva</h4>
+                  <span class="status-tag confirmado">confirmado</span>
+                </div>
+                <div class="agendamento-details">
+                  <div class="detail-item">
+                    <i data-feather="briefcase"></i>
+                    <span>Consultoria Financeira</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="clock"></i>
+                    <span>09:00 (60min)</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="phone"></i>
+                    <span>(11) 99999-9999</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="user"></i>
+                    <span>João Silva</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="calendar"></i>
+                    <span>24/08/2025</span>
+                  </div>
+                </div>
+                <div class="agendamento-actions">
+                  <button class="btn-secondary">Editar</button>
+                  <button class="btn-secondary">Confirmar</button>
+                  <button class="btn-danger">Cancelar</button>
+                </div>
+              </div>
+
+              <!-- Agendamento 2 -->
+              <div class="agendamento-card">
+                <div class="agendamento-header">
+                  <h4 class="cliente-nome">Carlos Santos</h4>
+                  <span class="status-tag pendente">pendente</span>
+                </div>
+                <div class="agendamento-details">
+                  <div class="detail-item">
+                    <i data-feather="briefcase"></i>
+                    <span>Revisão Contábil</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="clock"></i>
+                    <span>10:30 (90min)</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="phone"></i>
+                    <span>(11) 88888-8888</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="user"></i>
+                    <span>Maria Santos</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="calendar"></i>
+                    <span>24/08/2025</span>
+                  </div>
+                </div>
+                <div class="agendamento-actions">
+                  <button class="btn-secondary">Editar</button>
+                  <button class="btn-secondary">Confirmar</button>
+                  <button class="btn-danger">Cancelar</button>
+                </div>
+              </div>
+
+              <!-- Agendamento 3 -->
+              <div class="agendamento-card">
+                <div class="agendamento-header">
+                  <h4 class="cliente-nome">Lúcia Costa</h4>
+                  <span class="status-tag confirmado">confirmado</span>
+                </div>
+                <div class="agendamento-details">
+                  <div class="detail-item">
+                    <i data-feather="briefcase"></i>
+                    <span>Planejamento Tributário</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="clock"></i>
+                    <span>14:00 (120min)</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="phone"></i>
+                    <span>(11) 77777-7777</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="user"></i>
+                    <span>Pedro Costa</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="calendar"></i>
+                    <span>24/08/2025</span>
+                  </div>
+                </div>
+                <div class="agendamento-actions">
+                  <button class="btn-secondary">Editar</button>
+                  <button class="btn-secondary">Confirmar</button>
+                  <button class="btn-danger">Cancelar</button>
+                </div>
+              </div>
+
+              <!-- Agendamento 4 -->
+              <div class="agendamento-card">
+                <div class="agendamento-header">
+                  <h4 class="cliente-nome">Roberto Lima</h4>
+                  <span class="status-tag cancelado">cancelado</span>
+                </div>
+                <div class="agendamento-details">
+                  <div class="detail-item">
+                    <i data-feather="briefcase"></i>
+                    <span>Auditoria</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="clock"></i>
+                    <span>16:00 (180min)</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="phone"></i>
+                    <span>(11) 66666-6666</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="user"></i>
+                    <span>Ana Oliveira</span>
+                  </div>
+                  <div class="detail-item">
+                    <i data-feather="calendar"></i>
+                    <span>24/08/2025</span>
+                  </div>
+                </div>
+                <div class="agendamento-actions">
+                  <button class="btn-secondary">Editar</button>
+                  <button class="btn-secondary">Confirmar</button>
+                  <button class="btn-danger">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/feather-icons"></script>
+  <script>
+    feather.replace();
+  </script>
+</body>
+</html>
