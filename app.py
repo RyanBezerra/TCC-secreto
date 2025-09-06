@@ -6,17 +6,19 @@ import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QTextEdit, QFrame, QScrollArea, QGridLayout, QGraphicsDropShadowEffect,
-                             QSizePolicy)
+                             QSizePolicy, QMessageBox)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
 from PyQt6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
 import json
 import time
 import qtawesome as qta
+from login import LoginWindow
 
 class EduAIApp(QMainWindow):
-    def __init__(self):
+    def __init__(self, user_name="Usuário"):
         super().__init__()
-        self.setWindowTitle("EduAI - Plataforma de Ensino Inteligente")
+        self.user_name = user_name
+        self.setWindowTitle(f"EduAI - Plataforma de Ensino Inteligente - {user_name}")
         self.setGeometry(100, 100, 1200, 800)
         
         # Widget central padrão (sem scroll externo)
@@ -50,17 +52,63 @@ class EduAIApp(QMainWindow):
         self.search_history = []
         
     def _create_header(self, parent_layout):
-        """Cria o cabeçalho com logo e título"""
+        """Cria o cabeçalho com logo, título e informações do usuário"""
         header_widget = QWidget()
         header_layout = QVBoxLayout(header_widget)
+        
+        # Linha superior com logo e informações do usuário
+        top_row = QHBoxLayout()
         
         # Logo e título
         logo_label = QLabel("▣ EduAI - Plataforma de Ensino Inteligente")
         logo_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
         logo_label.setFont(logo_font)
-        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo_label.setStyleSheet("color: #2c3e50; margin-bottom: 5px;")
-        header_layout.addWidget(logo_label)
+        logo_label.setStyleSheet("color: #2c3e50;")
+        top_row.addWidget(logo_label)
+        
+        # Espaçador
+        top_row.addStretch()
+        
+        # Informações do usuário
+        user_container = QHBoxLayout()
+        user_container.setSpacing(10)
+        
+        # Ícone do usuário
+        user_icon = QLabel()
+        user_icon.setPixmap(qta.icon('fa5s.user', color="#3498db").pixmap(20, 20))
+        user_container.addWidget(user_icon)
+        
+        # Nome do usuário
+        user_label = QLabel(f"Olá, {self.user_name}")
+        user_font = QFont("Segoe UI", 12, QFont.Weight.Bold)
+        user_label.setFont(user_font)
+        user_label.setStyleSheet("color: #2c3e50;")
+        user_container.addWidget(user_label)
+        
+        # Botão de logout
+        logout_button = QPushButton()
+        logout_button.setIcon(qta.icon('fa5s.sign-out-alt', color="#e74c3c"))
+        logout_button.setToolTip("Sair da conta")
+        logout_button.setFixedSize(32, 32)
+        logout_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 2px solid #e74c3c;
+                border-radius: 16px;
+            }
+            QPushButton:hover {
+                background-color: #e74c3c;
+            }
+            QPushButton:hover QIcon {
+                color: white;
+            }
+        """)
+        logout_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        logout_button.clicked.connect(self._logout)
+        user_container.addWidget(logout_button)
+        
+        top_row.addLayout(user_container)
+        header_layout.addLayout(top_row)
         
         # Subtítulo
         subtitle_label = QLabel("Faça uma pergunta sobre o que deseja aprender e nossa IA selecionará a melhor aula para você")
@@ -548,16 +596,64 @@ Para mais informações, entre em contato conosco!"""
         
         self.result_text.setPlainText(help_text)
         self.result_text.setVisible(True)
+    
+    def _logout(self):
+        """Realiza logout do usuário"""
+        reply = QMessageBox.question(
+            self, 
+            'Confirmar Logout', 
+            'Tem certeza que deseja sair da sua conta?',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            self.close()
+            # Reabrir a tela de login
+            login_window = LoginWindow()
+            login_window.login_successful.connect(self._on_login_success)
+            login_window.show()
+    
+    def _on_login_success(self, user_name):
+        """Chamado quando o login é bem-sucedido"""
+        # Fechar janela atual e abrir nova com o usuário logado
+        self.close()
+        new_window = EduAIApp(user_name)
+        new_window.show()
+
+class EduAIManager:
+    """Gerenciador principal da aplicação EduAI"""
+    
+    def __init__(self):
+        self.app = QApplication(sys.argv)
+        self.current_window = None
+    
+    def start(self):
+        """Inicia a aplicação com tela de login"""
+        self.show_login()
+        sys.exit(self.app.exec())
+    
+    def show_login(self):
+        """Mostra a tela de login"""
+        login_window = LoginWindow()
+        login_window.login_successful.connect(self._on_login_success)
+        login_window.show()
+        self.current_window = login_window
+    
+    def _on_login_success(self, user_name):
+        """Chamado quando o login é bem-sucedido"""
+        if self.current_window:
+            self.current_window.close()
+        
+        # Criar e mostrar o dashboard
+        dashboard = EduAIApp(user_name)
+        dashboard.show()
+        self.current_window = dashboard
 
 def main():
-    app = QApplication(sys.argv)
-    
-    # Criar e mostrar a janela principal
-    window = EduAIApp()
-    window.show()
-    
-    # Executar a aplicação
-    sys.exit(app.exec())
+    # Usar o gerenciador para controlar o fluxo de login/dashboard
+    manager = EduAIManager()
+    manager.start()
 
 if __name__ == '__main__':
     main()

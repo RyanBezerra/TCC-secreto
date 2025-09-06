@@ -4,12 +4,13 @@ Uma aplicação desktop moderna e intuitiva para aprendizado personalizado, dese
 
 ## ✨ Características
 
-- 🎨 **Interface Moderna**: Design elegante com tema escuro e botões coloridos
+- 🔐 **Sistema de Login**: Autenticação segura com hash de senhas
+- 🎨 **Interface Moderna**: Design elegante e responsivo
 - 🔍 **Busca Inteligente**: Sistema de busca para encontrar aulas personalizadas
 - 📚 **Aulas Simuladas**: Gera conteúdo educacional baseado nas perguntas do usuário
 - 📋 **Histórico**: Mantém registro das buscas realizadas
 - 💡 **Dicas Interativas**: Sugestões para melhorar a experiência de aprendizado
-- ⚙️ **Personalização**: Opções de tema e configurações
+- 👤 **Perfil do Usuário**: Informações do usuário logado no cabeçalho
 - ❓ Botão de ajuda "sticky" no canto inferior direito
 
 ## 🚀 Como Executar
@@ -40,11 +41,19 @@ Uma aplicação desktop moderna e intuitiva para aprendizado personalizado, dese
 
 ## 🎯 Como Usar
 
+### 🔐 Login
+1. **Execute a aplicação**: `python app.py`
+2. **Faça login** com as credenciais:
+   - **Email/Usuário**: `admin@eduai.com`
+   - **Senha**: `123456`
+3. **Acesse o dashboard** após o login bem-sucedido
+
+### 📚 Dashboard Principal
 1. **Faça uma pergunta**: Digite sua dúvida no campo de busca
    - Exemplo: "Como resolver equações do segundo grau?"
    - Seja específico para melhores resultados
 
-2. **Busque a aula**: Clique em "🚀 Buscar Aula"
+2. **Busque a aula**: Clique em "Buscar"
 
 3. **Explore o conteúdo**: A aplicação gerará uma aula personalizada com:
    - Objetivos de aprendizagem
@@ -55,6 +64,7 @@ Uma aplicação desktop moderna e intuitiva para aprendizado personalizado, dese
 4. **Use as funcionalidades**:
    - **Histórico**: Veja suas buscas anteriores (máx. 3 entradas)
    - **Dicas**: Acesse sugestões para melhorar sua experiência
+   - **Logout**: Use o botão de sair no canto superior direito
    - **Ajuda**: Consulte o botão de ajuda "sticky" no canto inferior direito
 
 ## 🛠️ Funcionalidades
@@ -81,10 +91,10 @@ Uma aplicação desktop moderna e intuitiva para aprendizado personalizado, dese
 
 ```
 TCC-secreto/
-├── app.py              # Aplicação principal (PyQt6)
-├── allwidgets.py       # Widgets adicionais
-├── requirements.txt    # Dependências
-├── treeviewdata.json  # Dados para visualização
+├── app.py              # Aplicação principal (Dashboard)
+├── login.py            # Tela de login e autenticação
+├── requirements.txt    # Dependências do projeto
+├── users.json          # Arquivo de usuários (criado automaticamente)
 └── README.md          # Documentação
 ```
 
@@ -117,14 +127,16 @@ A aplicação pode ser facilmente personalizada:
 
 ## 🚧 Melhorias Futuras
 
+- [x] Sistema de login e perfis de usuário
 - [ ] Integração com APIs de IA real (OpenAI, etc.)
-- [ ] Sistema de login e perfis de usuário
 - [ ] Banco de dados para persistência
 - [ ] Exportação de aulas em PDF
 - [ ] Sistema de avaliação e feedback
 - [ ] Múltiplos idiomas
 - [ ] Modo offline com conteúdo pré-carregado
 - [ ] Tema claro/escuro com alternância
+- [ ] Sistema de recuperação de senha
+- [ ] Cadastro de novos usuários
 
 ## 📝 Licença
 
