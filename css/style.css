@@ -32,7 +32,7 @@ body{ margin:0; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Aria
 
 .content{ padding:24px; }
 .page-title{ font-size:22px; font-weight:700; margin:0 0 4px; }
-.page-sub{ color:var(--muted); font-size:13px; margin:0 0 18px; }
+.page-sub{ color:var(--muted); font-size:15px; margin:0 0 18px; }
 
 .grid{ display:grid; gap:16px; }
 .grid-top{ grid-template-columns: repeat(4, minmax(0,1fr)); }
