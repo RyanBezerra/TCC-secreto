@@ -3,12 +3,12 @@ EduAI - Plataforma de Ensino Inteligente
 """
 
 import sys
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QTextEdit, QFrame, QScrollArea, QGridLayout, QGraphicsDropShadowEffect,
                              QSizePolicy, QMessageBox)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
-from PyQt6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
+from PySide6.QtCore import Qt, QThread, Signal, QSize
+from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
 import json
 import time
 import qtawesome as qta
@@ -60,11 +60,29 @@ class EduAIApp(QMainWindow):
         top_row = QHBoxLayout()
         
         # Logo e título
-        logo_label = QLabel("▣ EduAI - Plataforma de Ensino Inteligente")
+        logo_container = QHBoxLayout()
+        logo_container.setSpacing(10)
+        
+        # Logo personalizada
+        logo_icon = QLabel()
+        logo_pixmap = QPixmap("Imagens/LogoPretaSemFundo - Editado.png")
+        if not logo_pixmap.isNull():
+            # Redimensionar para 48x48 mantendo proporção
+            logo_pixmap = logo_pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_icon.setPixmap(logo_pixmap)
+        else:
+            # Fallback para ícone Font Awesome se a imagem não for encontrada
+            logo_icon.setPixmap(qta.icon('fa5s.graduation-cap', color="#2c3e50").pixmap(32, 32))
+        logo_container.addWidget(logo_icon)
+        
+        # Título
+        logo_label = QLabel("EduAI - Plataforma de Ensino Inteligente")
         logo_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
         logo_label.setFont(logo_font)
         logo_label.setStyleSheet("color: #2c3e50;")
-        top_row.addWidget(logo_label)
+        logo_container.addWidget(logo_label)
+        
+        top_row.addLayout(logo_container)
         
         # Espaçador
         top_row.addStretch()
@@ -73,7 +91,7 @@ class EduAIApp(QMainWindow):
         user_container = QHBoxLayout()
         user_container.setSpacing(10)
         
-        # Ícone do usuário
+        # Ícone do usuário (Font Awesome)
         user_icon = QLabel()
         user_icon.setPixmap(qta.icon('fa5s.user', color="#3498db").pixmap(20, 20))
         user_container.addWidget(user_icon)
