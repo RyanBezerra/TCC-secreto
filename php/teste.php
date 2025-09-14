@@ -2,7 +2,7 @@
 $dbHost = 'localhost'; // banco no mesmo servidor do site
 $dbName = 'u359247811_BD';
 $dbUser = 'u359247811_Admin';
-$dbPass = 'SUA_SENHA_AQUI'; // coloque a senha do usuário MySQL
+$dbPass = 'cP$6nHI6Pmm'; // coloque a senha do usuário MySQL
 $port   = 3306;
 
 $dsn = "mysql:host=$dbHost;port=$port;dbname=$dbName;charset=utf8mb4";
