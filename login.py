@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, Signal
 from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor, QPalette
 import qtawesome as qta
+from database import db_manager
 
 class LoginWindow(QMainWindow):
     # Sinal emitido quando o login é bem-sucedido
@@ -43,9 +44,8 @@ class LoginWindow(QMainWindow):
         # Aplicar estilos
         self._apply_styles()
         
-        # Carregar usuários (sistema simples de arquivo)
-        self.users_file = "users.json"
-        self._load_users()
+        # Testar conexão com banco de dados
+        self._test_database_connection()
         
         # Configurar animações
         self._setup_animations()
@@ -210,13 +210,13 @@ class LoginWindow(QMainWindow):
         email_container = QVBoxLayout()
         email_container.setSpacing(8)
         
-        email_label = QLabel("Email ou Usuário")
+        email_label = QLabel("Nome de Usuário")
         email_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         email_label.setStyleSheet("color: #2c3e50;")
         email_container.addWidget(email_label)
         
         self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("Digite seu email ou nome de usuário")
+        self.email_input.setPlaceholderText("Digite seu nome de usuário")
         self.email_input.setFont(QFont("Segoe UI", 12))
         self.email_input.setStyleSheet("""
             QLineEdit {
@@ -392,69 +392,71 @@ class LoginWindow(QMainWindow):
         self.login_animation.setDuration(200)
         self.login_animation.setEasingCurve(QEasingCurve.Type.OutQuad)
     
-    def _load_users(self):
-        """Carrega usuários do arquivo JSON"""
-        self.users = {}
-        if os.path.exists(self.users_file):
-            try:
-                with open(self.users_file, 'r', encoding='utf-8') as f:
-                    self.users = json.load(f)
-            except:
-                self.users = {}
+    def _test_database_connection(self):
+        """Testa a conexão com o banco de dados"""
+        if not db_manager.test_connection():
+            self._show_error("Erro ao conectar com o banco de dados. Verifique sua conexão com a internet.")
+            return False
         
         # Criar usuário padrão se não existir nenhum
-        if not self.users:
-            self._create_default_user()
+        self._create_default_user_if_needed()
+        return True
     
-    def _create_default_user(self):
-        """Cria um usuário padrão para demonstração"""
-        default_user = {
-            "email": "admin@eduai.com",
-            "password": self._hash_password("123456"),
-            "name": "Administrador",
-            "role": "admin"
-        }
-        self.users["admin@eduai.com"] = default_user
-        self._save_users()
-    
-    def _hash_password(self, password):
-        """Cria hash da senha"""
-        return hashlib.sha256(password.encode()).hexdigest()
-    
-    def _save_users(self):
-        """Salva usuários no arquivo JSON"""
-        try:
-            with open(self.users_file, 'w', encoding='utf-8') as f:
-                json.dump(self.users, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"Erro ao salvar usuários: {e}")
+    def _create_default_user_if_needed(self):
+        """Cria um usuário padrão se não existir nenhum usuário no banco"""
+        users = db_manager.get_all_users()
+        if not users:
+            # Criar usuário administrador padrão
+            success = db_manager.create_user(
+                nome="admin",
+                idade=25,
+                senha="123456",
+                nota=10.0
+            )
+            if success:
+                print("Usuário administrador padrão criado (usuário: admin, senha: 123456)")
+            else:
+                print("Erro ao criar usuário administrador padrão")
     
     def _attempt_login(self):
         """Tenta fazer login com as credenciais fornecidas"""
-        email = self.email_input.text().strip()
+        username = self.email_input.text().strip()
         password = self.password_input.text().strip()
         
-        if not email or not password:
+        if not username or not password:
             self._show_error("Por favor, preencha todos os campos.")
             return
         
-        # Verificar se o usuário existe
-        if email in self.users:
-            stored_password = self.users[email]["password"]
-            if stored_password == self._hash_password(password):
+        # Desabilitar botão durante autenticação
+        self.login_button.setEnabled(False)
+        self.login_button.setText("Autenticando...")
+        
+        try:
+            # Autenticar usuário no banco de dados
+            user = db_manager.authenticate_user(username, password)
+            
+            if user:
                 # Login bem-sucedido
-                user_name = self.users[email]["name"]
+                user_name = user['nome']
                 self._show_success(f"Bem-vindo, {user_name}!")
                 
-                # Emitir sinal de sucesso
+                # Emitir sinal de sucesso com informações do usuário
                 self.login_successful.emit(user_name)
                 
                 # Fechar janela de login
                 self.close()
                 return
+            else:
+                # Login falhou
+                self._show_error("Nome de usuário ou senha incorretos.")
         
-        # Login falhou
-        self._show_error("Email/usuário ou senha incorretos.")
+        except Exception as e:
+            self._show_error(f"Erro ao conectar com o banco de dados: {str(e)}")
+        
+        finally:
+            # Reabilitar botão
+            self.login_button.setEnabled(True)
+            self.login_button.setText("Entrar")
     
     def _show_error(self, message):
         """Mostra mensagem de erro"""

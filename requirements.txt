@@ -7,6 +7,12 @@ PyQt6>=6.4.0
 # QtAwesome - Ícones Font Awesome para PyQt6
 qtawesome>=1.4.0
 
+# PostgreSQL - Driver para conexão com banco de dados
+psycopg2-binary>=2.9.0
+
+# Bcrypt - Para hash seguro de senhas
+bcrypt>=4.0.0
+
 # Para desenvolvimento (opcional)
 # pip install pillow  # Para manipulação de imagens (se necessário no futuro)
 # pip install requests  # Para requisições HTTP (se integrar com APIs)
