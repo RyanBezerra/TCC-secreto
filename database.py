@@ -155,6 +155,30 @@ class DatabaseManager:
         params = (nota, user_id)
         return self.execute_update(query, params)
     
+    def update_user_data(self, user_id: int, nome: str = None, idade: int = None, nota: float = None) -> bool:
+        """Atualiza dados do usuário"""
+        updates = []
+        params = []
+        
+        if nome is not None:
+            updates.append("nome = %s")
+            params.append(nome)
+        
+        if idade is not None:
+            updates.append("idade = %s")
+            params.append(idade)
+        
+        if nota is not None:
+            updates.append("nota = %s")
+            params.append(nota)
+        
+        if not updates:
+            return True  # Nada para atualizar
+        
+        params.append(user_id)
+        query = f"UPDATE usuario SET {', '.join(updates)} WHERE id = %s"
+        return self.execute_update(query, tuple(params))
+    
     def get_all_users(self) -> List[Dict]:
         """Retorna todos os usuários"""
         query = "SELECT id, nome, idade, nota, data_cadastro, ultimo_acesso FROM usuario ORDER BY nome"

@@ -13,8 +13,12 @@ import json
 import time
 import qtawesome as qta
 from login import LoginWindow
+from profile import ProfileWindow
 
 class EduAIApp(QMainWindow):
+    # Sinal emitido quando o usuário quer fazer logout
+    logout_requested = Signal()
+    
     def __init__(self, user_name="Usuário"):
         super().__init__()
         self.user_name = user_name
@@ -97,11 +101,33 @@ class EduAIApp(QMainWindow):
         user_container.addWidget(user_icon)
         
         # Nome do usuário
-        user_label = QLabel(f"Olá, {self.user_name}")
+        self.user_label = QLabel(f"Olá, {self.user_name}")
         user_font = QFont("Segoe UI", 12, QFont.Weight.Bold)
-        user_label.setFont(user_font)
-        user_label.setStyleSheet("color: #2c3e50;")
-        user_container.addWidget(user_label)
+        self.user_label.setFont(user_font)
+        self.user_label.setStyleSheet("color: #2c3e50;")
+        user_container.addWidget(self.user_label)
+        
+        # Botão de perfil
+        profile_button = QPushButton()
+        profile_button.setIcon(qta.icon('fa5s.user-cog', color="#3498db"))
+        profile_button.setToolTip("Meu Perfil")
+        profile_button.setFixedSize(32, 32)
+        profile_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 2px solid #3498db;
+                border-radius: 16px;
+            }
+            QPushButton:hover {
+                background-color: #3498db;
+            }
+            QPushButton:hover QIcon {
+                color: white;
+            }
+        """)
+        profile_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        profile_button.clicked.connect(self._open_profile)
+        user_container.addWidget(profile_button)
         
         # Botão de logout
         logout_button = QPushButton()
@@ -626,11 +652,76 @@ Para mais informações, entre em contato conosco!"""
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            self.close()
-            # Reabrir a tela de login
-            login_window = LoginWindow()
-            login_window.login_successful.connect(self._on_login_success)
-            login_window.show()
+            # Emitir sinal para o gerenciador principal
+            if hasattr(self, 'logout_requested'):
+                self.logout_requested.emit()
+            else:
+                # Fallback: criar nova janela de login diretamente
+                self._create_login_window()
+    
+    def _create_login_window(self):
+        """Cria uma nova janela de login"""
+        login_window = LoginWindow()
+        login_window.login_successful.connect(self._on_login_success)
+        login_window.show()
+    
+    def _open_profile(self):
+        """Abre a tela de perfil do usuário"""
+        try:
+            # Buscar dados do usuário no banco
+            from database import db_manager
+            user_data = db_manager.get_user_by_name(self.user_name)
+            
+            if user_data:
+                # Criar janela de perfil
+                self.profile_window = ProfileWindow(self.user_name, user_data)
+                self.profile_window.back_to_dashboard.connect(self._on_profile_back)
+                
+                # Conectar evento de fechamento
+                self.profile_window.closeEvent = self._on_profile_close
+                
+                # Mostrar janela
+                self.profile_window.show()
+                self.profile_window.raise_()  # Trazer para frente
+                self.profile_window.activateWindow()  # Ativar janela
+            else:
+                self._show_error("Erro ao carregar dados do usuário")
+        except Exception as e:
+            self._show_error(f"Erro ao abrir perfil: {str(e)}")
+    
+    def _on_profile_close(self, event):
+        """Chamado quando a janela de perfil é fechada"""
+        # Limpar referência
+        if hasattr(self, 'profile_window'):
+            self.profile_window = None
+        event.accept()
+    
+    def _on_profile_back(self, user_name):
+        """Chamado quando o usuário volta do perfil"""
+        # Atualizar nome do usuário se necessário
+        self.user_name = user_name
+        self.setWindowTitle(f"EduAI - Plataforma de Ensino Inteligente - {user_name}")
+        
+        # Atualizar label do usuário no cabeçalho
+        if hasattr(self, 'user_label'):
+            self.user_label.setText(f"Olá, {user_name}")
+    
+    def _show_error(self, message):
+        """Mostra mensagem de erro"""
+        from PySide6.QtWidgets import QMessageBox
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Critical)
+        msg.setWindowTitle("Erro")
+        msg.setText(message)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: #ffffff;
+            }
+            QMessageBox QLabel {
+                color: #2c3e50;
+            }
+        """)
+        msg.exec()
     
     def _on_login_success(self, user_name):
         """Chamado quando o login é bem-sucedido"""
@@ -665,8 +756,17 @@ class EduAIManager:
         
         # Criar e mostrar o dashboard
         dashboard = EduAIApp(user_name)
+        dashboard.logout_requested.connect(self._on_logout_requested)
         dashboard.show()
         self.current_window = dashboard
+    
+    def _on_logout_requested(self):
+        """Chamado quando o usuário solicita logout"""
+        if self.current_window:
+            self.current_window.close()
+        
+        # Mostrar tela de login novamente
+        self.show_login()
 
 def main():
     # Usar o gerenciador para controlar o fluxo de login/dashboard
