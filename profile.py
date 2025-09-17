@@ -1,1556 +1,790 @@
 """
 EduAI - Tela de Perfil do Usuário
-Sistema de gerenciamento de perfil integrado ao banco de dados
+Interface para visualização e edição dos dados do perfil
 """
 
-# Imports padrão do Python
-import sys
-import os
-import json
-import base64
-from datetime import datetime, timedelta
-
-# Imports do PySide6 - Otimizado
-from PySide6 import QtWidgets, QtCore, QtGui
-
-# Imports de terceiros
+from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+                             QLabel, QLineEdit, QPushButton, QFrame, QGridLayout,
+                             QSizePolicy, QMessageBox)
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont, QPixmap, QCursor
 import qtawesome as qta
+from datetime import datetime
 
-# Imports locais
-from database import db_manager
-
-class ProfileWindow(QtWidgets.QMainWindow):
-    # Sinal emitido quando o usuário quer voltar ao dashboard
-    back_to_dashboard = QtCore.Signal(str)  # Emite o nome do usuário
+class ProfileWindow(QMainWindow):
+    # Sinal emitido quando o usuário volta para o dashboard
+    back_to_dashboard = Signal(str)  # Emite o nome do usuário atualizado
     
-    def __init__(self, user_name="Usuário", user_data=None):
+    def __init__(self, user_name, user_data):
         super().__init__()
         self.user_name = user_name
         self.user_data = user_data
-        self.setWindowTitle(f"EduAI - Perfil - {user_name}")
-        self.setGeometry(100, 100, 1000, 700)
-        self.setMinimumSize(800, 600)
+        self.original_data = user_data.copy() if user_data else {}
+        self.is_editing = False
         
-        # Configurar flags da janela para evitar fechamento automático
-        self.setWindowFlags(QtCore.Qt.WindowType.Window | QtCore.Qt.WindowType.WindowCloseButtonHint | QtCore.Qt.WindowType.WindowMinimizeButtonHint | QtCore.Qt.WindowType.WindowMaximizeButtonHint)
-        
-        # Centralizar janela
-        self._center_window()
+        self.setWindowTitle(f"EduAI - Meu Perfil - {user_name}")
+        self.setGeometry(150, 150, 800, 600)
         
         # Widget central
-        central_widget = QtWidgets.QWidget()
+        central_widget = QWidget()
         self.setCentralWidget(central_widget)
         
         # Layout principal
-        main_layout = QtWidgets.QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout = QVBoxLayout(central_widget)
         main_layout.setSpacing(20)
+        main_layout.setContentsMargins(30, 30, 30, 30)
         
-        # Criar layout da tela
-        self._create_profile_layout(main_layout)
+        # Criar seções
+        self._create_header(main_layout)
+        self._create_profile_content(main_layout)
+        self._create_footer(main_layout)
         
-        # Aplicar estilos
+        # Aplicar estilo
         self._apply_styles()
         
-        # Carregar dados do usuário
-        self._load_user_data()
-        
-    def _center_window(self):
-        """Centraliza a janela na tela"""
-        screen = QtWidgets.QApplication.primaryScreen()
-        if screen:
-            screen_geometry = screen.availableGeometry()
-            x = (screen_geometry.width() - self.width()) // 2
-            y = (screen_geometry.height() - self.height()) // 2
-            self.move(x, y)
-    
-    def _create_profile_layout(self, parent_layout):
-        """Cria o layout principal da tela de perfil"""
-        # Cabeçalho
-        self._create_header(parent_layout)
-        
-        # Container principal com abas
-        self.tab_widget = QtWidgets.QTabWidget()
-        self.tab_widget.setStyleSheet("""
-            QtWidgets.QTabWidget::pane {
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
-                background-color: #ffffff;
-            }
-            QTabBar::tab {
-                background-color: #f8f9fa;
-                border: 1px solid #d1d5db;
-                padding: 10px 20px;
-                margin-right: 2px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                font-weight: bold;
-            }
-            QTabBar::tab:selected {
-                background-color: #ffffff;
-                border-bottom: 1px solid #ffffff;
-            }
-            QTabBar::tab:hover {
-                background-color: #e9ecef;
-            }
-        """)
-        
-        # Criar abas
-        self._create_overview_tab()
-        self._create_analytics_tab()
-        self._create_settings_tab()
-        self._create_activity_tab()
-        self._create_achievements_tab()
-        
-        parent_layout.addWidget(self.tab_widget)
+        # Iniciar maximizada
+        self.showMaximized()
     
     def _create_header(self, parent_layout):
-        """Cria o cabeçalho com navegação"""
-        header_widget = QtWidgets.QWidget()
-        header_layout = QtWidgets.QHBoxLayout(header_widget)
-        header_layout.setContentsMargins(0, 0, 0, 0)
+        """Cria o cabeçalho com logo, título e botão de voltar"""
+        header_widget = QWidget()
+        header_layout = QVBoxLayout(header_widget)
         
-        # Botão voltar
-        back_button = QtWidgets.QPushButton()
-        back_button.setIcon(qta.icon('fa5s.arrow-left', color="#2c3e50"))
-        back_button.setToolTip("Voltar ao Dashboard")
-        back_button.setFixedSize(40, 40)
-        back_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: transparent;
-                border: 2px solid #2c3e50;
-                border-radius: 20px;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #2c3e50;
-            }
-            QtWidgets.QPushButton:hover QtGui.QIcon {
-                color: white;
-            }
-        """)
-        back_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        back_button.clicked.connect(self._go_back)
-        header_layout.addWidget(back_button)
+        # Linha superior com logo e botão de voltar
+        top_row = QHBoxLayout()
+        
+        # Logo e título
+        logo_container = QHBoxLayout()
+        logo_container.setSpacing(10)
+        
+        # Logo personalizada
+        logo_icon = QLabel()
+        logo_pixmap = QPixmap("Imagens/LogoPretaSemFundo - Editado.png")
+        if not logo_pixmap.isNull():
+            logo_pixmap = logo_pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_icon.setPixmap(logo_pixmap)
+        else:
+            logo_icon.setPixmap(qta.icon('fa5s.graduation-cap', color="#2c3e50").pixmap(32, 32))
+        logo_container.addWidget(logo_icon)
         
         # Título
-        title_label = QtWidgets.QLabel("Meu Perfil")
-        title_font = QtGui.QFont("Segoe UI", 24, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 15px;")
-        header_layout.addWidget(title_label)
+        logo_label = QLabel("EduAI - Meu Perfil")
+        logo_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
+        logo_label.setFont(logo_font)
+        logo_label.setStyleSheet("color: #2c3e50;")
+        logo_container.addWidget(logo_label)
+        
+        top_row.addLayout(logo_container)
         
         # Espaçador
-        header_layout.addStretch()
+        top_row.addStretch()
         
-        # Informações do usuário
-        user_container = QtWidgets.QHBoxLayout()
-        user_container.setSpacing(10)
+        # Botão de voltar
+        back_button = QPushButton("Voltar ao Dashboard")
+        back_button.setIcon(qta.icon('fa5s.arrow-left', color="#ffffff"))
+        back_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #000000;
+                color: #ffffff;
+                padding: 8px 16px;
+                border: none;
+                border-radius: 8px;
+                font-size: 12px;
+                min-width: 150px;
+            }
+            QPushButton:hover {
+                background-color: #111111;
+            }
+            QPushButton:pressed {
+                background-color: #222222;
+            }
+        """)
+        back_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        back_button.clicked.connect(self._go_back)
+        top_row.addWidget(back_button)
         
-        # Ícone do usuário
-        user_icon = QtWidgets.QLabel()
-        user_icon.setPixmap(qta.icon('fa5s.user-circle', color="#3498db").pixmap(24, 24))
-        user_container.addWidget(user_icon)
+        header_layout.addLayout(top_row)
         
-        # Nome do usuário
-        user_label = QtWidgets.QLabel(f"Olá, {self.user_name}")
-        user_font = QtGui.QFont("Segoe UI", 12, QtGui.QFont.Weight.Bold)
-        user_label.setFont(user_font)
-        user_label.setStyleSheet("color: #2c3e50;")
-        user_container.addWidget(user_label)
-        
-        header_layout.addLayout(user_container)
+        # Subtítulo
+        subtitle_label = QLabel("Visualize e edite suas informações pessoais")
+        subtitle_font = QFont("Segoe UI", 11)
+        subtitle_label.setFont(subtitle_font)
+        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle_label.setStyleSheet("color: #7f8c8d; margin-bottom: 20px;")
+        subtitle_label.setWordWrap(True)
+        header_layout.addWidget(subtitle_label)
         
         parent_layout.addWidget(header_widget)
     
-    def _create_overview_tab(self):
-        """Cria a aba de visão geral"""
-        overview_widget = QtWidgets.QWidget()
-        overview_layout = QtWidgets.QVBoxLayout(overview_widget)
-        overview_layout.setSpacing(20)
+    def _create_profile_content(self, parent_layout):
+        """Cria o conteúdo principal do perfil"""
+        # Container principal
+        content_widget = QWidget()
+        content_layout = QHBoxLayout(content_widget)
+        content_layout.setSpacing(30)
         
-        # Container com scroll
-        scroll_area = QtWidgets.QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setStyleSheet("""
-            QtWidgets.QScrollArea {
-                border: none;
-                background-color: transparent;
-            }
-            QScrollBar:vertical {
-                background-color: #f0f0f0;
-                width: 12px;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #c0c0c0;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #a0a0a0;
-            }
-        """)
+        # Coluna esquerda - Informações pessoais
+        left_column = self._create_personal_info_section()
+        content_layout.addWidget(left_column, 1)
         
-        # Widget de conteúdo
-        content_widget = QtWidgets.QWidget()
-        content_layout = QtWidgets.QVBoxLayout(content_widget)
-        content_layout.setSpacing(20)
+        # Coluna direita - Estatísticas e ações
+        right_column = self._create_stats_section()
+        content_layout.addWidget(right_column, 1)
         
-        # Seções do perfil
-        self._create_avatar_section(content_layout)
-        self._create_profile_info_section(content_layout)
-        self._create_edit_section(content_layout)
-        self._create_quick_stats_section(content_layout)
-        
-        scroll_area.setWidget(content_widget)
-        overview_layout.addWidget(scroll_area)
-        
-        # Adicionar aba
-        self.tab_widget.addTab(overview_widget, "📋 Visão Geral")
+        parent_layout.addWidget(content_widget, 1)
     
-    def _create_avatar_section(self, parent_layout):
-        """Cria a seção de avatar do usuário"""
-        avatar_card = QtWidgets.QFrame()
-        avatar_card.setObjectName("avatarCard")
-        avatar_layout = QtWidgets.QVBoxLayout(avatar_card)
-        avatar_layout.setSpacing(15)
+    def _create_personal_info_section(self):
+        """Cria a seção de informações pessoais"""
+        info_card = QFrame()
+        info_card.setObjectName("infoCard")
+        info_layout = QVBoxLayout(info_card)
+        info_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.user-circle', color="#000000").pixmap(20, 20))
+        title_row = QHBoxLayout()
+        title_icon = QLabel()
+        title_icon.setPixmap(qta.icon('fa5s.user', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
-        
-        title_label = QtWidgets.QLabel("Avatar do Perfil")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
+        title_label = QLabel("Informações Pessoais")
+        title_font = QFont("Segoe UI", 14, QFont.Weight.Bold)
         title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
+        title_label.setStyleSheet("color: #2c3e50;")
         title_row.addWidget(title_label)
         title_row.addStretch()
         
-        avatar_layout.addLayout(title_row)
-        
-        # Container do avatar
-        avatar_container = QtWidgets.QHBoxLayout()
-        avatar_container.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        
-        # Avatar circular
-        self.avatar_label = QtWidgets.QLabel()
-        self.avatar_label.setFixedSize(120, 120)
-        self.avatar_label.setStyleSheet("""
-            QtWidgets.QLabel {
-                border: 4px solid #3498db;
-                border-radius: 60px;
-                background-color: #ecf0f1;
+        # Botão de editar
+        self.edit_button = QPushButton("Editar")
+        self.edit_button.setIcon(qta.icon('fa5s.edit', color="#ffffff"))
+        self.edit_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        self.edit_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: #ffffff;
+                padding: 6px 12px;
+                border: none;
+                border-radius: 6px;
+                font-size: 11px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:pressed {
+                background-color: #21618c;
             }
         """)
-        self.avatar_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.edit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.edit_button.clicked.connect(self._toggle_edit_mode)
+        title_row.addWidget(self.edit_button)
         
-        # Carregar avatar padrão ou personalizado
-        self._load_avatar()
+        info_layout.addLayout(title_row)
         
-        avatar_container.addWidget(self.avatar_label)
+        # Campos de informação
+        self._create_info_fields(info_layout)
         
-        # Botões de avatar
-        avatar_buttons = QtWidgets.QVBoxLayout()
-        avatar_buttons.setSpacing(10)
+        # Botões de ação (inicialmente ocultos)
+        self.action_buttons = self._create_action_buttons()
         
-        # Botão upload
-        upload_button = QtWidgets.QPushButton("📷 Upload Avatar")
-        upload_button.setFont(QtGui.QFont("Segoe UI", 10, QtGui.QFont.Weight.Bold))
-        upload_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #3498db;
+        # Criar container para os botões de ação
+        self.action_container = QWidget()
+        self.action_container.setLayout(self.action_buttons)
+        self.action_container.setVisible(False)
+        info_layout.addWidget(self.action_container)
+        
+        # Sombra
+        self._apply_card_shadow(info_card)
+        
+        return info_card
+    
+    def _create_info_fields(self, parent_layout):
+        """Cria os campos de informação"""
+        fields_layout = QGridLayout()
+        fields_layout.setSpacing(12)
+        
+        # Nome
+        name_label = QLabel("Nome:")
+        name_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        name_label.setStyleSheet("color: #2c3e50;")
+        fields_layout.addWidget(name_label, 0, 0)
+        
+        self.name_input = QLineEdit()
+        self.name_input.setFont(QFont("Segoe UI", 11))
+        self.name_input.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                border: 2px solid #ecf0f1;
+                border-radius: 6px;
+                background-color: #f8f9fa;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border-color: #3498db;
+                background-color: white;
+            }
+        """)
+        self.name_input.setReadOnly(True)
+        fields_layout.addWidget(self.name_input, 0, 1)
+        
+        # Idade
+        age_label = QLabel("Idade:")
+        age_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        age_label.setStyleSheet("color: #2c3e50;")
+        fields_layout.addWidget(age_label, 1, 0)
+        
+        self.age_input = QLineEdit()
+        self.age_input.setFont(QFont("Segoe UI", 11))
+        self.age_input.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                border: 2px solid #ecf0f1;
+                border-radius: 6px;
+                background-color: #f8f9fa;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border-color: #3498db;
+                background-color: white;
+            }
+        """)
+        self.age_input.setReadOnly(True)
+        fields_layout.addWidget(self.age_input, 1, 1)
+        
+        # Nota
+        grade_label = QLabel("Nota Média:")
+        grade_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        grade_label.setStyleSheet("color: #2c3e50;")
+        fields_layout.addWidget(grade_label, 2, 0)
+        
+        self.grade_input = QLineEdit()
+        self.grade_input.setFont(QFont("Segoe UI", 11))
+        self.grade_input.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                border: 2px solid #ecf0f1;
+                border-radius: 6px;
+                background-color: #f8f9fa;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border-color: #3498db;
+                background-color: white;
+            }
+        """)
+        self.grade_input.setReadOnly(True)
+        fields_layout.addWidget(self.grade_input, 2, 1)
+        
+        # Data de cadastro
+        date_label = QLabel("Membro desde:")
+        date_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        date_label.setStyleSheet("color: #2c3e50;")
+        fields_layout.addWidget(date_label, 3, 0)
+        
+        self.date_input = QLineEdit()
+        self.date_input.setFont(QFont("Segoe UI", 11))
+        self.date_input.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                border: 2px solid #ecf0f1;
+                border-radius: 6px;
+                background-color: #f8f9fa;
+                font-size: 12px;
+            }
+        """)
+        self.date_input.setReadOnly(True)
+        fields_layout.addWidget(self.date_input, 3, 1)
+        
+        # Último acesso
+        last_access_label = QLabel("Último acesso:")
+        last_access_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        last_access_label.setStyleSheet("color: #2c3e50;")
+        fields_layout.addWidget(last_access_label, 4, 0)
+        
+        self.last_access_input = QLineEdit()
+        self.last_access_input.setFont(QFont("Segoe UI", 11))
+        self.last_access_input.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                border: 2px solid #ecf0f1;
+                border-radius: 6px;
+                background-color: #f8f9fa;
+                font-size: 12px;
+            }
+        """)
+        self.last_access_input.setReadOnly(True)
+        fields_layout.addWidget(self.last_access_input, 4, 1)
+        
+        parent_layout.addLayout(fields_layout)
+        
+        # Carregar dados
+        self._load_user_data()
+    
+    def _create_action_buttons(self):
+        """Cria os botões de ação para edição"""
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)
+        
+        # Botão salvar
+        self.save_button = QPushButton("Salvar")
+        self.save_button.setIcon(qta.icon('fa5s.save', color="#ffffff"))
+        self.save_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        self.save_button.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
                 color: #ffffff;
                 padding: 8px 16px;
                 border: none;
                 border-radius: 6px;
-                font-size: 12px;
+                font-size: 11px;
+                min-width: 80px;
             }
-            QtWidgets.QPushButton:hover {
-                background-color: #2980b9;
+            QPushButton:hover {
+                background-color: #229954;
+            }
+            QPushButton:pressed {
+                background-color: #1e8449;
             }
         """)
-        upload_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        upload_button.clicked.connect(self._upload_avatar)
-        avatar_buttons.addWidget(upload_button)
+        self.save_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.save_button.clicked.connect(self._save_changes)
+        buttons_layout.addWidget(self.save_button)
         
-        # Botão remover
-        remove_button = QtWidgets.QPushButton("🗑️ Remover")
-        remove_button.setFont(QtGui.QFont("Segoe UI", 10, QtGui.QFont.Weight.Bold))
-        remove_button.setStyleSheet("""
-            QtWidgets.QPushButton {
+        # Botão cancelar
+        self.cancel_button = QPushButton("Cancelar")
+        self.cancel_button.setIcon(qta.icon('fa5s.times', color="#ffffff"))
+        self.cancel_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        self.cancel_button.setStyleSheet("""
+            QPushButton {
                 background-color: #e74c3c;
                 color: #ffffff;
                 padding: 8px 16px;
                 border: none;
                 border-radius: 6px;
-                font-size: 12px;
+                font-size: 11px;
+                min-width: 80px;
             }
-            QtWidgets.QPushButton:hover {
+            QPushButton:hover {
                 background-color: #c0392b;
             }
-        """)
-        remove_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        remove_button.clicked.connect(self._remove_avatar)
-        avatar_buttons.addWidget(remove_button)
-        
-        avatar_container.addLayout(avatar_buttons)
-        avatar_layout.addLayout(avatar_container)
-        
-        # Sombra
-        self._apply_card_shadow(avatar_card)
-        parent_layout.addWidget(avatar_card)
-    
-    def _create_profile_info_section(self, parent_layout):
-        """Cria a seção de informações do perfil"""
-        info_card = QtWidgets.QFrame()
-        info_card.setObjectName("infoCard")
-        info_layout = QtWidgets.QVBoxLayout(info_card)
-        info_layout.setSpacing(15)
-        
-        # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.user', color="#000000").pixmap(20, 20))
-        title_row.addWidget(title_icon)
-        
-        title_label = QtWidgets.QLabel("Informações Pessoais")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-        title_row.addWidget(title_label)
-        title_row.addStretch()
-        
-        info_layout.addLayout(title_row)
-        
-        # Formulário de informações
-        form_layout = QtWidgets.QFormLayout()
-        form_layout.setSpacing(15)
-        form_layout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
-        
-        # Nome
-        self.name_label = QtWidgets.QLabel("Nome:")
-        self.name_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.name_label.setStyleSheet("color: #2c3e50;")
-        
-        self.name_display = QtWidgets.QLabel("")
-        self.name_display.setFont(QtGui.QFont("Segoe UI", 12))
-        self.name_display.setStyleSheet("""
-            QtWidgets.QLabel {
-                padding: 8px 12px;
-                background-color: #f8f9fa;
-                border: 1px solid #e9ecef;
-                border-radius: 6px;
-                color: #495057;
+            QPushButton:pressed {
+                background-color: #a93226;
             }
         """)
-        form_layout.addRow(self.name_label, self.name_display)
-        
-        # Idade
-        self.age_label = QtWidgets.QLabel("Idade:")
-        self.age_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.age_label.setStyleSheet("color: #2c3e50;")
-        
-        self.age_display = QtWidgets.QLabel("")
-        self.age_display.setFont(QtGui.QFont("Segoe UI", 12))
-        self.age_display.setStyleSheet("""
-            QtWidgets.QLabel {
-                padding: 8px 12px;
-                background-color: #f8f9fa;
-                border: 1px solid #e9ecef;
-                border-radius: 6px;
-                color: #495057;
-            }
-        """)
-        form_layout.addRow(self.age_label, self.age_display)
-        
-        # Nota
-        self.grade_label = QtWidgets.QLabel("Nota Atual:")
-        self.grade_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.grade_label.setStyleSheet("color: #2c3e50;")
-        
-        self.grade_display = QtWidgets.QLabel("")
-        self.grade_display.setFont(QtGui.QFont("Segoe UI", 12))
-        self.grade_display.setStyleSheet("""
-            QtWidgets.QLabel {
-                padding: 8px 12px;
-                background-color: #f8f9fa;
-                border: 1px solid #e9ecef;
-                border-radius: 6px;
-                color: #495057;
-            }
-        """)
-        form_layout.addRow(self.grade_label, self.grade_display)
-        
-        # Data de cadastro
-        self.date_label = QtWidgets.QLabel("Membro desde:")
-        self.date_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.date_label.setStyleSheet("color: #2c3e50;")
-        
-        self.date_display = QtWidgets.QLabel("")
-        self.date_display.setFont(QtGui.QFont("Segoe UI", 12))
-        self.date_display.setStyleSheet("""
-            QtWidgets.QLabel {
-                padding: 8px 12px;
-                background-color: #f8f9fa;
-                border: 1px solid #e9ecef;
-                border-radius: 6px;
-                color: #495057;
-            }
-        """)
-        form_layout.addRow(self.date_label, self.date_display)
-        
-        info_layout.addLayout(form_layout)
-        
-        # Sombra
-        self._apply_card_shadow(info_card)
-        parent_layout.addWidget(info_card)
-    
-    def _create_edit_section(self, parent_layout):
-        """Cria a seção de edição de perfil"""
-        edit_card = QtWidgets.QFrame()
-        edit_card.setObjectName("editCard")
-        edit_layout = QtWidgets.QVBoxLayout(edit_card)
-        edit_layout.setSpacing(15)
-        
-        # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.edit', color="#000000").pixmap(20, 20))
-        title_row.addWidget(title_icon)
-        
-        title_label = QtWidgets.QLabel("Editar Perfil")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-        title_row.addWidget(title_label)
-        title_row.addStretch()
-        
-        edit_layout.addLayout(title_row)
-        
-        # Formulário de edição
-        form_layout = QtWidgets.QFormLayout()
-        form_layout.setSpacing(15)
-        form_layout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
-        
-        # Nome (editável)
-        self.edit_name_label = QtWidgets.QLabel("Nome:")
-        self.edit_name_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.edit_name_label.setStyleSheet("color: #2c3e50;")
-        
-        self.name_input = QtWidgets.QLineEdit()
-        self.name_input.setFont(QtGui.QFont("Segoe UI", 12))
-        self.name_input.setStyleSheet("""
-            QtWidgets.QLineEdit {
-                padding: 8px 12px;
-                border: 2px solid #e1e8ed;
-                border-radius: 6px;
-                background-color: white;
-                font-size: 14px;
-            }
-            QtWidgets.QLineEdit:focus {
-                border-color: #000000;
-            }
-        """)
-        form_layout.addRow(self.edit_name_label, self.name_input)
-        
-        # Idade (editável)
-        self.edit_age_label = QtWidgets.QLabel("Idade:")
-        self.edit_age_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.edit_age_label.setStyleSheet("color: #2c3e50;")
-        
-        self.age_input = QtWidgets.QSpinBox()
-        self.age_input.setRange(1, 120)
-        self.age_input.setFont(QtGui.QFont("Segoe UI", 12))
-        self.age_input.setStyleSheet("""
-            QtWidgets.QSpinBox {
-                padding: 8px 12px;
-                border: 2px solid #e1e8ed;
-                border-radius: 6px;
-                background-color: white;
-                font-size: 14px;
-            }
-            QtWidgets.QSpinBox:focus {
-                border-color: #000000;
-            }
-        """)
-        form_layout.addRow(self.edit_age_label, self.age_input)
-        
-        # Nota (editável)
-        self.edit_grade_label = QtWidgets.QLabel("Nota:")
-        self.edit_grade_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.edit_grade_label.setStyleSheet("color: #2c3e50;")
-        
-        self.grade_input = QtWidgets.QLineEdit()
-        self.grade_input.setFont(QtGui.QFont("Segoe UI", 12))
-        self.grade_input.setPlaceholderText("Ex: 8.5")
-        self.grade_input.setStyleSheet("""
-            QtWidgets.QLineEdit {
-                padding: 8px 12px;
-                border: 2px solid #e1e8ed;
-                border-radius: 6px;
-                background-color: white;
-                font-size: 14px;
-            }
-            QtWidgets.QLineEdit:focus {
-                border-color: #000000;
-            }
-        """)
-        form_layout.addRow(self.edit_grade_label, self.grade_input)
-        
-        edit_layout.addLayout(form_layout)
-        
-        # Botões de ação
-        button_layout = QtWidgets.QHBoxLayout()
-        button_layout.setSpacing(10)
-        
-        # Botão salvar
-        self.save_button = QtWidgets.QPushButton("Salvar Alterações")
-        self.save_button.setIcon(qta.icon('fa5s.save', color="#ffffff"))
-        self.save_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.save_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #000000;
-                color: #ffffff;
-                padding: 10px 20px;
-                border: none;
-                border-radius: 8px;
-                font-size: 13px;
-                min-width: 150px;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #333333;
-            }
-            QtWidgets.QPushButton:pressed {
-                background-color: #1a1a1a;
-            }
-        """)
-        self.save_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        self.save_button.clicked.connect(self._save_profile)
-        button_layout.addWidget(self.save_button)
-        
-        # Botão cancelar
-        self.cancel_button = QtWidgets.QPushButton("Cancelar")
-        self.cancel_button.setIcon(qta.icon('fa5s.times', color="#ffffff"))
-        self.cancel_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        self.cancel_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #6c757d;
-                color: #ffffff;
-                padding: 10px 20px;
-                border: none;
-                border-radius: 8px;
-                font-size: 13px;
-                min-width: 120px;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #5a6268;
-            }
-            QtWidgets.QPushButton:pressed {
-                background-color: #545b62;
-            }
-        """)
-        self.cancel_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.cancel_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.cancel_button.clicked.connect(self._cancel_edit)
-        button_layout.addWidget(self.cancel_button)
+        buttons_layout.addWidget(self.cancel_button)
         
-        button_layout.addStretch()
-        edit_layout.addLayout(button_layout)
+        buttons_layout.addStretch()
         
-        # Sombra
-        self._apply_card_shadow(edit_card)
-        parent_layout.addWidget(edit_card)
+        return buttons_layout
     
-    def _create_stats_section(self, parent_layout):
-        """Cria a seção de estatísticas do usuário"""
-        stats_card = QtWidgets.QFrame()
+    def _create_stats_section(self):
+        """Cria a seção de estatísticas"""
+        stats_widget = QWidget()
+        stats_layout = QVBoxLayout(stats_widget)
+        stats_layout.setSpacing(20)
+        
+        # Card de estatísticas
+        stats_card = QFrame()
         stats_card.setObjectName("statsCard")
-        stats_layout = QtWidgets.QVBoxLayout(stats_card)
-        stats_layout.setSpacing(15)
+        stats_card_layout = QVBoxLayout(stats_card)
+        stats_card_layout.setSpacing(15)
         
-        # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.chart-bar', color="#000000").pixmap(20, 20))
-        title_row.addWidget(title_icon)
+        # Título
+        stats_title_row = QHBoxLayout()
+        stats_icon = QLabel()
+        stats_icon.setPixmap(qta.icon('fa5s.chart-bar', color="#000000").pixmap(20, 20))
+        stats_title_row.addWidget(stats_icon)
+        stats_title = QLabel("Estatísticas")
+        stats_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        stats_title.setStyleSheet("color: #2c3e50;")
+        stats_title_row.addWidget(stats_title)
+        stats_title_row.addStretch()
+        stats_card_layout.addLayout(stats_title_row)
         
-        title_label = QtWidgets.QLabel("Estatísticas")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-        title_row.addWidget(title_label)
-        title_row.addStretch()
-        
-        stats_layout.addLayout(title_row)
-        
-        # Grid de estatísticas
-        stats_grid = QtWidgets.QGridLayout()
-        stats_grid.setSpacing(20)
-        
-        # Estatística 1 - Aulas assistidas
-        stat1_card = self._create_stat_card("fa5s.play-circle", "Aulas Assistidas", "0", "#3498db")
-        stats_grid.addWidget(stat1_card, 0, 0)
-        
-        # Estatística 2 - Tempo de estudo
-        stat2_card = self._create_stat_card("fa5s.clock", "Tempo de Estudo", "0h", "#e74c3c")
-        stats_grid.addWidget(stat2_card, 0, 1)
-        
-        # Estatística 3 - Progresso
-        stat3_card = self._create_stat_card("fa5s.trophy", "Progresso", "0%", "#f39c12")
-        stats_grid.addWidget(stat3_card, 1, 0)
-        
-        # Estatística 4 - Conquistas
-        stat4_card = self._create_stat_card("fa5s.star", "Conquistas", "0", "#9b59b6")
-        stats_grid.addWidget(stat4_card, 1, 1)
-        
-        stats_layout.addLayout(stats_grid)
+        # Estatísticas
+        self._create_stats_items(stats_card_layout)
         
         # Sombra
         self._apply_card_shadow(stats_card)
-        parent_layout.addWidget(stats_card)
-    
-    def _create_stat_card(self, icon_name, title, value, color):
-        """Cria um card de estatística"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("statCard")
-        card.setStyleSheet(f"""
-            QtWidgets.QFrame#statCard {{
-                background-color: #ffffff;
-                border: 1px solid #e9ecef;
-                border-radius: 8px;
-                padding: 15px;
-            }}
-        """)
+        stats_layout.addWidget(stats_card)
         
-        layout = QtWidgets.QVBoxLayout(card)
-        layout.setSpacing(10)
-        
-        # Ícone
-        icon_label = QtWidgets.QLabel()
-        icon_label.setPixmap(qta.icon(icon_name, color=color).pixmap(32, 32))
-        icon_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(icon_label)
-        
-        # Valor
-        value_label = QtWidgets.QLabel(value)
-        value_label.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Weight.Bold))
-        value_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        value_label.setStyleSheet(f"color: {color};")
-        layout.addWidget(value_label)
+        # Card de ações rápidas
+        actions_card = QFrame()
+        actions_card.setObjectName("actionsCard")
+        actions_card_layout = QVBoxLayout(actions_card)
+        actions_card_layout.setSpacing(15)
         
         # Título
-        title_label = QtWidgets.QLabel(title)
-        title_label.setFont(QtGui.QFont("Segoe UI", 10))
-        title_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet("color: #6c757d;")
-        layout.addWidget(title_label)
-        
-        return card
-    
-    def _create_actions_section(self, parent_layout):
-        """Cria a seção de ações do perfil"""
-        actions_card = QtWidgets.QFrame()
-        actions_card.setObjectName("actionsCard")
-        actions_layout = QtWidgets.QVBoxLayout(actions_card)
-        actions_layout.setSpacing(15)
-        
-        # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.cog', color="#000000").pixmap(20, 20))
-        title_row.addWidget(title_icon)
-        
-        title_label = QtWidgets.QLabel("Ações")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-        title_row.addWidget(title_label)
-        title_row.addStretch()
-        
-        actions_layout.addLayout(title_row)
+        actions_title_row = QHBoxLayout()
+        actions_icon = QLabel()
+        actions_icon.setPixmap(qta.icon('fa5s.cog', color="#000000").pixmap(20, 20))
+        actions_title_row.addWidget(actions_icon)
+        actions_title = QLabel("Ações Rápidas")
+        actions_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        actions_title.setStyleSheet("color: #2c3e50;")
+        actions_title_row.addWidget(actions_title)
+        actions_title_row.addStretch()
+        actions_card_layout.addLayout(actions_title_row)
         
         # Botões de ação
-        button_layout = QtWidgets.QHBoxLayout()
-        button_layout.setSpacing(15)
-        
-        # Botão alterar senha
-        change_password_button = QtWidgets.QPushButton("Alterar Senha")
-        change_password_button.setIcon(qta.icon('fa5s.key', color="#ffffff"))
-        change_password_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        change_password_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #17a2b8;
-                color: #ffffff;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 8px;
-                font-size: 13px;
-                min-width: 140px;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #138496;
-            }
-            QtWidgets.QPushButton:pressed {
-                background-color: #117a8b;
-            }
-        """)
-        change_password_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        change_password_button.clicked.connect(self._change_password)
-        button_layout.addWidget(change_password_button)
-        
-        # Botão exportar dados
-        export_button = QtWidgets.QPushButton("Exportar Dados")
-        export_button.setIcon(qta.icon('fa5s.download', color="#ffffff"))
-        export_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        export_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #28a745;
-                color: #ffffff;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 8px;
-                font-size: 13px;
-                min-width: 140px;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #218838;
-            }
-            QtWidgets.QPushButton:pressed {
-                background-color: #1e7e34;
-            }
-        """)
-        export_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        export_button.clicked.connect(self._export_data)
-        button_layout.addWidget(export_button)
-        
-        # Botão excluir conta
-        delete_button = QtWidgets.QPushButton("Excluir Conta")
-        delete_button.setIcon(qta.icon('fa5s.trash', color="#ffffff"))
-        delete_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        delete_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #dc3545;
-                color: #ffffff;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 8px;
-                font-size: 13px;
-                min-width: 140px;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #c82333;
-            }
-            QtWidgets.QPushButton:pressed {
-                background-color: #bd2130;
-            }
-        """)
-        delete_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        delete_button.clicked.connect(self._delete_account)
-        button_layout.addWidget(delete_button)
-        
-        button_layout.addStretch()
-        actions_layout.addLayout(button_layout)
+        self._create_quick_actions(actions_card_layout)
         
         # Sombra
         self._apply_card_shadow(actions_card)
-        parent_layout.addWidget(actions_card)
+        stats_layout.addWidget(actions_card)
+        
+        return stats_widget
     
-    def _create_quick_stats_section(self, parent_layout):
-        """Cria a seção de estatísticas rápidas"""
-        stats_card = QtWidgets.QFrame()
-        stats_card.setObjectName("statsCard")
-        stats_layout = QtWidgets.QVBoxLayout(stats_card)
+    def _create_stats_items(self, parent_layout):
+        """Cria os itens de estatísticas"""
+        stats_layout = QGridLayout()
         stats_layout.setSpacing(15)
         
-        # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.chart-line', color="#000000").pixmap(20, 20))
-        title_row.addWidget(title_icon)
+        # Total de aulas assistidas
+        lessons_label = QLabel("Aulas Assistidas:")
+        lessons_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        lessons_label.setStyleSheet("color: #2c3e50;")
+        stats_layout.addWidget(lessons_label, 0, 0)
         
-        title_label = QtWidgets.QLabel("Estatísticas Rápidas")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-        title_row.addWidget(title_label)
-        title_row.addStretch()
+        self.lessons_count = QLabel("0")
+        self.lessons_count.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self.lessons_count.setStyleSheet("color: #3498db;")
+        stats_layout.addWidget(self.lessons_count, 0, 1)
         
-        stats_layout.addLayout(title_row)
+        # Tempo de estudo
+        time_label = QLabel("Tempo de Estudo:")
+        time_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        time_label.setStyleSheet("color: #2c3e50;")
+        stats_layout.addWidget(time_label, 1, 0)
         
-        # Grid de estatísticas
-        stats_grid = QtWidgets.QGridLayout()
-        stats_grid.setSpacing(20)
+        self.study_time = QLabel("0 horas")
+        self.study_time.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self.study_time.setStyleSheet("color: #27ae60;")
+        stats_layout.addWidget(self.study_time, 1, 1)
         
-        # Estatística 1 - Progresso geral
-        progress_card = self._create_progress_card("🎯 Progresso Geral", 75, "#3498db")
-        stats_grid.addWidget(progress_card, 0, 0)
+        # Conquistas
+        achievements_label = QLabel("Conquistas:")
+        achievements_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        achievements_label.setStyleSheet("color: #2c3e50;")
+        stats_layout.addWidget(achievements_label, 2, 0)
         
-        # Estatística 2 - Tempo de estudo
-        time_card = self._create_progress_card("⏱️ Tempo de Estudo", 60, "#e74c3c")
-        stats_grid.addWidget(time_card, 0, 1)
+        self.achievements_count = QLabel("0")
+        self.achievements_count.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        self.achievements_count.setStyleSheet("color: #f39c12;")
+        stats_layout.addWidget(self.achievements_count, 2, 1)
         
-        # Estatística 3 - Aulas concluídas
-        lessons_card = self._create_progress_card("📚 Aulas Concluídas", 45, "#f39c12")
-        stats_grid.addWidget(lessons_card, 1, 0)
-        
-        # Estatística 4 - Pontuação
-        score_card = self._create_progress_card("⭐ Pontuação", 85, "#9b59b6")
-        stats_grid.addWidget(score_card, 1, 1)
-        
-        stats_layout.addLayout(stats_grid)
-        
-        # Sombra
-        self._apply_card_shadow(stats_card)
-        parent_layout.addWidget(stats_card)
+        parent_layout.addLayout(stats_layout)
     
-    def _create_progress_card(self, title, value, color):
-        """Cria um card de progresso"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("progressCard")
-        card.setStyleSheet(f"""
-            QtWidgets.QFrame#progressCard {{
-                background-color: #ffffff;
-                border: 1px solid #e9ecef;
-                border-radius: 8px;
-                padding: 15px;
-            }}
-        """)
+    def _create_quick_actions(self, parent_layout):
+        """Cria os botões de ações rápidas"""
+        actions_layout = QVBoxLayout()
+        actions_layout.setSpacing(10)
         
-        layout = QtWidgets.QVBoxLayout(card)
-        layout.setSpacing(10)
-        
-        # Título
-        title_label = QtWidgets.QLabel(title)
-        title_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        title_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet("color: #2c3e50;")
-        layout.addWidget(title_label)
-        
-        # Barra de progresso
-        progress_bar = QtWidgets.QProgressBar()
-        progress_bar.setValue(value)
-        progress_bar.setStyleSheet(f"""
-            QtWidgets.QProgressBar {{
-                border: 2px solid #e9ecef;
-                border-radius: 5px;
-                text-align: center;
-                font-weight: bold;
-            }}
-            QtWidgets.QProgressBar::chunk {{
-                background-color: {color};
-                border-radius: 3px;
-            }}
-        """)
-        layout.addWidget(progress_bar)
-        
-        # Valor
-        value_label = QtWidgets.QLabel(f"{value}%")
-        value_label.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        value_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        value_label.setStyleSheet(f"color: {color};")
-        layout.addWidget(value_label)
-        
-        return card
-    
-    def _create_analytics_tab(self):
-        """Cria a aba de analytics e gráficos"""
-        analytics_widget = QtWidgets.QWidget()
-        analytics_layout = QtWidgets.QVBoxLayout(analytics_widget)
-        analytics_layout.setSpacing(20)
-        
-        # Container com scroll
-        scroll_area = QtWidgets.QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setStyleSheet("""
-            QtWidgets.QScrollArea {
-                border: none;
-                background-color: transparent;
-            }
-            QScrollBar:vertical {
-                background-color: #f0f0f0;
-                width: 12px;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #c0c0c0;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #a0a0a0;
-            }
-        """)
-        
-        # Widget de conteúdo
-        content_widget = QtWidgets.QWidget()
-        content_layout = QtWidgets.QVBoxLayout(content_widget)
-        content_layout.setSpacing(20)
-        
-        # Seções de analytics
-        self._create_performance_chart_section(content_layout)
-        self._create_learning_analytics_section(content_layout)
-        self._create_goals_section(content_layout)
-        
-        scroll_area.setWidget(content_widget)
-        analytics_layout.addWidget(scroll_area)
-        
-        # Adicionar aba
-        self.tab_widget.addTab(analytics_widget, "📊 Analytics")
-    
-    def _create_performance_chart_section(self, parent_layout):
-        """Cria seção de gráfico de performance"""
-        chart_card = QtWidgets.QFrame()
-        chart_card.setObjectName("chartCard")
-        chart_layout = QtWidgets.QVBoxLayout(chart_card)
-        chart_layout.setSpacing(15)
-        
-        # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.chart-bar', color="#000000").pixmap(20, 20))
-        title_row.addWidget(title_icon)
-        
-        title_label = QtWidgets.QLabel("Performance ao Longo do Tempo")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-        title_row.addWidget(title_label)
-        title_row.addStretch()
-        
-        chart_layout.addLayout(title_row)
-        
-        # Simulação de gráfico (em um projeto real, usaria matplotlib ou similar)
-        chart_widget = QtWidgets.QWidget()
-        chart_widget.setFixedHeight(200)
-        chart_widget.setStyleSheet("""
-            QtWidgets.QWidget {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #f8f9fa, stop:1 #e9ecef);
-                border: 2px solid #dee2e6;
-                border-radius: 8px;
-            }
-        """)
-        
-        # Adicionar texto simulado do gráfico
-        chart_label = QtWidgets.QLabel("📈 Gráfico de Performance\n\n• Semana 1: 65%\n• Semana 2: 72%\n• Semana 3: 78%\n• Semana 4: 85%")
-        chart_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        chart_label.setFont(QtGui.QFont("Segoe UI", 12))
-        chart_label.setStyleSheet("color: #495057;")
-        
-        chart_layout_widget = QtWidgets.QVBoxLayout(chart_widget)
-        chart_layout_widget.addWidget(chart_label)
-        
-        chart_layout.addWidget(chart_widget)
-        
-        # Sombra
-        self._apply_card_shadow(chart_card)
-        parent_layout.addWidget(chart_card)
-    
-    def _create_learning_analytics_section(self, parent_layout):
-        """Cria seção de analytics de aprendizado"""
-        analytics_card = QtWidgets.QFrame()
-        analytics_card.setObjectName("analyticsCard")
-        analytics_layout = QtWidgets.QVBoxLayout(analytics_card)
-        analytics_layout.setSpacing(15)
-        
-        # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.brain', color="#000000").pixmap(20, 20))
-        title_row.addWidget(title_icon)
-        
-        title_label = QtWidgets.QLabel("Analytics de Aprendizado")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-        title_row.addWidget(title_label)
-        title_row.addStretch()
-        
-        analytics_layout.addLayout(title_row)
-        
-        # Grid de métricas
-        metrics_grid = QtWidgets.QGridLayout()
-        metrics_grid.setSpacing(15)
-        
-        # Métrica 1 - Tempo médio por aula
-        time_metric = self._create_metric_card("⏱️ Tempo Médio por Aula", "25 min", "#3498db")
-        metrics_grid.addWidget(time_metric, 0, 0)
-        
-        # Métrica 2 - Taxa de conclusão
-        completion_metric = self._create_metric_card("✅ Taxa de Conclusão", "87%", "#27ae60")
-        metrics_grid.addWidget(completion_metric, 0, 1)
-        
-        # Métrica 3 - Pontuação média
-        score_metric = self._create_metric_card("🎯 Pontuação Média", "8.4", "#f39c12")
-        metrics_grid.addWidget(score_metric, 1, 0)
-        
-        # Métrica 4 - Estreia atual
-        streak_metric = self._create_metric_card("🔥 Sequência Atual", "12 dias", "#e74c3c")
-        metrics_grid.addWidget(streak_metric, 1, 1)
-        
-        analytics_layout.addLayout(metrics_grid)
-        
-        # Sombra
-        self._apply_card_shadow(analytics_card)
-        parent_layout.addWidget(analytics_card)
-    
-    def _create_metric_card(self, title, value, color):
-        """Cria um card de métrica"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("metricCard")
-        card.setStyleSheet(f"""
-            QtWidgets.QFrame#metricCard {{
-                background-color: #ffffff;
-                border: 2px solid {color};
-                border-radius: 8px;
-                padding: 15px;
-            }}
-        """)
-        
-        layout = QtWidgets.QVBoxLayout(card)
-        layout.setSpacing(8)
-        
-        # Título
-        title_label = QtWidgets.QLabel(title)
-        title_label.setFont(QtGui.QFont("Segoe UI", 10, QtGui.QFont.Weight.Bold))
-        title_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet("color: #2c3e50;")
-        layout.addWidget(title_label)
-        
-        # Valor
-        value_label = QtWidgets.QLabel(value)
-        value_label.setFont(QtGui.QFont("Segoe UI", 18, QtGui.QFont.Weight.Bold))
-        value_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        value_label.setStyleSheet(f"color: {color};")
-        layout.addWidget(value_label)
-        
-        return card
-    
-    def _create_goals_section(self, parent_layout):
-        """Cria seção de metas e objetivos"""
-        goals_card = QtWidgets.QFrame()
-        goals_card.setObjectName("goalsCard")
-        goals_layout = QtWidgets.QVBoxLayout(goals_card)
-        goals_layout.setSpacing(15)
-        
-        # Título da seção
-        title_row = QtWidgets.QHBoxLayout()
-        title_icon = QtWidgets.QLabel()
-        title_icon.setPixmap(qta.icon('fa5s.bullseye', color="#000000").pixmap(20, 20))
-        title_row.addWidget(title_icon)
-        
-        title_label = QtWidgets.QLabel("Metas e Objetivos")
-        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
-        title_row.addWidget(title_label)
-        title_row.addStretch()
-        
-        goals_layout.addLayout(title_row)
-        
-        # Lista de metas
-        goals_list = QtWidgets.QListWidget()
-        goals_list.setStyleSheet("""
-            QtWidgets.QListWidget {
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-                background-color: #ffffff;
-                padding: 10px;
-            }
-            QtWidgets.QListWidget::item {
-                padding: 10px;
-                border-bottom: 1px solid #f8f9fa;
-                border-radius: 4px;
-                margin: 2px;
-            }
-            QtWidgets.QListWidget::item:hover {
-                background-color: #f8f9fa;
-            }
-        """)
-        
-        # Adicionar metas de exemplo
-        goals = [
-            "🎯 Completar 50 aulas este mês (Progresso: 32/50)",
-            "⭐ Manter pontuação média acima de 8.0 (Atual: 8.4)",
-            "🔥 Manter sequência de estudo por 30 dias (Atual: 12 dias)",
-            "📚 Estudar 2 horas por dia (Média atual: 1.8h)",
-            "🏆 Conquistar 5 badges este mês (Atual: 2/5)"
-        ]
-        
-        for goal in goals:
-            item = QtWidgets.QListWidgetItem(goal)
-            item.setFont(QtGui.QFont("Segoe UI", 10))
-            goals_list.addItem(item)
-        
-        goals_layout.addWidget(goals_list)
-        
-        # Botão adicionar meta
-        add_goal_button = QtWidgets.QPushButton("➕ Adicionar Nova Meta")
-        add_goal_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        add_goal_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #28a745;
+        # Botão de histórico
+        history_button = QPushButton("Ver Histórico de Aulas")
+        history_button.setIcon(qta.icon('fa5s.history', color="#ffffff"))
+        history_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        history_button.setStyleSheet("""
+            QPushButton {
+                background-color: #9b59b6;
                 color: #ffffff;
-                padding: 10px 20px;
+                padding: 10px 16px;
                 border: none;
                 border-radius: 8px;
                 font-size: 12px;
+                text-align: left;
             }
-            QtWidgets.QPushButton:hover {
-                background-color: #218838;
+            QPushButton:hover {
+                background-color: #8e44ad;
+            }
+            QPushButton:pressed {
+                background-color: #7d3c98;
             }
         """)
-        add_goal_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        add_goal_button.clicked.connect(self._add_goal)
-        goals_layout.addWidget(add_goal_button)
+        history_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        history_button.clicked.connect(self._view_history)
+        actions_layout.addWidget(history_button)
         
-        # Sombra
-        self._apply_card_shadow(goals_card)
-        parent_layout.addWidget(goals_card)
-    
-    def _create_settings_tab(self):
-        """Cria a aba de configurações"""
-        settings_widget = QtWidgets.QWidget()
-        settings_layout = QtWidgets.QVBoxLayout(settings_widget)
-        settings_layout.setSpacing(20)
-        
-        # Container com scroll
-        scroll_area = QtWidgets.QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setStyleSheet("""
-            QtWidgets.QScrollArea {
+        # Botão de configurações
+        settings_button = QPushButton("Configurações da Conta")
+        settings_button.setIcon(qta.icon('fa5s.cog', color="#ffffff"))
+        settings_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        settings_button.setStyleSheet("""
+            QPushButton {
+                background-color: #34495e;
+                color: #ffffff;
+                padding: 10px 16px;
                 border: none;
-                background-color: transparent;
+                border-radius: 8px;
+                font-size: 12px;
+                text-align: left;
             }
-            QScrollBar:vertical {
-                background-color: #f0f0f0;
-                width: 12px;
-                border-radius: 6px;
+            QPushButton:hover {
+                background-color: #2c3e50;
             }
-            QScrollBar::handle:vertical {
-                background-color: #c0c0c0;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #a0a0a0;
+            QPushButton:pressed {
+                background-color: #1b2631;
             }
         """)
+        settings_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        settings_button.clicked.connect(self._open_settings)
+        actions_layout.addWidget(settings_button)
         
-        # Widget de conteúdo
-        content_widget = QtWidgets.QWidget()
-        content_layout = QtWidgets.QVBoxLayout(content_widget)
-        content_layout.setSpacing(20)
-        
-        # Seções de configurações
-        self._create_notification_settings_section(content_layout)
-        self._create_privacy_settings_section(content_layout)
-        self._create_theme_settings_section(content_layout)
-        self._create_export_settings_section(content_layout)
-        
-        scroll_area.setWidget(content_widget)
-        settings_layout.addWidget(scroll_area)
-        
-        # Adicionar aba
-        self.tab_widget.addTab(settings_widget, "⚙️ Configurações")
-    
-    def _create_activity_tab(self):
-        """Cria a aba de atividades"""
-        activity_widget = QtWidgets.QWidget()
-        activity_layout = QtWidgets.QVBoxLayout(activity_widget)
-        activity_layout.setSpacing(20)
-        
-        # Container com scroll
-        scroll_area = QtWidgets.QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setStyleSheet("""
-            QtWidgets.QScrollArea {
+        # Botão de ajuda
+        help_button = QPushButton("Central de Ajuda")
+        help_button.setIcon(qta.icon('fa5s.question-circle', color="#ffffff"))
+        help_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        help_button.setStyleSheet("""
+            QPushButton {
+                background-color: #16a085;
+                color: #ffffff;
+                padding: 10px 16px;
                 border: none;
-                background-color: transparent;
+                border-radius: 8px;
+                font-size: 12px;
+                text-align: left;
             }
-            QScrollBar:vertical {
-                background-color: #f0f0f0;
-                width: 12px;
-                border-radius: 6px;
+            QPushButton:hover {
+                background-color: #138d75;
             }
-            QScrollBar::handle:vertical {
-                background-color: #c0c0c0;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #a0a0a0;
+            QPushButton:pressed {
+                background-color: #117a65;
             }
         """)
+        help_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        help_button.clicked.connect(self._open_help)
+        actions_layout.addWidget(help_button)
         
-        # Widget de conteúdo
-        content_widget = QtWidgets.QWidget()
-        content_layout = QtWidgets.QVBoxLayout(content_widget)
-        content_layout.setSpacing(20)
-        
-        # Seções de atividades
-        self._create_recent_activity_section(content_layout)
-        self._create_study_calendar_section(content_layout)
-        self._create_learning_logs_section(content_layout)
-        
-        scroll_area.setWidget(content_widget)
-        activity_layout.addWidget(scroll_area)
-        
-        # Adicionar aba
-        self.tab_widget.addTab(activity_widget, "📅 Atividades")
+        parent_layout.addLayout(actions_layout)
     
-    def _create_achievements_tab(self):
-        """Cria a aba de conquistas"""
-        achievements_widget = QtWidgets.QWidget()
-        achievements_layout = QtWidgets.QVBoxLayout(achievements_widget)
-        achievements_layout.setSpacing(20)
+    def _create_footer(self, parent_layout):
+        """Cria o rodapé"""
+        footer_widget = QWidget()
+        footer_layout = QHBoxLayout(footer_widget)
+        footer_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Container com scroll
-        scroll_area = QtWidgets.QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setStyleSheet("""
-            QtWidgets.QScrollArea {
-                border: none;
-                background-color: transparent;
-            }
-            QScrollBar:vertical {
-                background-color: #f0f0f0;
-                width: 12px;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #c0c0c0;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #a0a0a0;
-            }
-        """)
+        # Espaçador
+        footer_layout.addStretch()
         
-        # Widget de conteúdo
-        content_widget = QtWidgets.QWidget()
-        content_layout = QtWidgets.QVBoxLayout(content_widget)
-        content_layout.setSpacing(20)
+        # Informação de versão
+        version_label = QLabel("EduAI v1.0 - Plataforma de Ensino Inteligente")
+        version_label.setFont(QFont("Segoe UI", 9))
+        version_label.setStyleSheet("color: #95a5a6;")
+        footer_layout.addWidget(version_label)
         
-        # Seções de conquistas
-        self._create_badges_section(content_layout)
-        self._create_certificates_section(content_layout)
-        self._create_leaderboard_section(content_layout)
-        
-        scroll_area.setWidget(content_widget)
-        achievements_layout.addWidget(scroll_area)
-        
-        # Adicionar aba
-        self.tab_widget.addTab(achievements_widget, "🏆 Conquistas")
+        parent_layout.addWidget(footer_widget)
     
     def _apply_styles(self):
         """Aplica estilos globais"""
         self.setStyleSheet("""
-            QtWidgets.QMainWindow {
-                background-color: #f8f9fa;
+            QMainWindow {
+                background-color: #ffffff;
             }
-            QtWidgets.QFrame#infoCard, QtWidgets.QFrame#editCard, QtWidgets.QFrame#statsCard, QtWidgets.QFrame#actionsCard {
+            QFrame#infoCard, QFrame#statsCard, QFrame#actionsCard {
                 background-color: #ffffff;
                 border-radius: 10px;
                 padding: 20px;
                 border: 1px solid #d1d5db;
             }
-            QtWidgets.QLabel {
+            QLabel {
                 color: #111827;
             }
         """)
     
     def _apply_card_shadow(self, widget):
-        """Aplica sombra ao card (desabilitada para compatibilidade)"""
+        """Aplica sombra ao card (desabilitada para consistência)"""
         widget.setGraphicsEffect(None)
     
-    def _load_avatar(self):
-        """Carrega o avatar do usuário"""
-        try:
-            # Tentar carregar avatar personalizado
-            avatar_path = f"avatars/{self.user_name}_avatar.png"
-            if os.path.exists(avatar_path):
-                pixmap = QtGui.QPixmap(avatar_path)
-                if not pixmap.isNull():
-                    # Redimensionar para 120x120 mantendo proporção
-                    pixmap = pixmap.scaled(120, 120, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation)
-                    self.avatar_label.setPixmap(pixmap)
-                    return
-            
-            # Avatar padrão com iniciais
-            self._create_default_avatar()
-        except Exception as e:
-            print(f"Erro ao carregar avatar: {e}")
-            self._create_default_avatar()
-    
-    def _create_default_avatar(self):
-        """Cria avatar padrão com iniciais do usuário"""
-        # Criar pixmap com iniciais
-        pixmap = QtGui.QPixmap(120, 120)
-        pixmap.fill(QtGui.QColor("#3498db"))
-        
-        painter = QtGui.QPainter(pixmap)
-        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-        
-        # Desenhar círculo
-        painter.setBrush(QtGui.QColor("#3498db"))
-        painter.setPen(QtGui.QPen(QtGui.QColor("#2980b9"), 4))
-        painter.drawEllipse(2, 2, 116, 116)
-        
-        # Desenhar iniciais
-        painter.setPen(QtGui.QPen(QtGui.QColor("#ffffff"), 1))
-        painter.setFont(QtGui.QFont("Segoe UI", 36, QtGui.QFont.Weight.Bold))
-        initials = self.user_name[:2].upper() if len(self.user_name) >= 2 else self.user_name.upper()
-        painter.drawText(pixmap.rect(), QtCore.Qt.AlignmentFlag.AlignCenter, initials)
-        painter.end()
-        
-        self.avatar_label.setPixmap(pixmap)
-    
-    def _upload_avatar(self):
-        """Permite upload de novo avatar"""
-        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self,
-            "Selecionar Avatar",
-            "",
-            "Imagens (*.png *.jpg *.jpeg *.gif *.bmp)"
-        )
-        
-        if file_path:
-            try:
-                # Criar diretório de avatars se não existir
-                os.makedirs("avatars", exist_ok=True)
-                
-                # Carregar e redimensionar imagem
-                pixmap = QtGui.QPixmap(file_path)
-                if not pixmap.isNull():
-                    # Redimensionar para 120x120 mantendo proporção
-                    pixmap = pixmap.scaled(120, 120, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation)
-                    
-                    # Salvar avatar
-                    avatar_path = f"avatars/{self.user_name}_avatar.png"
-                    pixmap.save(avatar_path, "PNG")
-                    
-                    # Atualizar exibição
-                    self.avatar_label.setPixmap(pixmap)
-                    
-                    self._show_success("Avatar atualizado com sucesso!")
-                else:
-                    self._show_error("Erro ao carregar a imagem selecionada.")
-            except Exception as e:
-                self._show_error(f"Erro ao salvar avatar: {str(e)}")
-    
-    def _remove_avatar(self):
-        """Remove o avatar personalizado"""
-        reply = QtWidgets.QMessageBox.question(
-            self,
-            'Confirmar Remoção',
-            'Tem certeza que deseja remover seu avatar personalizado?',
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            QtWidgets.QMessageBox.StandardButton.No
-        )
-        
-        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            try:
-                # Remover arquivo do avatar
-                avatar_path = f"avatars/{self.user_name}_avatar.png"
-                if os.path.exists(avatar_path):
-                    os.remove(avatar_path)
-                
-                # Voltar ao avatar padrão
-                self._create_default_avatar()
-                
-                self._show_success("Avatar removido com sucesso!")
-            except Exception as e:
-                self._show_error(f"Erro ao remover avatar: {str(e)}")
-    
-    def _add_goal(self):
-        """Adiciona nova meta"""
-        goal_text, ok = QtWidgets.QInputDialog.getText(
-            self,
-            'Nova Meta',
-            'Digite sua nova meta:'
-        )
-        
-        if ok and goal_text.strip():
-            # Aqui você implementaria a lógica para salvar a meta no banco
-            self._show_success(f"Meta adicionada: {goal_text}")
-    
     def _load_user_data(self):
-        """Carrega os dados do usuário do banco de dados"""
-        try:
-            if not self.user_data:
-                # Buscar dados do usuário no banco
-                user = db_manager.get_user_by_name(self.user_name)
-                if user:
-                    self.user_data = user
+        """Carrega os dados do usuário nos campos"""
+        if not self.user_data:
+            return
+        
+        # Nome
+        self.name_input.setText(self.user_data.get('nome', ''))
+        
+        # Idade
+        idade = self.user_data.get('idade', '')
+        self.age_input.setText(str(idade) if idade is not None else '')
+        
+        # Nota
+        nota = self.user_data.get('nota', '')
+        self.grade_input.setText(f"{nota:.1f}" if nota is not None else 'N/A')
+        
+        # Data de cadastro
+        data_cadastro = self.user_data.get('data_cadastro', '')
+        if data_cadastro:
+            try:
+                if isinstance(data_cadastro, str):
+                    # Se for string, tentar converter
+                    date_obj = datetime.fromisoformat(data_cadastro.replace('Z', '+00:00'))
                 else:
-                    # Criar dados padrão se não encontrar no banco
-                    self.user_data = {
-                        'id': 1,
-                        'nome': self.user_name,
-                        'idade': 25,
-                        'nota': 0.0,
-                        'data_cadastro': None
-                    }
-                    print(f"Dados padrão criados para usuário: {self.user_name}")
-            
-            # Preencher campos de visualização
-            self.name_display.setText(self.user_data.get('nome', 'N/A'))
-            self.age_display.setText(str(self.user_data.get('idade', 'N/A')))
-            grade = self.user_data.get('nota')
-            self.grade_display.setText(f"{grade:.1f}" if grade is not None else "N/A")
-            
-            # Formatar data de cadastro
-            date_cadastro = self.user_data.get('data_cadastro')
-            if date_cadastro:
-                formatted_date = date_cadastro.strftime("%d/%m/%Y") if hasattr(date_cadastro, 'strftime') else str(date_cadastro)
-                self.date_display.setText(formatted_date)
-            else:
-                self.date_display.setText("N/A")
-            
-            # Preencher campos de edição
-            self.name_input.setText(self.user_data.get('nome', ''))
-            self.age_input.setValue(self.user_data.get('idade', 18))
-            grade = self.user_data.get('nota')
-            self.grade_input.setText(f"{grade:.1f}" if grade is not None else "")
-            
-        except Exception as e:
-            print(f"Erro ao carregar dados do usuário: {e}")
-            # Criar dados padrão em caso de erro
-            self.user_data = {
-                'id': 1,
-                'nome': self.user_name,
-                'idade': 25,
-                'nota': 0.0,
-                'data_cadastro': None
-            }
-            self._load_user_data()  # Tentar novamente com dados padrão
+                    date_obj = data_cadastro
+                formatted_date = date_obj.strftime("%d/%m/%Y")
+                self.date_input.setText(formatted_date)
+            except:
+                self.date_input.setText(str(data_cadastro))
+        else:
+            self.date_input.setText('N/A')
+        
+        # Último acesso
+        ultimo_acesso = self.user_data.get('ultimo_acesso', '')
+        if ultimo_acesso:
+            try:
+                if isinstance(ultimo_acesso, str):
+                    date_obj = datetime.fromisoformat(ultimo_acesso.replace('Z', '+00:00'))
+                else:
+                    date_obj = ultimo_acesso
+                formatted_date = date_obj.strftime("%d/%m/%Y %H:%M")
+                self.last_access_input.setText(formatted_date)
+            except:
+                self.last_access_input.setText(str(ultimo_acesso))
+        else:
+            self.last_access_input.setText('N/A')
     
-    def _save_profile(self):
-        """Salva as alterações do perfil"""
-        try:
-            # Validar dados
-            name = self.name_input.text().strip()
-            age = self.age_input.value()
-            grade_text = self.grade_input.text().strip()
+    def _toggle_edit_mode(self):
+        """Alterna entre modo de visualização e edição"""
+        if not self.is_editing:
+            # Entrar em modo de edição
+            self.is_editing = True
+            self.edit_button.setText("Cancelar")
+            self.edit_button.setIcon(qta.icon('fa5s.times', color="#ffffff"))
+            self.edit_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #e74c3c;
+                    color: #ffffff;
+                    padding: 6px 12px;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 11px;
+                    min-width: 80px;
+                }
+                QPushButton:hover {
+                    background-color: #c0392b;
+                }
+                QPushButton:pressed {
+                    background-color: #a93226;
+                }
+            """)
             
-            if not name:
+            # Habilitar edição dos campos
+            self.name_input.setReadOnly(False)
+            self.age_input.setReadOnly(False)
+            self.grade_input.setReadOnly(False)
+            
+            # Mostrar botões de ação
+            self.action_container.setVisible(True)
+        else:
+            # Cancelar edição
+            self._cancel_edit()
+    
+    def _cancel_edit(self):
+        """Cancela a edição e restaura dados originais"""
+        self.is_editing = False
+        self.edit_button.setText("Editar")
+        self.edit_button.setIcon(qta.icon('fa5s.edit', color="#ffffff"))
+        self.edit_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: #ffffff;
+                padding: 6px 12px;
+                border: none;
+                border-radius: 6px;
+                font-size: 11px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:pressed {
+                background-color: #21618c;
+            }
+        """)
+        
+        # Desabilitar edição dos campos
+        self.name_input.setReadOnly(True)
+        self.age_input.setReadOnly(True)
+        self.grade_input.setReadOnly(True)
+        
+        # Ocultar botões de ação
+        self.action_container.setVisible(False)
+        
+        # Restaurar dados originais
+        self._load_user_data()
+    
+    def _save_changes(self):
+        """Salva as alterações no banco de dados"""
+        try:
+            from database import db_manager
+            
+            # Validar dados
+            nome = self.name_input.text().strip()
+            if not nome:
                 self._show_error("O nome não pode estar vazio")
                 return
             
-            # Validar nota
             try:
-                grade = float(grade_text) if grade_text else None
-                if grade is not None and (grade < 0 or grade > 10):
-                    self._show_error("A nota deve estar entre 0 e 10")
-                    return
+                idade = int(self.age_input.text()) if self.age_input.text().strip() else None
+            except ValueError:
+                self._show_error("A idade deve ser um número válido")
+                return
+            
+            try:
+                nota = float(self.grade_input.text()) if self.grade_input.text().strip() and self.grade_input.text() != 'N/A' else None
             except ValueError:
                 self._show_error("A nota deve ser um número válido")
                 return
             
-            # Atualizar no banco de dados
+            # Atualizar no banco
             user_id = self.user_data.get('id')
-            if not user_id:
-                self._show_error("ID do usuário não encontrado")
-                return
-            
-            # Atualizar todos os dados do usuário
-            success = db_manager.update_user_data(
-                user_id=user_id,
-                nome=name,
-                idade=age,
-                nota=grade
-            )
-            
-            if success:
-                # Atualizar dados locais
-                self.user_data['idade'] = age
-                self.user_data['nota'] = grade
-                self.user_data['nome'] = name
-                
-                # Atualizar exibição
-                self._load_user_data()
-                
-                self._show_success("Perfil atualizado com sucesso!")
+            if user_id:
+                success = db_manager.update_user_data(user_id, nome, idade, nota)
+                if success:
+                    # Atualizar dados locais
+                    self.user_data['nome'] = nome
+                    self.user_data['idade'] = idade
+                    self.user_data['nota'] = nota
+                    
+                    # Sair do modo de edição
+                    self._cancel_edit()
+                    
+                    # Mostrar sucesso
+                    self._show_success("Dados atualizados com sucesso!")
+                    
+                    # Emitir sinal com nome atualizado
+                    self.back_to_dashboard.emit(nome)
+                else:
+                    self._show_error("Erro ao salvar dados no banco")
             else:
-                self._show_error("Erro ao atualizar perfil no banco de dados")
+                self._show_error("ID do usuário não encontrado")
                 
         except Exception as e:
-            self._show_error(f"Erro ao salvar perfil: {str(e)}")
+            self._show_error(f"Erro ao salvar: {str(e)}")
     
-    def _cancel_edit(self):
-        """Cancela a edição e restaura valores originais"""
-        self._load_user_data()
-        self._show_info("Edição cancelada")
-    
-    def _change_password(self):
-        """Mostra diálogo para alterar senha"""
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        msg.setWindowTitle("Alterar Senha")
-        msg.setText("Funcionalidade de alteração de senha será implementada em breve.")
-        msg.setStyleSheet("""
-            QtWidgets.QMessageBox {
-                background-color: #ffffff;
-            }
-            QtWidgets.QMessageBox QtWidgets.QLabel {
-                color: #2c3e50;
-            }
-        """)
-        msg.exec()
-    
-    def _export_data(self):
-        """Exporta dados do usuário"""
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        msg.setWindowTitle("Exportar Dados")
-        msg.setText("Funcionalidade de exportação de dados será implementada em breve.")
-        msg.setStyleSheet("""
-            QtWidgets.QMessageBox {
-                background-color: #ffffff;
-            }
-            QtWidgets.QMessageBox QtWidgets.QLabel {
-                color: #2c3e50;
-            }
-        """)
-        msg.exec()
-    
-    def _delete_account(self):
-        """Mostra confirmação para excluir conta"""
-        reply = QtWidgets.QMessageBox.question(
+    def _view_history(self):
+        """Abre o histórico de aulas"""
+        QMessageBox.information(
             self, 
-            'Confirmar Exclusão', 
-            'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            QtWidgets.QMessageBox.StandardButton.No
+            "Histórico de Aulas", 
+            "Funcionalidade de histórico será implementada em breve!"
         )
-        
-        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
-            msg.setWindowTitle("Excluir Conta")
-            msg.setText("Funcionalidade de exclusão de conta será implementada em breve.")
-            msg.setStyleSheet("""
-                QtWidgets.QMessageBox {
-                    background-color: #ffffff;
-                }
-                QtWidgets.QMessageBox QtWidgets.QLabel {
-                    color: #2c3e50;
-                }
-            """)
-            msg.exec()
+    
+    def _open_settings(self):
+        """Abre as configurações da conta"""
+        QMessageBox.information(
+            self, 
+            "Configurações", 
+            "Funcionalidade de configurações será implementada em breve!"
+        )
+    
+    def _open_help(self):
+        """Abre a central de ajuda"""
+        QMessageBox.information(
+            self, 
+            "Central de Ajuda", 
+            "Funcionalidade de ajuda será implementada em breve!"
+        )
     
     def _go_back(self):
         """Volta para o dashboard"""
@@ -1559,15 +793,15 @@ class ProfileWindow(QtWidgets.QMainWindow):
     
     def _show_error(self, message):
         """Mostra mensagem de erro"""
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Critical)
         msg.setWindowTitle("Erro")
         msg.setText(message)
         msg.setStyleSheet("""
-            QtWidgets.QMessageBox {
+            QMessageBox {
                 background-color: #ffffff;
             }
-            QtWidgets.QMessageBox QtWidgets.QLabel {
+            QMessageBox QLabel {
                 color: #2c3e50;
             }
         """)
@@ -1575,394 +809,16 @@ class ProfileWindow(QtWidgets.QMainWindow):
     
     def _show_success(self, message):
         """Mostra mensagem de sucesso"""
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Information)
         msg.setWindowTitle("Sucesso")
         msg.setText(message)
         msg.setStyleSheet("""
-            QtWidgets.QMessageBox {
+            QMessageBox {
                 background-color: #ffffff;
             }
-            QtWidgets.QMessageBox QtWidgets.QLabel {
+            QMessageBox QLabel {
                 color: #2c3e50;
             }
         """)
         msg.exec()
-    
-    def _show_info(self, message):
-        """Mostra mensagem informativa"""
-        msg = QtWidgets.QMessageBox()
-        msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        msg.setWindowTitle("Informação")
-        msg.setText(message)
-        msg.setStyleSheet("""
-            QtWidgets.QMessageBox {
-                background-color: #ffffff;
-            }
-            QtWidgets.QMessageBox QtWidgets.QLabel {
-                color: #2c3e50;
-            }
-        """)
-        msg.exec()
-    
-    def closeEvent(self, event):
-        """Evento chamado quando a janela é fechada"""
-        # Emitir sinal de volta ao dashboard se necessário
-        if hasattr(self, 'back_to_dashboard'):
-            self.back_to_dashboard.emit(self.user_name)
-        event.accept()
-    
-    # Métodos stub para as seções das outras abas
-    def _create_notification_settings_section(self, parent_layout):
-        """Cria seção de configurações de notificação"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("settingsCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("🔔 Configurações de Notificação")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Checkboxes de exemplo
-        email_notifications = QtWidgets.QCheckBox("Notificações por email")
-        email_notifications.setChecked(True)
-        layout.addWidget(email_notifications)
-        
-        push_notifications = QtWidgets.QCheckBox("Notificações push")
-        push_notifications.setChecked(True)
-        layout.addWidget(push_notifications)
-        
-        weekly_reports = QtWidgets.QCheckBox("Relatórios semanais")
-        weekly_reports.setChecked(False)
-        layout.addWidget(weekly_reports)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_privacy_settings_section(self, parent_layout):
-        """Cria seção de configurações de privacidade"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("settingsCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("🔒 Configurações de Privacidade")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Configurações de exemplo
-        profile_visibility = QtWidgets.QCheckBox("Perfil público")
-        profile_visibility.setChecked(False)
-        layout.addWidget(profile_visibility)
-        
-        data_sharing = QtWidgets.QCheckBox("Compartilhar dados para melhorias")
-        data_sharing.setChecked(True)
-        layout.addWidget(data_sharing)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_theme_settings_section(self, parent_layout):
-        """Cria seção de configurações de tema"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("settingsCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("🎨 Configurações de Tema")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Seletor de tema
-        theme_label = QtWidgets.QLabel("Tema:")
-        theme_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
-        layout.addWidget(theme_label)
-        
-        theme_combo = QtWidgets.QComboBox()
-        theme_combo.addItems(["Claro", "Escuro", "Automático"])
-        theme_combo.setCurrentText("Claro")
-        layout.addWidget(theme_combo)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_export_settings_section(self, parent_layout):
-        """Cria seção de configurações de exportação"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("settingsCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("📤 Exportação de Dados")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Botões de exportação
-        export_button = QtWidgets.QPushButton("📊 Exportar Dados Completos")
-        export_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #28a745;
-                color: white;
-                padding: 10px;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #218838;
-            }
-        """)
-        export_button.clicked.connect(self._export_data)
-        layout.addWidget(export_button)
-        
-        backup_button = QtWidgets.QPushButton("💾 Criar Backup")
-        backup_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #17a2b8;
-                color: white;
-                padding: 10px;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #138496;
-            }
-        """)
-        backup_button.clicked.connect(self._create_backup)
-        layout.addWidget(backup_button)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_recent_activity_section(self, parent_layout):
-        """Cria seção de atividades recentes"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("activityCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("📋 Atividades Recentes")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Lista de atividades
-        activity_list = QtWidgets.QListWidget()
-        activities = [
-            "✅ Concluiu aula: 'Introdução ao Python' - Hoje 14:30",
-            "🎯 Atingiu meta semanal de 5 aulas - Hoje 12:00",
-            "⭐ Recebeu badge: 'Estudante Dedicado' - Ontem 18:45",
-            "📚 Iniciou curso: 'Machine Learning Básico' - Ontem 16:20",
-            "🏆 Subiu para o nível 3 - 2 dias atrás"
-        ]
-        
-        for activity in activities:
-            item = QtWidgets.QListWidgetItem(activity)
-            item.setFont(QtGui.QFont("Segoe UI", 10))
-            activity_list.addItem(item)
-        
-        layout.addWidget(activity_list)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_study_calendar_section(self, parent_layout):
-        """Cria seção de calendário de estudos"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("calendarCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("📅 Calendário de Estudos")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Calendário
-        calendar = QtWidgets.QCalendarWidget()
-        calendar.setStyleSheet("""
-            QtWidgets.QCalendarWidget {
-                background-color: white;
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-            }
-        """)
-        layout.addWidget(calendar)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_learning_logs_section(self, parent_layout):
-        """Cria seção de logs de aprendizado"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("logsCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("📝 Logs de Aprendizado")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Área de texto para logs
-        logs_text = QtWidgets.QTextEdit()
-        logs_text.setReadOnly(True)
-        logs_text.setMaximumHeight(150)
-        logs_text.setPlainText("""
-[2024-01-15 14:30] Iniciou sessão de estudo
-[2024-01-15 14:35] Acessou aula: "Variáveis em Python"
-[2024-01-15 14:45] Completou exercício 1 com 100% de acerto
-[2024-01-15 15:00] Completou exercício 2 com 80% de acerto
-[2024-01-15 15:15] Finalizou aula com sucesso
-[2024-01-15 15:16] Encerrou sessão de estudo
-        """.strip())
-        layout.addWidget(logs_text)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_badges_section(self, parent_layout):
-        """Cria seção de badges"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("badgesCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("🏆 Badges Conquistados")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Grid de badges
-        badges_grid = QtWidgets.QGridLayout()
-        
-        badges = [
-            ("🥇", "Primeiro Passo", "Completou sua primeira aula"),
-            ("🔥", "Sequência de Fogo", "Estudou 7 dias seguidos"),
-            ("📚", "Estudante Dedicado", "Completou 50 aulas"),
-            ("⭐", "Excelência", "Manteve nota média acima de 9.0"),
-            ("🎯", "Focado", "Completou 10 aulas em um dia"),
-            ("💎", "Diamante", "Usuário premium por 1 ano")
-        ]
-        
-        for i, (emoji, name, description) in enumerate(badges):
-            badge_widget = QtWidgets.QWidget()
-            badge_layout = QtWidgets.QVBoxLayout(badge_widget)
-            badge_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            
-            emoji_label = QtWidgets.QLabel(emoji)
-            emoji_label.setFont(QtGui.QFont("Segoe UI", 24))
-            emoji_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            badge_layout.addWidget(emoji_label)
-            
-            name_label = QtWidgets.QLabel(name)
-            name_label.setFont(QtGui.QFont("Segoe UI", 10, QtGui.QFont.Weight.Bold))
-            name_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            badge_layout.addWidget(name_label)
-            
-            desc_label = QtWidgets.QLabel(description)
-            desc_label.setFont(QtGui.QFont("Segoe UI", 8))
-            desc_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-            desc_label.setWordWrap(True)
-            badge_layout.addWidget(desc_label)
-            
-            badges_grid.addWidget(badge_widget, i // 3, i % 3)
-        
-        layout.addLayout(badges_grid)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_certificates_section(self, parent_layout):
-        """Cria seção de certificados"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("certificatesCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("📜 Certificados")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Lista de certificados
-        cert_list = QtWidgets.QListWidget()
-        certificates = [
-            "🏆 Certificado de Conclusão - Curso de Python Básico",
-            "🥇 Certificado de Excelência - Machine Learning",
-            "📚 Certificado de Participação - Webinar de IA"
-        ]
-        
-        for cert in certificates:
-            item = QtWidgets.QListWidgetItem(cert)
-            item.setFont(QtGui.QFont("Segoe UI", 10))
-            cert_list.addItem(item)
-        
-        layout.addWidget(cert_list)
-        
-        # Botão para baixar certificados
-        download_button = QtWidgets.QPushButton("📥 Baixar Certificados")
-        download_button.setStyleSheet("""
-            QtWidgets.QPushButton {
-                background-color: #007bff;
-                color: white;
-                padding: 10px;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-            }
-            QtWidgets.QPushButton:hover {
-                background-color: #0056b3;
-            }
-        """)
-        layout.addWidget(download_button)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_leaderboard_section(self, parent_layout):
-        """Cria seção de ranking"""
-        card = QtWidgets.QFrame()
-        card.setObjectName("leaderboardCard")
-        layout = QtWidgets.QVBoxLayout(card)
-        
-        title = QtWidgets.QLabel("🏅 Ranking de Usuários")
-        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-        title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-        layout.addWidget(title)
-        
-        # Lista de ranking
-        leaderboard_list = QtWidgets.QListWidget()
-        rankings = [
-            "🥇 1º - João Silva - 2,450 pontos",
-            "🥈 2º - Maria Santos - 2,320 pontos",
-            "🥉 3º - Pedro Costa - 2,180 pontos",
-            "4º - Ana Oliveira - 1,950 pontos",
-            "5º - Você - 1,820 pontos"
-        ]
-        
-        for ranking in rankings:
-            item = QtWidgets.QListWidgetItem(ranking)
-            item.setFont(QtGui.QFont("Segoe UI", 10))
-            if "Você" in ranking:
-                item.setBackground(QtGui.QColor("#e3f2fd"))
-            leaderboard_list.addItem(item)
-        
-        layout.addWidget(leaderboard_list)
-        
-        self._apply_card_shadow(card)
-        parent_layout.addWidget(card)
-    
-    def _create_backup(self):
-        """Cria backup dos dados"""
-        self._show_info("Funcionalidade de backup será implementada em breve.")
-
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    
-    # Criar e mostrar a janela de perfil
-    profile_window = ProfileWindow("admin")
-    profile_window.show()
-    
-    # Executar a aplicação
-    sys.exit(app.exec())
-
-if __name__ == '__main__':
-    main()
