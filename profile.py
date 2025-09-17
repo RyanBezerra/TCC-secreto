@@ -3,27 +3,25 @@ EduAI - Tela de Perfil do Usuário
 Sistema de gerenciamento de perfil integrado ao banco de dados
 """
 
+# Imports padrão do Python
 import sys
 import os
 import json
 import base64
 from datetime import datetime, timedelta
-from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                             QHBoxLayout, QLabel, QLineEdit, QPushButton, 
-                             QFrame, QGridLayout, QSizePolicy, QMessageBox,
-                             QScrollArea, QSpacerItem, QFormLayout, QSpinBox,
-                             QFileDialog, QProgressBar, QSlider, QComboBox,
-                             QCheckBox, QTabWidget, QListWidget, QListWidgetItem,
-                             QTextEdit, QGroupBox, QSplitter, QCalendarWidget,
-                             QInputDialog)
-from PySide6.QtCore import Qt, Signal, QSize, QTimer, QPropertyAnimation, QEasingCurve
-from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor, QPainter, QPen
+
+# Imports do PySide6 - Otimizado
+from PySide6 import QtWidgets, QtCore, QtGui
+
+# Imports de terceiros
 import qtawesome as qta
+
+# Imports locais
 from database import db_manager
 
-class ProfileWindow(QMainWindow):
+class ProfileWindow(QtWidgets.QMainWindow):
     # Sinal emitido quando o usuário quer voltar ao dashboard
-    back_to_dashboard = Signal(str)  # Emite o nome do usuário
+    back_to_dashboard = QtCore.Signal(str)  # Emite o nome do usuário
     
     def __init__(self, user_name="Usuário", user_data=None):
         super().__init__()
@@ -34,17 +32,17 @@ class ProfileWindow(QMainWindow):
         self.setMinimumSize(800, 600)
         
         # Configurar flags da janela para evitar fechamento automático
-        self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowCloseButtonHint | Qt.WindowType.WindowMinimizeButtonHint | Qt.WindowType.WindowMaximizeButtonHint)
+        self.setWindowFlags(QtCore.Qt.WindowType.Window | QtCore.Qt.WindowType.WindowCloseButtonHint | QtCore.Qt.WindowType.WindowMinimizeButtonHint | QtCore.Qt.WindowType.WindowMaximizeButtonHint)
         
         # Centralizar janela
         self._center_window()
         
         # Widget central
-        central_widget = QWidget()
+        central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
         
         # Layout principal
-        main_layout = QVBoxLayout(central_widget)
+        main_layout = QtWidgets.QVBoxLayout(central_widget)
         main_layout.setContentsMargins(30, 30, 30, 30)
         main_layout.setSpacing(20)
         
@@ -59,7 +57,7 @@ class ProfileWindow(QMainWindow):
         
     def _center_window(self):
         """Centraliza a janela na tela"""
-        screen = QApplication.primaryScreen()
+        screen = QtWidgets.QApplication.primaryScreen()
         if screen:
             screen_geometry = screen.availableGeometry()
             x = (screen_geometry.width() - self.width()) // 2
@@ -72,9 +70,9 @@ class ProfileWindow(QMainWindow):
         self._create_header(parent_layout)
         
         # Container principal com abas
-        self.tab_widget = QTabWidget()
+        self.tab_widget = QtWidgets.QTabWidget()
         self.tab_widget.setStyleSheet("""
-            QTabWidget::pane {
+            QtWidgets.QTabWidget::pane {
                 border: 1px solid #d1d5db;
                 border-radius: 8px;
                 background-color: #ffffff;
@@ -108,35 +106,35 @@ class ProfileWindow(QMainWindow):
     
     def _create_header(self, parent_layout):
         """Cria o cabeçalho com navegação"""
-        header_widget = QWidget()
-        header_layout = QHBoxLayout(header_widget)
+        header_widget = QtWidgets.QWidget()
+        header_layout = QtWidgets.QHBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
         
         # Botão voltar
-        back_button = QPushButton()
+        back_button = QtWidgets.QPushButton()
         back_button.setIcon(qta.icon('fa5s.arrow-left', color="#2c3e50"))
         back_button.setToolTip("Voltar ao Dashboard")
         back_button.setFixedSize(40, 40)
         back_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: transparent;
                 border: 2px solid #2c3e50;
                 border-radius: 20px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #2c3e50;
             }
-            QPushButton:hover QIcon {
+            QtWidgets.QPushButton:hover QtGui.QIcon {
                 color: white;
             }
         """)
-        back_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        back_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         back_button.clicked.connect(self._go_back)
         header_layout.addWidget(back_button)
         
         # Título
-        title_label = QLabel("Meu Perfil")
-        title_font = QFont("Segoe UI", 24, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Meu Perfil")
+        title_font = QtGui.QFont("Segoe UI", 24, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 15px;")
         header_layout.addWidget(title_label)
@@ -145,17 +143,17 @@ class ProfileWindow(QMainWindow):
         header_layout.addStretch()
         
         # Informações do usuário
-        user_container = QHBoxLayout()
+        user_container = QtWidgets.QHBoxLayout()
         user_container.setSpacing(10)
         
         # Ícone do usuário
-        user_icon = QLabel()
+        user_icon = QtWidgets.QLabel()
         user_icon.setPixmap(qta.icon('fa5s.user-circle', color="#3498db").pixmap(24, 24))
         user_container.addWidget(user_icon)
         
         # Nome do usuário
-        user_label = QLabel(f"Olá, {self.user_name}")
-        user_font = QFont("Segoe UI", 12, QFont.Weight.Bold)
+        user_label = QtWidgets.QLabel(f"Olá, {self.user_name}")
+        user_font = QtGui.QFont("Segoe UI", 12, QtGui.QFont.Weight.Bold)
         user_label.setFont(user_font)
         user_label.setStyleSheet("color: #2c3e50;")
         user_container.addWidget(user_label)
@@ -166,17 +164,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_overview_tab(self):
         """Cria a aba de visão geral"""
-        overview_widget = QWidget()
-        overview_layout = QVBoxLayout(overview_widget)
+        overview_widget = QtWidgets.QWidget()
+        overview_layout = QtWidgets.QVBoxLayout(overview_widget)
         overview_layout.setSpacing(20)
         
         # Container com scroll
-        scroll_area = QScrollArea()
+        scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setStyleSheet("""
-            QScrollArea {
+            QtWidgets.QScrollArea {
                 border: none;
                 background-color: transparent;
             }
@@ -196,8 +194,8 @@ class ProfileWindow(QMainWindow):
         """)
         
         # Widget de conteúdo
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
+        content_widget = QtWidgets.QWidget()
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setSpacing(20)
         
         # Seções do perfil
@@ -214,19 +212,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_avatar_section(self, parent_layout):
         """Cria a seção de avatar do usuário"""
-        avatar_card = QFrame()
+        avatar_card = QtWidgets.QFrame()
         avatar_card.setObjectName("avatarCard")
-        avatar_layout = QVBoxLayout(avatar_card)
+        avatar_layout = QtWidgets.QVBoxLayout(avatar_card)
         avatar_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.user-circle', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Avatar do Perfil")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Avatar do Perfil")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -235,20 +233,20 @@ class ProfileWindow(QMainWindow):
         avatar_layout.addLayout(title_row)
         
         # Container do avatar
-        avatar_container = QHBoxLayout()
-        avatar_container.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        avatar_container = QtWidgets.QHBoxLayout()
+        avatar_container.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         
         # Avatar circular
-        self.avatar_label = QLabel()
+        self.avatar_label = QtWidgets.QLabel()
         self.avatar_label.setFixedSize(120, 120)
         self.avatar_label.setStyleSheet("""
-            QLabel {
+            QtWidgets.QLabel {
                 border: 4px solid #3498db;
                 border-radius: 60px;
                 background-color: #ecf0f1;
             }
         """)
-        self.avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.avatar_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         
         # Carregar avatar padrão ou personalizado
         self._load_avatar()
@@ -256,14 +254,14 @@ class ProfileWindow(QMainWindow):
         avatar_container.addWidget(self.avatar_label)
         
         # Botões de avatar
-        avatar_buttons = QVBoxLayout()
+        avatar_buttons = QtWidgets.QVBoxLayout()
         avatar_buttons.setSpacing(10)
         
         # Botão upload
-        upload_button = QPushButton("📷 Upload Avatar")
-        upload_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        upload_button = QtWidgets.QPushButton("📷 Upload Avatar")
+        upload_button.setFont(QtGui.QFont("Segoe UI", 10, QtGui.QFont.Weight.Bold))
         upload_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #3498db;
                 color: #ffffff;
                 padding: 8px 16px;
@@ -271,19 +269,19 @@ class ProfileWindow(QMainWindow):
                 border-radius: 6px;
                 font-size: 12px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #2980b9;
             }
         """)
-        upload_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        upload_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         upload_button.clicked.connect(self._upload_avatar)
         avatar_buttons.addWidget(upload_button)
         
         # Botão remover
-        remove_button = QPushButton("🗑️ Remover")
-        remove_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        remove_button = QtWidgets.QPushButton("🗑️ Remover")
+        remove_button.setFont(QtGui.QFont("Segoe UI", 10, QtGui.QFont.Weight.Bold))
         remove_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #e74c3c;
                 color: #ffffff;
                 padding: 8px 16px;
@@ -291,11 +289,11 @@ class ProfileWindow(QMainWindow):
                 border-radius: 6px;
                 font-size: 12px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #c0392b;
             }
         """)
-        remove_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        remove_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         remove_button.clicked.connect(self._remove_avatar)
         avatar_buttons.addWidget(remove_button)
         
@@ -308,19 +306,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_profile_info_section(self, parent_layout):
         """Cria a seção de informações do perfil"""
-        info_card = QFrame()
+        info_card = QtWidgets.QFrame()
         info_card.setObjectName("infoCard")
-        info_layout = QVBoxLayout(info_card)
+        info_layout = QtWidgets.QVBoxLayout(info_card)
         info_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.user', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Informações Pessoais")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Informações Pessoais")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -329,19 +327,19 @@ class ProfileWindow(QMainWindow):
         info_layout.addLayout(title_row)
         
         # Formulário de informações
-        form_layout = QFormLayout()
+        form_layout = QtWidgets.QFormLayout()
         form_layout.setSpacing(15)
-        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        form_layout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         
         # Nome
-        self.name_label = QLabel("Nome:")
-        self.name_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.name_label = QtWidgets.QLabel("Nome:")
+        self.name_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.name_label.setStyleSheet("color: #2c3e50;")
         
-        self.name_display = QLabel("")
-        self.name_display.setFont(QFont("Segoe UI", 12))
+        self.name_display = QtWidgets.QLabel("")
+        self.name_display.setFont(QtGui.QFont("Segoe UI", 12))
         self.name_display.setStyleSheet("""
-            QLabel {
+            QtWidgets.QLabel {
                 padding: 8px 12px;
                 background-color: #f8f9fa;
                 border: 1px solid #e9ecef;
@@ -352,14 +350,14 @@ class ProfileWindow(QMainWindow):
         form_layout.addRow(self.name_label, self.name_display)
         
         # Idade
-        self.age_label = QLabel("Idade:")
-        self.age_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.age_label = QtWidgets.QLabel("Idade:")
+        self.age_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.age_label.setStyleSheet("color: #2c3e50;")
         
-        self.age_display = QLabel("")
-        self.age_display.setFont(QFont("Segoe UI", 12))
+        self.age_display = QtWidgets.QLabel("")
+        self.age_display.setFont(QtGui.QFont("Segoe UI", 12))
         self.age_display.setStyleSheet("""
-            QLabel {
+            QtWidgets.QLabel {
                 padding: 8px 12px;
                 background-color: #f8f9fa;
                 border: 1px solid #e9ecef;
@@ -370,14 +368,14 @@ class ProfileWindow(QMainWindow):
         form_layout.addRow(self.age_label, self.age_display)
         
         # Nota
-        self.grade_label = QLabel("Nota Atual:")
-        self.grade_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.grade_label = QtWidgets.QLabel("Nota Atual:")
+        self.grade_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.grade_label.setStyleSheet("color: #2c3e50;")
         
-        self.grade_display = QLabel("")
-        self.grade_display.setFont(QFont("Segoe UI", 12))
+        self.grade_display = QtWidgets.QLabel("")
+        self.grade_display.setFont(QtGui.QFont("Segoe UI", 12))
         self.grade_display.setStyleSheet("""
-            QLabel {
+            QtWidgets.QLabel {
                 padding: 8px 12px;
                 background-color: #f8f9fa;
                 border: 1px solid #e9ecef;
@@ -388,14 +386,14 @@ class ProfileWindow(QMainWindow):
         form_layout.addRow(self.grade_label, self.grade_display)
         
         # Data de cadastro
-        self.date_label = QLabel("Membro desde:")
-        self.date_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.date_label = QtWidgets.QLabel("Membro desde:")
+        self.date_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.date_label.setStyleSheet("color: #2c3e50;")
         
-        self.date_display = QLabel("")
-        self.date_display.setFont(QFont("Segoe UI", 12))
+        self.date_display = QtWidgets.QLabel("")
+        self.date_display.setFont(QtGui.QFont("Segoe UI", 12))
         self.date_display.setStyleSheet("""
-            QLabel {
+            QtWidgets.QLabel {
                 padding: 8px 12px;
                 background-color: #f8f9fa;
                 border: 1px solid #e9ecef;
@@ -413,19 +411,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_edit_section(self, parent_layout):
         """Cria a seção de edição de perfil"""
-        edit_card = QFrame()
+        edit_card = QtWidgets.QFrame()
         edit_card.setObjectName("editCard")
-        edit_layout = QVBoxLayout(edit_card)
+        edit_layout = QtWidgets.QVBoxLayout(edit_card)
         edit_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.edit', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Editar Perfil")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Editar Perfil")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -434,70 +432,70 @@ class ProfileWindow(QMainWindow):
         edit_layout.addLayout(title_row)
         
         # Formulário de edição
-        form_layout = QFormLayout()
+        form_layout = QtWidgets.QFormLayout()
         form_layout.setSpacing(15)
-        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        form_layout.setLabelAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
         
         # Nome (editável)
-        self.edit_name_label = QLabel("Nome:")
-        self.edit_name_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.edit_name_label = QtWidgets.QLabel("Nome:")
+        self.edit_name_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.edit_name_label.setStyleSheet("color: #2c3e50;")
         
-        self.name_input = QLineEdit()
-        self.name_input.setFont(QFont("Segoe UI", 12))
+        self.name_input = QtWidgets.QLineEdit()
+        self.name_input.setFont(QtGui.QFont("Segoe UI", 12))
         self.name_input.setStyleSheet("""
-            QLineEdit {
+            QtWidgets.QLineEdit {
                 padding: 8px 12px;
                 border: 2px solid #e1e8ed;
                 border-radius: 6px;
                 background-color: white;
                 font-size: 14px;
             }
-            QLineEdit:focus {
+            QtWidgets.QLineEdit:focus {
                 border-color: #000000;
             }
         """)
         form_layout.addRow(self.edit_name_label, self.name_input)
         
         # Idade (editável)
-        self.edit_age_label = QLabel("Idade:")
-        self.edit_age_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.edit_age_label = QtWidgets.QLabel("Idade:")
+        self.edit_age_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.edit_age_label.setStyleSheet("color: #2c3e50;")
         
-        self.age_input = QSpinBox()
+        self.age_input = QtWidgets.QSpinBox()
         self.age_input.setRange(1, 120)
-        self.age_input.setFont(QFont("Segoe UI", 12))
+        self.age_input.setFont(QtGui.QFont("Segoe UI", 12))
         self.age_input.setStyleSheet("""
-            QSpinBox {
+            QtWidgets.QSpinBox {
                 padding: 8px 12px;
                 border: 2px solid #e1e8ed;
                 border-radius: 6px;
                 background-color: white;
                 font-size: 14px;
             }
-            QSpinBox:focus {
+            QtWidgets.QSpinBox:focus {
                 border-color: #000000;
             }
         """)
         form_layout.addRow(self.edit_age_label, self.age_input)
         
         # Nota (editável)
-        self.edit_grade_label = QLabel("Nota:")
-        self.edit_grade_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.edit_grade_label = QtWidgets.QLabel("Nota:")
+        self.edit_grade_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.edit_grade_label.setStyleSheet("color: #2c3e50;")
         
-        self.grade_input = QLineEdit()
-        self.grade_input.setFont(QFont("Segoe UI", 12))
+        self.grade_input = QtWidgets.QLineEdit()
+        self.grade_input.setFont(QtGui.QFont("Segoe UI", 12))
         self.grade_input.setPlaceholderText("Ex: 8.5")
         self.grade_input.setStyleSheet("""
-            QLineEdit {
+            QtWidgets.QLineEdit {
                 padding: 8px 12px;
                 border: 2px solid #e1e8ed;
                 border-radius: 6px;
                 background-color: white;
                 font-size: 14px;
             }
-            QLineEdit:focus {
+            QtWidgets.QLineEdit:focus {
                 border-color: #000000;
             }
         """)
@@ -506,15 +504,15 @@ class ProfileWindow(QMainWindow):
         edit_layout.addLayout(form_layout)
         
         # Botões de ação
-        button_layout = QHBoxLayout()
+        button_layout = QtWidgets.QHBoxLayout()
         button_layout.setSpacing(10)
         
         # Botão salvar
-        self.save_button = QPushButton("Salvar Alterações")
+        self.save_button = QtWidgets.QPushButton("Salvar Alterações")
         self.save_button.setIcon(qta.icon('fa5s.save', color="#ffffff"))
-        self.save_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.save_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.save_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #000000;
                 color: #ffffff;
                 padding: 10px 20px;
@@ -523,23 +521,23 @@ class ProfileWindow(QMainWindow):
                 font-size: 13px;
                 min-width: 150px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #333333;
             }
-            QPushButton:pressed {
+            QtWidgets.QPushButton:pressed {
                 background-color: #1a1a1a;
             }
         """)
-        self.save_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.save_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.save_button.clicked.connect(self._save_profile)
         button_layout.addWidget(self.save_button)
         
         # Botão cancelar
-        self.cancel_button = QPushButton("Cancelar")
+        self.cancel_button = QtWidgets.QPushButton("Cancelar")
         self.cancel_button.setIcon(qta.icon('fa5s.times', color="#ffffff"))
-        self.cancel_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.cancel_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         self.cancel_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #6c757d;
                 color: #ffffff;
                 padding: 10px 20px;
@@ -548,14 +546,14 @@ class ProfileWindow(QMainWindow):
                 font-size: 13px;
                 min-width: 120px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #5a6268;
             }
-            QPushButton:pressed {
+            QtWidgets.QPushButton:pressed {
                 background-color: #545b62;
             }
         """)
-        self.cancel_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.cancel_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.cancel_button.clicked.connect(self._cancel_edit)
         button_layout.addWidget(self.cancel_button)
         
@@ -568,19 +566,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_stats_section(self, parent_layout):
         """Cria a seção de estatísticas do usuário"""
-        stats_card = QFrame()
+        stats_card = QtWidgets.QFrame()
         stats_card.setObjectName("statsCard")
-        stats_layout = QVBoxLayout(stats_card)
+        stats_layout = QtWidgets.QVBoxLayout(stats_card)
         stats_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.chart-bar', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Estatísticas")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Estatísticas")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -589,7 +587,7 @@ class ProfileWindow(QMainWindow):
         stats_layout.addLayout(title_row)
         
         # Grid de estatísticas
-        stats_grid = QGridLayout()
+        stats_grid = QtWidgets.QGridLayout()
         stats_grid.setSpacing(20)
         
         # Estatística 1 - Aulas assistidas
@@ -616,10 +614,10 @@ class ProfileWindow(QMainWindow):
     
     def _create_stat_card(self, icon_name, title, value, color):
         """Cria um card de estatística"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("statCard")
         card.setStyleSheet(f"""
-            QFrame#statCard {{
+            QtWidgets.QFrame#statCard {{
                 background-color: #ffffff;
                 border: 1px solid #e9ecef;
                 border-radius: 8px;
@@ -627,26 +625,26 @@ class ProfileWindow(QMainWindow):
             }}
         """)
         
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         layout.setSpacing(10)
         
         # Ícone
-        icon_label = QLabel()
+        icon_label = QtWidgets.QLabel()
         icon_label.setPixmap(qta.icon(icon_name, color=color).pixmap(32, 32))
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(icon_label)
         
         # Valor
-        value_label = QLabel(value)
-        value_label.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
-        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        value_label = QtWidgets.QLabel(value)
+        value_label.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Weight.Bold))
+        value_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         value_label.setStyleSheet(f"color: {color};")
         layout.addWidget(value_label)
         
         # Título
-        title_label = QLabel(title)
-        title_label.setFont(QFont("Segoe UI", 10))
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label = QtWidgets.QLabel(title)
+        title_label.setFont(QtGui.QFont("Segoe UI", 10))
+        title_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("color: #6c757d;")
         layout.addWidget(title_label)
         
@@ -654,19 +652,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_actions_section(self, parent_layout):
         """Cria a seção de ações do perfil"""
-        actions_card = QFrame()
+        actions_card = QtWidgets.QFrame()
         actions_card.setObjectName("actionsCard")
-        actions_layout = QVBoxLayout(actions_card)
+        actions_layout = QtWidgets.QVBoxLayout(actions_card)
         actions_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.cog', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Ações")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Ações")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -675,15 +673,15 @@ class ProfileWindow(QMainWindow):
         actions_layout.addLayout(title_row)
         
         # Botões de ação
-        button_layout = QHBoxLayout()
+        button_layout = QtWidgets.QHBoxLayout()
         button_layout.setSpacing(15)
         
         # Botão alterar senha
-        change_password_button = QPushButton("Alterar Senha")
+        change_password_button = QtWidgets.QPushButton("Alterar Senha")
         change_password_button.setIcon(qta.icon('fa5s.key', color="#ffffff"))
-        change_password_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        change_password_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         change_password_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #17a2b8;
                 color: #ffffff;
                 padding: 12px 20px;
@@ -692,23 +690,23 @@ class ProfileWindow(QMainWindow):
                 font-size: 13px;
                 min-width: 140px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #138496;
             }
-            QPushButton:pressed {
+            QtWidgets.QPushButton:pressed {
                 background-color: #117a8b;
             }
         """)
-        change_password_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        change_password_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         change_password_button.clicked.connect(self._change_password)
         button_layout.addWidget(change_password_button)
         
         # Botão exportar dados
-        export_button = QPushButton("Exportar Dados")
+        export_button = QtWidgets.QPushButton("Exportar Dados")
         export_button.setIcon(qta.icon('fa5s.download', color="#ffffff"))
-        export_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        export_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         export_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #28a745;
                 color: #ffffff;
                 padding: 12px 20px;
@@ -717,23 +715,23 @@ class ProfileWindow(QMainWindow):
                 font-size: 13px;
                 min-width: 140px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #218838;
             }
-            QPushButton:pressed {
+            QtWidgets.QPushButton:pressed {
                 background-color: #1e7e34;
             }
         """)
-        export_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        export_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         export_button.clicked.connect(self._export_data)
         button_layout.addWidget(export_button)
         
         # Botão excluir conta
-        delete_button = QPushButton("Excluir Conta")
+        delete_button = QtWidgets.QPushButton("Excluir Conta")
         delete_button.setIcon(qta.icon('fa5s.trash', color="#ffffff"))
-        delete_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        delete_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         delete_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #dc3545;
                 color: #ffffff;
                 padding: 12px 20px;
@@ -742,14 +740,14 @@ class ProfileWindow(QMainWindow):
                 font-size: 13px;
                 min-width: 140px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #c82333;
             }
-            QPushButton:pressed {
+            QtWidgets.QPushButton:pressed {
                 background-color: #bd2130;
             }
         """)
-        delete_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        delete_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         delete_button.clicked.connect(self._delete_account)
         button_layout.addWidget(delete_button)
         
@@ -762,19 +760,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_quick_stats_section(self, parent_layout):
         """Cria a seção de estatísticas rápidas"""
-        stats_card = QFrame()
+        stats_card = QtWidgets.QFrame()
         stats_card.setObjectName("statsCard")
-        stats_layout = QVBoxLayout(stats_card)
+        stats_layout = QtWidgets.QVBoxLayout(stats_card)
         stats_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.chart-line', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Estatísticas Rápidas")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Estatísticas Rápidas")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -783,7 +781,7 @@ class ProfileWindow(QMainWindow):
         stats_layout.addLayout(title_row)
         
         # Grid de estatísticas
-        stats_grid = QGridLayout()
+        stats_grid = QtWidgets.QGridLayout()
         stats_grid.setSpacing(20)
         
         # Estatística 1 - Progresso geral
@@ -810,10 +808,10 @@ class ProfileWindow(QMainWindow):
     
     def _create_progress_card(self, title, value, color):
         """Cria um card de progresso"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("progressCard")
         card.setStyleSheet(f"""
-            QFrame#progressCard {{
+            QtWidgets.QFrame#progressCard {{
                 background-color: #ffffff;
                 border: 1px solid #e9ecef;
                 border-radius: 8px;
@@ -821,27 +819,27 @@ class ProfileWindow(QMainWindow):
             }}
         """)
         
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         layout.setSpacing(10)
         
         # Título
-        title_label = QLabel(title)
-        title_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label = QtWidgets.QLabel(title)
+        title_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
+        title_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("color: #2c3e50;")
         layout.addWidget(title_label)
         
         # Barra de progresso
-        progress_bar = QProgressBar()
+        progress_bar = QtWidgets.QProgressBar()
         progress_bar.setValue(value)
         progress_bar.setStyleSheet(f"""
-            QProgressBar {{
+            QtWidgets.QProgressBar {{
                 border: 2px solid #e9ecef;
                 border-radius: 5px;
                 text-align: center;
                 font-weight: bold;
             }}
-            QProgressBar::chunk {{
+            QtWidgets.QProgressBar::chunk {{
                 background-color: {color};
                 border-radius: 3px;
             }}
@@ -849,9 +847,9 @@ class ProfileWindow(QMainWindow):
         layout.addWidget(progress_bar)
         
         # Valor
-        value_label = QLabel(f"{value}%")
-        value_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
-        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        value_label = QtWidgets.QLabel(f"{value}%")
+        value_label.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
+        value_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         value_label.setStyleSheet(f"color: {color};")
         layout.addWidget(value_label)
         
@@ -859,17 +857,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_analytics_tab(self):
         """Cria a aba de analytics e gráficos"""
-        analytics_widget = QWidget()
-        analytics_layout = QVBoxLayout(analytics_widget)
+        analytics_widget = QtWidgets.QWidget()
+        analytics_layout = QtWidgets.QVBoxLayout(analytics_widget)
         analytics_layout.setSpacing(20)
         
         # Container com scroll
-        scroll_area = QScrollArea()
+        scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setStyleSheet("""
-            QScrollArea {
+            QtWidgets.QScrollArea {
                 border: none;
                 background-color: transparent;
             }
@@ -889,8 +887,8 @@ class ProfileWindow(QMainWindow):
         """)
         
         # Widget de conteúdo
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
+        content_widget = QtWidgets.QWidget()
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setSpacing(20)
         
         # Seções de analytics
@@ -906,19 +904,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_performance_chart_section(self, parent_layout):
         """Cria seção de gráfico de performance"""
-        chart_card = QFrame()
+        chart_card = QtWidgets.QFrame()
         chart_card.setObjectName("chartCard")
-        chart_layout = QVBoxLayout(chart_card)
+        chart_layout = QtWidgets.QVBoxLayout(chart_card)
         chart_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.chart-bar', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Performance ao Longo do Tempo")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Performance ao Longo do Tempo")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -927,10 +925,10 @@ class ProfileWindow(QMainWindow):
         chart_layout.addLayout(title_row)
         
         # Simulação de gráfico (em um projeto real, usaria matplotlib ou similar)
-        chart_widget = QWidget()
+        chart_widget = QtWidgets.QWidget()
         chart_widget.setFixedHeight(200)
         chart_widget.setStyleSheet("""
-            QWidget {
+            QtWidgets.QWidget {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                     stop:0 #f8f9fa, stop:1 #e9ecef);
                 border: 2px solid #dee2e6;
@@ -939,12 +937,12 @@ class ProfileWindow(QMainWindow):
         """)
         
         # Adicionar texto simulado do gráfico
-        chart_label = QLabel("📈 Gráfico de Performance\n\n• Semana 1: 65%\n• Semana 2: 72%\n• Semana 3: 78%\n• Semana 4: 85%")
-        chart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        chart_label.setFont(QFont("Segoe UI", 12))
+        chart_label = QtWidgets.QLabel("📈 Gráfico de Performance\n\n• Semana 1: 65%\n• Semana 2: 72%\n• Semana 3: 78%\n• Semana 4: 85%")
+        chart_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        chart_label.setFont(QtGui.QFont("Segoe UI", 12))
         chart_label.setStyleSheet("color: #495057;")
         
-        chart_layout_widget = QVBoxLayout(chart_widget)
+        chart_layout_widget = QtWidgets.QVBoxLayout(chart_widget)
         chart_layout_widget.addWidget(chart_label)
         
         chart_layout.addWidget(chart_widget)
@@ -955,19 +953,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_learning_analytics_section(self, parent_layout):
         """Cria seção de analytics de aprendizado"""
-        analytics_card = QFrame()
+        analytics_card = QtWidgets.QFrame()
         analytics_card.setObjectName("analyticsCard")
-        analytics_layout = QVBoxLayout(analytics_card)
+        analytics_layout = QtWidgets.QVBoxLayout(analytics_card)
         analytics_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.brain', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Analytics de Aprendizado")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Analytics de Aprendizado")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -976,7 +974,7 @@ class ProfileWindow(QMainWindow):
         analytics_layout.addLayout(title_row)
         
         # Grid de métricas
-        metrics_grid = QGridLayout()
+        metrics_grid = QtWidgets.QGridLayout()
         metrics_grid.setSpacing(15)
         
         # Métrica 1 - Tempo médio por aula
@@ -1003,10 +1001,10 @@ class ProfileWindow(QMainWindow):
     
     def _create_metric_card(self, title, value, color):
         """Cria um card de métrica"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("metricCard")
         card.setStyleSheet(f"""
-            QFrame#metricCard {{
+            QtWidgets.QFrame#metricCard {{
                 background-color: #ffffff;
                 border: 2px solid {color};
                 border-radius: 8px;
@@ -1014,20 +1012,20 @@ class ProfileWindow(QMainWindow):
             }}
         """)
         
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         layout.setSpacing(8)
         
         # Título
-        title_label = QLabel(title)
-        title_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label = QtWidgets.QLabel(title)
+        title_label.setFont(QtGui.QFont("Segoe UI", 10, QtGui.QFont.Weight.Bold))
+        title_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("color: #2c3e50;")
         layout.addWidget(title_label)
         
         # Valor
-        value_label = QLabel(value)
-        value_label.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
-        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        value_label = QtWidgets.QLabel(value)
+        value_label.setFont(QtGui.QFont("Segoe UI", 18, QtGui.QFont.Weight.Bold))
+        value_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         value_label.setStyleSheet(f"color: {color};")
         layout.addWidget(value_label)
         
@@ -1035,19 +1033,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_goals_section(self, parent_layout):
         """Cria seção de metas e objetivos"""
-        goals_card = QFrame()
+        goals_card = QtWidgets.QFrame()
         goals_card.setObjectName("goalsCard")
-        goals_layout = QVBoxLayout(goals_card)
+        goals_layout = QtWidgets.QVBoxLayout(goals_card)
         goals_layout.setSpacing(15)
         
         # Título da seção
-        title_row = QHBoxLayout()
-        title_icon = QLabel()
+        title_row = QtWidgets.QHBoxLayout()
+        title_icon = QtWidgets.QLabel()
         title_icon.setPixmap(qta.icon('fa5s.bullseye', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
         
-        title_label = QLabel("Metas e Objetivos")
-        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
+        title_label = QtWidgets.QLabel("Metas e Objetivos")
+        title_font = QtGui.QFont("Segoe UI", 16, QtGui.QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50; margin-left: 10px;")
         title_row.addWidget(title_label)
@@ -1056,21 +1054,21 @@ class ProfileWindow(QMainWindow):
         goals_layout.addLayout(title_row)
         
         # Lista de metas
-        goals_list = QListWidget()
+        goals_list = QtWidgets.QListWidget()
         goals_list.setStyleSheet("""
-            QListWidget {
+            QtWidgets.QListWidget {
                 border: 2px solid #e9ecef;
                 border-radius: 8px;
                 background-color: #ffffff;
                 padding: 10px;
             }
-            QListWidget::item {
+            QtWidgets.QListWidget::item {
                 padding: 10px;
                 border-bottom: 1px solid #f8f9fa;
                 border-radius: 4px;
                 margin: 2px;
             }
-            QListWidget::item:hover {
+            QtWidgets.QListWidget::item:hover {
                 background-color: #f8f9fa;
             }
         """)
@@ -1085,17 +1083,17 @@ class ProfileWindow(QMainWindow):
         ]
         
         for goal in goals:
-            item = QListWidgetItem(goal)
-            item.setFont(QFont("Segoe UI", 10))
+            item = QtWidgets.QListWidgetItem(goal)
+            item.setFont(QtGui.QFont("Segoe UI", 10))
             goals_list.addItem(item)
         
         goals_layout.addWidget(goals_list)
         
         # Botão adicionar meta
-        add_goal_button = QPushButton("➕ Adicionar Nova Meta")
-        add_goal_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        add_goal_button = QtWidgets.QPushButton("➕ Adicionar Nova Meta")
+        add_goal_button.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         add_goal_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #28a745;
                 color: #ffffff;
                 padding: 10px 20px;
@@ -1103,11 +1101,11 @@ class ProfileWindow(QMainWindow):
                 border-radius: 8px;
                 font-size: 12px;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #218838;
             }
         """)
-        add_goal_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        add_goal_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         add_goal_button.clicked.connect(self._add_goal)
         goals_layout.addWidget(add_goal_button)
         
@@ -1117,17 +1115,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_settings_tab(self):
         """Cria a aba de configurações"""
-        settings_widget = QWidget()
-        settings_layout = QVBoxLayout(settings_widget)
+        settings_widget = QtWidgets.QWidget()
+        settings_layout = QtWidgets.QVBoxLayout(settings_widget)
         settings_layout.setSpacing(20)
         
         # Container com scroll
-        scroll_area = QScrollArea()
+        scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setStyleSheet("""
-            QScrollArea {
+            QtWidgets.QScrollArea {
                 border: none;
                 background-color: transparent;
             }
@@ -1147,8 +1145,8 @@ class ProfileWindow(QMainWindow):
         """)
         
         # Widget de conteúdo
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
+        content_widget = QtWidgets.QWidget()
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setSpacing(20)
         
         # Seções de configurações
@@ -1165,17 +1163,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_activity_tab(self):
         """Cria a aba de atividades"""
-        activity_widget = QWidget()
-        activity_layout = QVBoxLayout(activity_widget)
+        activity_widget = QtWidgets.QWidget()
+        activity_layout = QtWidgets.QVBoxLayout(activity_widget)
         activity_layout.setSpacing(20)
         
         # Container com scroll
-        scroll_area = QScrollArea()
+        scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setStyleSheet("""
-            QScrollArea {
+            QtWidgets.QScrollArea {
                 border: none;
                 background-color: transparent;
             }
@@ -1195,8 +1193,8 @@ class ProfileWindow(QMainWindow):
         """)
         
         # Widget de conteúdo
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
+        content_widget = QtWidgets.QWidget()
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setSpacing(20)
         
         # Seções de atividades
@@ -1212,17 +1210,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_achievements_tab(self):
         """Cria a aba de conquistas"""
-        achievements_widget = QWidget()
-        achievements_layout = QVBoxLayout(achievements_widget)
+        achievements_widget = QtWidgets.QWidget()
+        achievements_layout = QtWidgets.QVBoxLayout(achievements_widget)
         achievements_layout.setSpacing(20)
         
         # Container com scroll
-        scroll_area = QScrollArea()
+        scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setStyleSheet("""
-            QScrollArea {
+            QtWidgets.QScrollArea {
                 border: none;
                 background-color: transparent;
             }
@@ -1242,8 +1240,8 @@ class ProfileWindow(QMainWindow):
         """)
         
         # Widget de conteúdo
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
+        content_widget = QtWidgets.QWidget()
+        content_layout = QtWidgets.QVBoxLayout(content_widget)
         content_layout.setSpacing(20)
         
         # Seções de conquistas
@@ -1260,16 +1258,16 @@ class ProfileWindow(QMainWindow):
     def _apply_styles(self):
         """Aplica estilos globais"""
         self.setStyleSheet("""
-            QMainWindow {
+            QtWidgets.QMainWindow {
                 background-color: #f8f9fa;
             }
-            QFrame#infoCard, QFrame#editCard, QFrame#statsCard, QFrame#actionsCard {
+            QtWidgets.QFrame#infoCard, QtWidgets.QFrame#editCard, QtWidgets.QFrame#statsCard, QtWidgets.QFrame#actionsCard {
                 background-color: #ffffff;
                 border-radius: 10px;
                 padding: 20px;
                 border: 1px solid #d1d5db;
             }
-            QLabel {
+            QtWidgets.QLabel {
                 color: #111827;
             }
         """)
@@ -1284,10 +1282,10 @@ class ProfileWindow(QMainWindow):
             # Tentar carregar avatar personalizado
             avatar_path = f"avatars/{self.user_name}_avatar.png"
             if os.path.exists(avatar_path):
-                pixmap = QPixmap(avatar_path)
+                pixmap = QtGui.QPixmap(avatar_path)
                 if not pixmap.isNull():
                     # Redimensionar para 120x120 mantendo proporção
-                    pixmap = pixmap.scaled(120, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    pixmap = pixmap.scaled(120, 120, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation)
                     self.avatar_label.setPixmap(pixmap)
                     return
             
@@ -1300,29 +1298,29 @@ class ProfileWindow(QMainWindow):
     def _create_default_avatar(self):
         """Cria avatar padrão com iniciais do usuário"""
         # Criar pixmap com iniciais
-        pixmap = QPixmap(120, 120)
-        pixmap.fill(QColor("#3498db"))
+        pixmap = QtGui.QPixmap(120, 120)
+        pixmap.fill(QtGui.QColor("#3498db"))
         
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         
         # Desenhar círculo
-        painter.setBrush(QColor("#3498db"))
-        painter.setPen(QPen(QColor("#2980b9"), 4))
+        painter.setBrush(QtGui.QColor("#3498db"))
+        painter.setPen(QtGui.QPen(QtGui.QColor("#2980b9"), 4))
         painter.drawEllipse(2, 2, 116, 116)
         
         # Desenhar iniciais
-        painter.setPen(QPen(QColor("#ffffff"), 1))
-        painter.setFont(QFont("Segoe UI", 36, QFont.Weight.Bold))
+        painter.setPen(QtGui.QPen(QtGui.QColor("#ffffff"), 1))
+        painter.setFont(QtGui.QFont("Segoe UI", 36, QtGui.QFont.Weight.Bold))
         initials = self.user_name[:2].upper() if len(self.user_name) >= 2 else self.user_name.upper()
-        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, initials)
+        painter.drawText(pixmap.rect(), QtCore.Qt.AlignmentFlag.AlignCenter, initials)
         painter.end()
         
         self.avatar_label.setPixmap(pixmap)
     
     def _upload_avatar(self):
         """Permite upload de novo avatar"""
-        file_path, _ = QFileDialog.getOpenFileName(
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
             "Selecionar Avatar",
             "",
@@ -1335,10 +1333,10 @@ class ProfileWindow(QMainWindow):
                 os.makedirs("avatars", exist_ok=True)
                 
                 # Carregar e redimensionar imagem
-                pixmap = QPixmap(file_path)
+                pixmap = QtGui.QPixmap(file_path)
                 if not pixmap.isNull():
                     # Redimensionar para 120x120 mantendo proporção
-                    pixmap = pixmap.scaled(120, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    pixmap = pixmap.scaled(120, 120, QtCore.Qt.AspectRatioMode.KeepAspectRatio, QtCore.Qt.TransformationMode.SmoothTransformation)
                     
                     # Salvar avatar
                     avatar_path = f"avatars/{self.user_name}_avatar.png"
@@ -1355,15 +1353,15 @@ class ProfileWindow(QMainWindow):
     
     def _remove_avatar(self):
         """Remove o avatar personalizado"""
-        reply = QMessageBox.question(
+        reply = QtWidgets.QMessageBox.question(
             self,
             'Confirmar Remoção',
             'Tem certeza que deseja remover seu avatar personalizado?',
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No
         )
         
-        if reply == QMessageBox.StandardButton.Yes:
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
             try:
                 # Remover arquivo do avatar
                 avatar_path = f"avatars/{self.user_name}_avatar.png"
@@ -1379,7 +1377,7 @@ class ProfileWindow(QMainWindow):
     
     def _add_goal(self):
         """Adiciona nova meta"""
-        goal_text, ok = QInputDialog.getText(
+        goal_text, ok = QtWidgets.QInputDialog.getText(
             self,
             'Nova Meta',
             'Digite sua nova meta:'
@@ -1499,15 +1497,15 @@ class ProfileWindow(QMainWindow):
     
     def _change_password(self):
         """Mostra diálogo para alterar senha"""
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Information)
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
         msg.setWindowTitle("Alterar Senha")
         msg.setText("Funcionalidade de alteração de senha será implementada em breve.")
         msg.setStyleSheet("""
-            QMessageBox {
+            QtWidgets.QMessageBox {
                 background-color: #ffffff;
             }
-            QMessageBox QLabel {
+            QtWidgets.QMessageBox QtWidgets.QLabel {
                 color: #2c3e50;
             }
         """)
@@ -1515,15 +1513,15 @@ class ProfileWindow(QMainWindow):
     
     def _export_data(self):
         """Exporta dados do usuário"""
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Information)
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
         msg.setWindowTitle("Exportar Dados")
         msg.setText("Funcionalidade de exportação de dados será implementada em breve.")
         msg.setStyleSheet("""
-            QMessageBox {
+            QtWidgets.QMessageBox {
                 background-color: #ffffff;
             }
-            QMessageBox QLabel {
+            QtWidgets.QMessageBox QtWidgets.QLabel {
                 color: #2c3e50;
             }
         """)
@@ -1531,24 +1529,24 @@ class ProfileWindow(QMainWindow):
     
     def _delete_account(self):
         """Mostra confirmação para excluir conta"""
-        reply = QMessageBox.question(
+        reply = QtWidgets.QMessageBox.question(
             self, 
             'Confirmar Exclusão', 
             'Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.',
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No
         )
         
-        if reply == QMessageBox.StandardButton.Yes:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Icon.Information)
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
             msg.setWindowTitle("Excluir Conta")
             msg.setText("Funcionalidade de exclusão de conta será implementada em breve.")
             msg.setStyleSheet("""
-                QMessageBox {
+                QtWidgets.QMessageBox {
                     background-color: #ffffff;
                 }
-                QMessageBox QLabel {
+                QtWidgets.QMessageBox QtWidgets.QLabel {
                     color: #2c3e50;
                 }
             """)
@@ -1561,15 +1559,15 @@ class ProfileWindow(QMainWindow):
     
     def _show_error(self, message):
         """Mostra mensagem de erro"""
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Critical)
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
         msg.setWindowTitle("Erro")
         msg.setText(message)
         msg.setStyleSheet("""
-            QMessageBox {
+            QtWidgets.QMessageBox {
                 background-color: #ffffff;
             }
-            QMessageBox QLabel {
+            QtWidgets.QMessageBox QtWidgets.QLabel {
                 color: #2c3e50;
             }
         """)
@@ -1577,15 +1575,15 @@ class ProfileWindow(QMainWindow):
     
     def _show_success(self, message):
         """Mostra mensagem de sucesso"""
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Information)
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
         msg.setWindowTitle("Sucesso")
         msg.setText(message)
         msg.setStyleSheet("""
-            QMessageBox {
+            QtWidgets.QMessageBox {
                 background-color: #ffffff;
             }
-            QMessageBox QLabel {
+            QtWidgets.QMessageBox QtWidgets.QLabel {
                 color: #2c3e50;
             }
         """)
@@ -1593,15 +1591,15 @@ class ProfileWindow(QMainWindow):
     
     def _show_info(self, message):
         """Mostra mensagem informativa"""
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Information)
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Icon.Information)
         msg.setWindowTitle("Informação")
         msg.setText(message)
         msg.setStyleSheet("""
-            QMessageBox {
+            QtWidgets.QMessageBox {
                 background-color: #ffffff;
             }
-            QMessageBox QLabel {
+            QtWidgets.QMessageBox QtWidgets.QLabel {
                 color: #2c3e50;
             }
         """)
@@ -1617,25 +1615,25 @@ class ProfileWindow(QMainWindow):
     # Métodos stub para as seções das outras abas
     def _create_notification_settings_section(self, parent_layout):
         """Cria seção de configurações de notificação"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("settingsCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("🔔 Configurações de Notificação")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("🔔 Configurações de Notificação")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Checkboxes de exemplo
-        email_notifications = QCheckBox("Notificações por email")
+        email_notifications = QtWidgets.QCheckBox("Notificações por email")
         email_notifications.setChecked(True)
         layout.addWidget(email_notifications)
         
-        push_notifications = QCheckBox("Notificações push")
+        push_notifications = QtWidgets.QCheckBox("Notificações push")
         push_notifications.setChecked(True)
         layout.addWidget(push_notifications)
         
-        weekly_reports = QCheckBox("Relatórios semanais")
+        weekly_reports = QtWidgets.QCheckBox("Relatórios semanais")
         weekly_reports.setChecked(False)
         layout.addWidget(weekly_reports)
         
@@ -1644,21 +1642,21 @@ class ProfileWindow(QMainWindow):
     
     def _create_privacy_settings_section(self, parent_layout):
         """Cria seção de configurações de privacidade"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("settingsCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("🔒 Configurações de Privacidade")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("🔒 Configurações de Privacidade")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Configurações de exemplo
-        profile_visibility = QCheckBox("Perfil público")
+        profile_visibility = QtWidgets.QCheckBox("Perfil público")
         profile_visibility.setChecked(False)
         layout.addWidget(profile_visibility)
         
-        data_sharing = QCheckBox("Compartilhar dados para melhorias")
+        data_sharing = QtWidgets.QCheckBox("Compartilhar dados para melhorias")
         data_sharing.setChecked(True)
         layout.addWidget(data_sharing)
         
@@ -1667,21 +1665,21 @@ class ProfileWindow(QMainWindow):
     
     def _create_theme_settings_section(self, parent_layout):
         """Cria seção de configurações de tema"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("settingsCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("🎨 Configurações de Tema")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("🎨 Configurações de Tema")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Seletor de tema
-        theme_label = QLabel("Tema:")
-        theme_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        theme_label = QtWidgets.QLabel("Tema:")
+        theme_label.setFont(QtGui.QFont("Segoe UI", 11, QtGui.QFont.Weight.Bold))
         layout.addWidget(theme_label)
         
-        theme_combo = QComboBox()
+        theme_combo = QtWidgets.QComboBox()
         theme_combo.addItems(["Claro", "Escuro", "Automático"])
         theme_combo.setCurrentText("Claro")
         layout.addWidget(theme_combo)
@@ -1691,19 +1689,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_export_settings_section(self, parent_layout):
         """Cria seção de configurações de exportação"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("settingsCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("📤 Exportação de Dados")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("📤 Exportação de Dados")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Botões de exportação
-        export_button = QPushButton("📊 Exportar Dados Completos")
+        export_button = QtWidgets.QPushButton("📊 Exportar Dados Completos")
         export_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #28a745;
                 color: white;
                 padding: 10px;
@@ -1711,16 +1709,16 @@ class ProfileWindow(QMainWindow):
                 border-radius: 6px;
                 font-weight: bold;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #218838;
             }
         """)
         export_button.clicked.connect(self._export_data)
         layout.addWidget(export_button)
         
-        backup_button = QPushButton("💾 Criar Backup")
+        backup_button = QtWidgets.QPushButton("💾 Criar Backup")
         backup_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #17a2b8;
                 color: white;
                 padding: 10px;
@@ -1728,7 +1726,7 @@ class ProfileWindow(QMainWindow):
                 border-radius: 6px;
                 font-weight: bold;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #138496;
             }
         """)
@@ -1740,17 +1738,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_recent_activity_section(self, parent_layout):
         """Cria seção de atividades recentes"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("activityCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("📋 Atividades Recentes")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("📋 Atividades Recentes")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Lista de atividades
-        activity_list = QListWidget()
+        activity_list = QtWidgets.QListWidget()
         activities = [
             "✅ Concluiu aula: 'Introdução ao Python' - Hoje 14:30",
             "🎯 Atingiu meta semanal de 5 aulas - Hoje 12:00",
@@ -1760,8 +1758,8 @@ class ProfileWindow(QMainWindow):
         ]
         
         for activity in activities:
-            item = QListWidgetItem(activity)
-            item.setFont(QFont("Segoe UI", 10))
+            item = QtWidgets.QListWidgetItem(activity)
+            item.setFont(QtGui.QFont("Segoe UI", 10))
             activity_list.addItem(item)
         
         layout.addWidget(activity_list)
@@ -1771,19 +1769,19 @@ class ProfileWindow(QMainWindow):
     
     def _create_study_calendar_section(self, parent_layout):
         """Cria seção de calendário de estudos"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("calendarCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("📅 Calendário de Estudos")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("📅 Calendário de Estudos")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Calendário
-        calendar = QCalendarWidget()
+        calendar = QtWidgets.QCalendarWidget()
         calendar.setStyleSheet("""
-            QCalendarWidget {
+            QtWidgets.QCalendarWidget {
                 background-color: white;
                 border: 2px solid #e9ecef;
                 border-radius: 8px;
@@ -1796,17 +1794,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_learning_logs_section(self, parent_layout):
         """Cria seção de logs de aprendizado"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("logsCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("📝 Logs de Aprendizado")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("📝 Logs de Aprendizado")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Área de texto para logs
-        logs_text = QTextEdit()
+        logs_text = QtWidgets.QTextEdit()
         logs_text.setReadOnly(True)
         logs_text.setMaximumHeight(150)
         logs_text.setPlainText("""
@@ -1824,17 +1822,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_badges_section(self, parent_layout):
         """Cria seção de badges"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("badgesCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("🏆 Badges Conquistados")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("🏆 Badges Conquistados")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Grid de badges
-        badges_grid = QGridLayout()
+        badges_grid = QtWidgets.QGridLayout()
         
         badges = [
             ("🥇", "Primeiro Passo", "Completou sua primeira aula"),
@@ -1846,23 +1844,23 @@ class ProfileWindow(QMainWindow):
         ]
         
         for i, (emoji, name, description) in enumerate(badges):
-            badge_widget = QWidget()
-            badge_layout = QVBoxLayout(badge_widget)
-            badge_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            badge_widget = QtWidgets.QWidget()
+            badge_layout = QtWidgets.QVBoxLayout(badge_widget)
+            badge_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             
-            emoji_label = QLabel(emoji)
-            emoji_label.setFont(QFont("Segoe UI", 24))
-            emoji_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            emoji_label = QtWidgets.QLabel(emoji)
+            emoji_label.setFont(QtGui.QFont("Segoe UI", 24))
+            emoji_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             badge_layout.addWidget(emoji_label)
             
-            name_label = QLabel(name)
-            name_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-            name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            name_label = QtWidgets.QLabel(name)
+            name_label.setFont(QtGui.QFont("Segoe UI", 10, QtGui.QFont.Weight.Bold))
+            name_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             badge_layout.addWidget(name_label)
             
-            desc_label = QLabel(description)
-            desc_label.setFont(QFont("Segoe UI", 8))
-            desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            desc_label = QtWidgets.QLabel(description)
+            desc_label.setFont(QtGui.QFont("Segoe UI", 8))
+            desc_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             desc_label.setWordWrap(True)
             badge_layout.addWidget(desc_label)
             
@@ -1875,17 +1873,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_certificates_section(self, parent_layout):
         """Cria seção de certificados"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("certificatesCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("📜 Certificados")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("📜 Certificados")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Lista de certificados
-        cert_list = QListWidget()
+        cert_list = QtWidgets.QListWidget()
         certificates = [
             "🏆 Certificado de Conclusão - Curso de Python Básico",
             "🥇 Certificado de Excelência - Machine Learning",
@@ -1893,16 +1891,16 @@ class ProfileWindow(QMainWindow):
         ]
         
         for cert in certificates:
-            item = QListWidgetItem(cert)
-            item.setFont(QFont("Segoe UI", 10))
+            item = QtWidgets.QListWidgetItem(cert)
+            item.setFont(QtGui.QFont("Segoe UI", 10))
             cert_list.addItem(item)
         
         layout.addWidget(cert_list)
         
         # Botão para baixar certificados
-        download_button = QPushButton("📥 Baixar Certificados")
+        download_button = QtWidgets.QPushButton("📥 Baixar Certificados")
         download_button.setStyleSheet("""
-            QPushButton {
+            QtWidgets.QPushButton {
                 background-color: #007bff;
                 color: white;
                 padding: 10px;
@@ -1910,7 +1908,7 @@ class ProfileWindow(QMainWindow):
                 border-radius: 6px;
                 font-weight: bold;
             }
-            QPushButton:hover {
+            QtWidgets.QPushButton:hover {
                 background-color: #0056b3;
             }
         """)
@@ -1921,17 +1919,17 @@ class ProfileWindow(QMainWindow):
     
     def _create_leaderboard_section(self, parent_layout):
         """Cria seção de ranking"""
-        card = QFrame()
+        card = QtWidgets.QFrame()
         card.setObjectName("leaderboardCard")
-        layout = QVBoxLayout(card)
+        layout = QtWidgets.QVBoxLayout(card)
         
-        title = QLabel("🏅 Ranking de Usuários")
-        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title = QtWidgets.QLabel("🏅 Ranking de Usuários")
+        title.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
         title.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(title)
         
         # Lista de ranking
-        leaderboard_list = QListWidget()
+        leaderboard_list = QtWidgets.QListWidget()
         rankings = [
             "🥇 1º - João Silva - 2,450 pontos",
             "🥈 2º - Maria Santos - 2,320 pontos",
@@ -1941,10 +1939,10 @@ class ProfileWindow(QMainWindow):
         ]
         
         for ranking in rankings:
-            item = QListWidgetItem(ranking)
-            item.setFont(QFont("Segoe UI", 10))
+            item = QtWidgets.QListWidgetItem(ranking)
+            item.setFont(QtGui.QFont("Segoe UI", 10))
             if "Você" in ranking:
-                item.setBackground(QColor("#e3f2fd"))
+                item.setBackground(QtGui.QColor("#e3f2fd"))
             leaderboard_list.addItem(item)
         
         layout.addWidget(leaderboard_list)
@@ -1957,7 +1955,7 @@ class ProfileWindow(QMainWindow):
         self._show_info("Funcionalidade de backup será implementada em breve.")
 
 def main():
-    app = QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     
     # Criar e mostrar a janela de perfil
     profile_window = ProfileWindow("admin")
