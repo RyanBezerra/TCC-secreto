@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
     $cargo = trim($_POST['cargo'] ?? '');
-    $empresa_id = intval($_POST['empresa_id'] ?? 0);
+    $empresa_id = trim($_POST['empresa_id'] ?? '');
     
     // Validações
     $erros = [];
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erros[] = 'Cargo é obrigatório';
     }
     
-    if ($empresa_id <= 0) {
+    if (empty($empresa_id)) {
         $erros[] = 'Empresa é obrigatória';
     } else {
         // Verificar se a empresa existe no banco
@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Limpar campos do formulário
             $nome = $email = $cargo = '';
-            $empresa_id = 0;
+            $empresa_id = '';
             
         } catch (PDOException $e) {
             $mensagem = 'Erro ao cadastrar usuário: ' . $e->getMessage();
@@ -239,15 +239,6 @@ try {
             </div>
         <?php endif; ?>
         
-        <?php if (isset($_POST['empresa_id'])): ?>
-            <div class="mensagem erro">
-                <strong>Debug:</strong> ID da empresa enviado: <?php echo htmlspecialchars($_POST['empresa_id']); ?>
-                <br><strong>Empresas disponíveis:</strong>
-                <?php foreach ($empresas as $empresa): ?>
-                    ID: <?php echo $empresa['id']; ?> - <?php echo htmlspecialchars($empresa['nome_empresa']); ?><br>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
         
         <form method="POST" action="">
             <div class="form-group">
