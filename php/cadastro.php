@@ -37,6 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($empresa_id <= 0) {
         $erros[] = 'Empresa é obrigatória';
+    } else {
+        // Verificar se a empresa existe no banco
+        try {
+            $stmt = $pdo->prepare("SELECT id FROM empresas WHERE id = ?");
+            $stmt->execute([$empresa_id]);
+            if (!$stmt->fetch()) {
+                $erros[] = 'Empresa selecionada não existe no banco de dados';
+            }
+        } catch (PDOException $e) {
+            $erros[] = 'Erro ao verificar empresa: ' . $e->getMessage();
+        }
     }
     
     // Verificar se email já existe
@@ -85,6 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $stmt = $pdo->query("SELECT id, nome_empresa FROM empresas ORDER BY nome_empresa");
     $empresas = $stmt->fetchAll();
+    
+    // Debug: mostrar empresas disponíveis (remover em produção)
+    if (empty($empresas)) {
+        $mensagem = 'Nenhuma empresa encontrada no banco de dados.';
+        $tipoMensagem = 'erro';
+    }
 } catch (PDOException $e) {
     $empresas = [];
     if (empty($mensagem)) {
@@ -219,6 +236,16 @@ try {
         <?php if ($mensagem): ?>
             <div class="mensagem <?php echo $tipoMensagem; ?>">
                 <?php echo $mensagem; ?>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($_POST['empresa_id'])): ?>
+            <div class="mensagem erro">
+                <strong>Debug:</strong> ID da empresa enviado: <?php echo htmlspecialchars($_POST['empresa_id']); ?>
+                <br><strong>Empresas disponíveis:</strong>
+                <?php foreach ($empresas as $empresa): ?>
+                    ID: <?php echo $empresa['id']; ?> - <?php echo htmlspecialchars($empresa['nome_empresa']); ?><br>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
         
