@@ -12,7 +12,7 @@ from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
 import json
 import time
 import qtawesome as qta
-from login import LoginWindow
+from auth_window import AuthWindow
 from profile import ProfileWindow
 
 class EduAIApp(QMainWindow):
@@ -743,11 +743,12 @@ class EduAIManager:
         sys.exit(self.app.exec())
     
     def show_login(self):
-        """Mostra a tela de login"""
-        login_window = LoginWindow()
-        login_window.login_successful.connect(self._on_login_success)
-        login_window.show()
-        self.current_window = login_window
+        """Mostra a tela de autenticação (login/cadastro)"""
+        auth_window = AuthWindow()
+        auth_window.login_successful.connect(self._on_login_success)
+        auth_window.signup_successful.connect(self._on_login_success)  # Usar o mesmo handler
+        auth_window.show()
+        self.current_window = auth_window
     
     def _on_login_success(self, user_name):
         """Chamado quando o login é bem-sucedido"""

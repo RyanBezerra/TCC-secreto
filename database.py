@@ -128,6 +128,10 @@ class DatabaseManager:
         results = self.execute_query(query, (nome,))
         return results[0] if results else None
     
+    def get_user_by_username(self, username: str) -> Optional[Dict]:
+        """Busca usuário pelo nome de usuário (alias para get_user_by_name)"""
+        return self.get_user_by_name(username)
+    
     def get_user_by_id(self, user_id: int) -> Optional[Dict]:
         """Busca usuário pelo ID"""
         query = "SELECT * FROM usuario WHERE id = %s"

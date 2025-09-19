@@ -507,20 +507,24 @@ class LoginWindow(QMainWindow):
         msg.exec()
     
     def _show_signup(self):
-        """Mostra diálogo para criação de conta"""
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.setWindowTitle("Criar Conta")
-        msg.setText("Para criar uma nova conta, entre em contato com o administrador do sistema.")
-        msg.setStyleSheet("""
-            QMessageBox {
-                background-color: #ffffff;
-            }
-            QMessageBox QLabel {
-                color: #2c3e50;
-            }
-        """)
-        msg.exec()
+        """Abre a tela de cadastro"""
+        # Redirecionar para o sistema unificado de autenticação
+        from auth_window import AuthWindow
+        self.auth_window = AuthWindow()
+        self.auth_window.signup_successful.connect(self._on_signup_success)
+        self.auth_window.show()
+    
+    def _on_signup_success(self, user_name):
+        """Chamado quando o cadastro é bem-sucedido"""
+        # Fechar janela de autenticação
+        if hasattr(self, 'auth_window'):
+            self.auth_window.close()
+        
+        # Emitir sinal de login bem-sucedido
+        self.login_successful.emit(user_name)
+        
+        # Fechar janela de login
+        self.close()
     
     def keyPressEvent(self, event):
         """Permite login com Enter"""
