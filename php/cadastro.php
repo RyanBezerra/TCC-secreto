@@ -66,12 +66,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Criar nova empresa se não existir
                 // Usar o email do usuário como email de contato da empresa
                 $stmt = $pdo->prepare("INSERT INTO empresas (nome_empresa, email_contato, data_cadastro) VALUES (?, ?, NOW())");
-                $stmt->execute([$empresa_nome, $email]);
+                $result = $stmt->execute([$empresa_nome, $email]);
+                
+                if (!$result) {
+                    throw new Exception('Falha ao inserir empresa no banco');
+                }
+                
                 $empresa_id = $pdo->lastInsertId();
                 
                 // Verificar se o ID foi gerado corretamente
-                if (!$empresa_id) {
-                    throw new Exception('Falha ao obter ID da empresa criada');
+                if (!$empresa_id || $empresa_id === 0) {
+                    throw new Exception('Falha ao obter ID da empresa criada. ID retornado: ' . $empresa_id);
                 }
             }
         } catch (PDOException $e) {
@@ -98,6 +103,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Verificar se empresa_id foi definido
             if (!isset($empresa_id) || empty($empresa_id)) {
                 throw new Exception('ID da empresa não foi definido');
+            }
+            
+            // Debug: verificar valores antes da inserção
+            $debug_values = [
+                'empresa_id' => $empresa_id,
+                'nome' => $nome,
+                'email' => $email,
+                'cargo' => $cargo
+            ];
+            
+            // Verificar se algum valor está vazio
+            foreach ($debug_values as $key => $value) {
+                if (empty($value) && $value !== 0) {
+                    throw new Exception("Campo '$key' está vazio: '$value'");
+                }
             }
             
             $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
