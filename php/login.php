@@ -58,9 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['empresa_nome'] = $usuario['nome_empresa'];
                         $_SESSION['logado'] = true;
                         
-                        // Atualizar último acesso
-                        $stmt = $pdo->prepare("UPDATE usuarios SET ultimo_acesso = NOW() WHERE id = ?");
-                        $stmt->execute([$usuario['id']]);
+                        // Login bem-sucedido - não há coluna ultimo_acesso na tabela
                         
                         echo json_encode([
                             'success' => true,
