@@ -223,7 +223,7 @@
           <!-- Mensagens de sucesso/erro serão inseridas aqui pelo PHP -->
           <div id="mensagem-container"></div>
           
-          <form id="cadastro-form" method="POST" action="../php/cadastro.php">
+          <form id="cadastro-form">
             <div class="form-grid">
               <div class="form-group full-width">
                 <label for="nome" class="form-label">
@@ -329,29 +329,68 @@
       console.log('Página de cadastro carregada');
     });
     
-    // Validação do formulário
+    // Validação e envio do formulário
     document.getElementById('cadastro-form').addEventListener('submit', function(e) {
-      const senha = document.getElementById('senha').value;
+      e.preventDefault();
+      
+      const nome = document.getElementById('nome').value;
       const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+      const cargo = document.getElementById('cargo').value;
       const empresaNome = document.getElementById('empresa_nome').value;
       
-      if (senha.length < 6) {
-        e.preventDefault();
-        mostrarMensagem('A senha deve ter pelo menos 6 caracteres', 'erro');
+      // Validações
+      if (nome.trim().length < 2) {
+        mostrarMensagem('Digite o nome completo', 'erro');
         return;
       }
       
       if (!email.includes('@')) {
-        e.preventDefault();
         mostrarMensagem('Digite um email válido', 'erro');
         return;
       }
       
+      if (senha.length < 6) {
+        mostrarMensagem('A senha deve ter pelo menos 6 caracteres', 'erro');
+        return;
+      }
+      
+      if (cargo.trim().length < 2) {
+        mostrarMensagem('Digite o cargo', 'erro');
+        return;
+      }
+      
       if (empresaNome.trim().length < 2) {
-        e.preventDefault();
         mostrarMensagem('Digite o nome da empresa', 'erro');
         return;
       }
+      
+      // Enviar dados via AJAX
+      const formData = new FormData();
+      formData.append('nome', nome);
+      formData.append('email', email);
+      formData.append('senha', senha);
+      formData.append('cargo', cargo);
+      formData.append('empresa_nome', empresaNome);
+      
+      fetch('../php/cadastro.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          mostrarMensagem(data.message, 'sucesso');
+          // Limpar formulário
+          document.getElementById('cadastro-form').reset();
+        } else {
+          mostrarMensagem(data.message, 'erro');
+        }
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        mostrarMensagem('Erro ao processar cadastro. Tente novamente.', 'erro');
+      });
     });
     
     function mostrarMensagem(texto, tipo) {

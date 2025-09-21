@@ -1,12 +1,11 @@
 <?php
 require_once 'config.php';
 
-$mensagem = '';
-$tipoMensagem = '';
+// Definir header para JSON
+header('Content-Type: application/json');
 
 // Se for uma requisição AJAX para buscar empresas
 if (isset($_GET['action']) && $_GET['action'] === 'get_empresas') {
-    header('Content-Type: application/json');
     try {
         $stmt = $pdo->query("SELECT id, nome_empresa FROM empresas ORDER BY nome_empresa");
         $empresas = $stmt->fetchAll();
@@ -62,8 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $empresa_id = $empresa_existente['id'];
             } else {
                 // Criar nova empresa se não existir
-                $stmt = $pdo->prepare("INSERT INTO empresas (nome_empresa, data_cadastro) VALUES (?, NOW())");
-                $stmt->execute([$empresa_nome]);
+                // Usar o email do usuário como email de contato da empresa
+                $stmt = $pdo->prepare("INSERT INTO empresas (nome_empresa, email_contato, data_cadastro) VALUES (?, ?, NOW())");
+                $stmt->execute([$empresa_nome, $email]);
                 $empresa_id = $pdo->lastInsertId();
             }
         } catch (PDOException $e) {
@@ -96,185 +96,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $stmt->execute([$empresa_id, $nome, $email, $senha_hash, $cargo]);
             
-            $mensagem = 'Usuário cadastrado com sucesso!';
-            $tipoMensagem = 'sucesso';
-            
-            // Limpar campos do formulário
-            $nome = $email = $cargo = $empresa_nome = '';
+            echo json_encode([
+                'success' => true,
+                'message' => 'Usuário cadastrado com sucesso!'
+            ]);
+            exit;
             
         } catch (PDOException $e) {
-            $mensagem = 'Erro ao cadastrar usuário: ' . $e->getMessage();
-            $tipoMensagem = 'erro';
+            echo json_encode([
+                'success' => false,
+                'message' => 'Erro ao cadastrar usuário: ' . $e->getMessage()
+            ]);
+            exit;
         }
     } else {
-        $mensagem = implode('<br>', $erros);
-        $tipoMensagem = 'erro';
+        echo json_encode([
+            'success' => false,
+            'message' => implode('<br>', $erros)
+        ]);
+        exit;
     }
 }
 
-// Inicializar variável empresa_nome se não estiver definida
-if (!isset($empresa_nome)) {
-    $empresa_nome = '';
-}
-?>
-
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Usuário</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            padding: 40px;
-            width: 100%;
-            max-width: 500px;
-        }
-        
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2rem;
-            font-weight: 300;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-        }
-        
-        input, select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-        
-        input:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .mensagem {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .mensagem.sucesso {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .mensagem.erro {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .required {
-            color: #e74c3c;
-        }
-        
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-                margin: 10px;
-            }
-            
-            h1 {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Cadastro de Usuário</h1>
-        
-        <?php if ($mensagem): ?>
-            <div class="mensagem <?php echo $tipoMensagem; ?>">
-                <?php echo $mensagem; ?>
-            </div>
-        <?php endif; ?>
-        
-        
-        <form method="POST" action="">
-            <div class="form-group">
-                <label for="nome">Nome Completo <span class="required">*</span></label>
-                <input type="text" id="nome" name="nome" value="<?php echo htmlspecialchars($nome ?? ''); ?>" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="email">Email <span class="required">*</span></label>
-                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email ?? ''); ?>" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="senha">Senha <span class="required">*</span></label>
-                <input type="password" id="senha" name="senha" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="cargo">Cargo <span class="required">*</span></label>
-                <input type="text" id="cargo" name="cargo" value="<?php echo htmlspecialchars($cargo ?? ''); ?>" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="empresa_nome">Empresa <span class="required">*</span></label>
-                <input type="text" id="empresa_nome" name="empresa_nome" value="<?php echo htmlspecialchars($empresa_nome); ?>" required placeholder="Digite o nome da empresa">
-            </div>
-            
-            <button type="submit" class="btn">Cadastrar Usuário</button>
-        </form>
-    </div>
-</body>
-</html>
+// Se não for uma requisição POST, retornar erro
+echo json_encode([
+    'success' => false,
+    'message' => 'Método não permitido'
+]);
+exit;
