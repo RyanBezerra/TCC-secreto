@@ -84,18 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // Verificar se email já existe
-    if (empty($erros)) {
-        try {
-            $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
-            $stmt->execute([$email]);
-            if ($stmt->fetch()) {
-                $erros[] = 'Email já cadastrado';
-            }
-        } catch (PDOException $e) {
-            $erros[] = 'Erro ao verificar email: ' . $e->getMessage();
-        }
-    }
     
     // Se não há erros, inserir no banco
     if (empty($erros)) {
@@ -122,12 +110,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
             
+            // Verificar se já existe um usuário com este email
+            $stmt_check = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+            $stmt_check->execute([$email]);
+            if ($stmt_check->fetch()) {
+                throw new Exception('Email já cadastrado no sistema');
+            }
+            
+            // Verificar se a empresa existe
+            $stmt_empresa = $pdo->prepare("SELECT id FROM empresas WHERE id = ?");
+            $stmt_empresa->execute([$empresa_id]);
+            if (!$stmt_empresa->fetch()) {
+                throw new Exception('Empresa não encontrada no sistema');
+            }
+            
+            // Inserir usuário com campos explícitos e validação
             $stmt = $pdo->prepare("
                 INSERT INTO usuarios (empresa_id, nome, email, senha_hash, cargo, status, data_cadastro) 
-                VALUES (?, ?, ?, ?, ?, 'ativo', NOW())
+                VALUES (?, ?, ?, ?, ?, ?, NOW())
             ");
             
-            $stmt->execute([$empresa_id, $nome, $email, $senha_hash, $cargo]);
+            // Garantir que todos os valores não estão vazios
+            $empresa_id_int = (int)$empresa_id;
+            $nome_trim = trim($nome);
+            $email_trim = trim($email);
+            $cargo_trim = trim($cargo);
+            
+            if ($empresa_id_int <= 0) {
+                throw new Exception('ID da empresa inválido: ' . $empresa_id);
+            }
+            
+            if (empty($nome_trim)) {
+                throw new Exception('Nome não pode estar vazio');
+            }
+            
+            if (empty($email_trim)) {
+                throw new Exception('Email não pode estar vazio');
+            }
+            
+            if (empty($cargo_trim)) {
+                throw new Exception('Cargo não pode estar vazio');
+            }
+            
+            $result = $stmt->execute([
+                $empresa_id_int, 
+                $nome_trim, 
+                $email_trim, 
+                $senha_hash, 
+                $cargo_trim, 
+                'ativo'
+            ]);
+            
+            if (!$result) {
+                throw new Exception('Falha ao inserir usuário no banco de dados');
+            }
             
             echo json_encode([
                 'success' => true,
