@@ -51,6 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($empresa_nome)) {
         $erros[] = 'Empresa é obrigatória';
     } else {
+        // Inicializar empresa_id
+        $empresa_id = null;
+        
         // Verificar se a empresa existe no banco ou criar uma nova
         try {
             $stmt = $pdo->prepare("SELECT id FROM empresas WHERE nome_empresa = ?");
@@ -65,6 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("INSERT INTO empresas (nome_empresa, email_contato, data_cadastro) VALUES (?, ?, NOW())");
                 $stmt->execute([$empresa_nome, $email]);
                 $empresa_id = $pdo->lastInsertId();
+                
+                // Verificar se o ID foi gerado corretamente
+                if (!$empresa_id) {
+                    throw new Exception('Falha ao obter ID da empresa criada');
+                }
             }
         } catch (PDOException $e) {
             $erros[] = 'Erro ao verificar/criar empresa: ' . $e->getMessage();
@@ -87,6 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Se não há erros, inserir no banco
     if (empty($erros)) {
         try {
+            // Verificar se empresa_id foi definido
+            if (!isset($empresa_id) || empty($empresa_id)) {
+                throw new Exception('ID da empresa não foi definido');
+            }
+            
             $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
             
             $stmt = $pdo->prepare("
