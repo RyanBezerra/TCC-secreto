@@ -124,20 +124,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Empresa não encontrada no sistema');
             }
             
+            // Gerar UUID para o usuário
+            $usuario_id = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                mt_rand(0, 0xffff),
+                mt_rand(0, 0x0fff) | 0x4000,
+                mt_rand(0, 0x3fff) | 0x8000,
+                mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+            );
+            
             // Inserir usuário com campos explícitos e validação
             $stmt = $pdo->prepare("
-                INSERT INTO usuarios (empresa_id, nome, email, senha_hash, cargo, status, data_cadastro) 
-                VALUES (?, ?, ?, ?, ?, ?, NOW())
+                INSERT INTO usuarios (id, empresa_id, nome, email, senha_hash, cargo, status, data_cadastro) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
             ");
             
             // Garantir que todos os valores não estão vazios
-            $empresa_id_int = (int)$empresa_id;
+            $empresa_id_trim = trim($empresa_id);
             $nome_trim = trim($nome);
             $email_trim = trim($email);
             $cargo_trim = trim($cargo);
             
-            if ($empresa_id_int <= 0) {
-                throw new Exception('ID da empresa inválido: ' . $empresa_id);
+            if (empty($empresa_id_trim)) {
+                throw new Exception('ID da empresa não pode estar vazio');
             }
             
             if (empty($nome_trim)) {
@@ -153,7 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             $result = $stmt->execute([
-                $empresa_id_int, 
+                $usuario_id,
+                $empresa_id_trim, 
                 $nome_trim, 
                 $email_trim, 
                 $senha_hash, 
