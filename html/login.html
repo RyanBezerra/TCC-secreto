@@ -224,7 +224,7 @@
       <!-- Mensagens de sucesso/erro serão inseridas aqui -->
       <div id="mensagem-container"></div>
       
-      <form id="login-form" method="POST" action="../php/login.php">
+      <form id="login-form">
         <div class="form-group">
           <label for="email" class="form-label">
             Email
@@ -291,22 +291,49 @@
       console.log('Página de login carregada');
     });
     
-    // Validação do formulário
+    // Validação e envio do formulário
     document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
       const email = document.getElementById('email').value;
       const senha = document.getElementById('senha').value;
       
+      // Validações
       if (!email.includes('@')) {
-        e.preventDefault();
         mostrarMensagem('Digite um email válido', 'erro');
         return;
       }
       
       if (senha.length < 1) {
-        e.preventDefault();
         mostrarMensagem('Digite sua senha', 'erro');
         return;
       }
+      
+      // Enviar dados via AJAX
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('senha', senha);
+      
+      fetch('../php/login.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          mostrarMensagem(data.message, 'sucesso');
+          // Redirecionar para dashboard após 1 segundo
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1000);
+        } else {
+          mostrarMensagem(data.message, 'erro');
+        }
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        mostrarMensagem('Erro ao processar login. Tente novamente.', 'erro');
+      });
     });
     
     function mostrarMensagem(texto, tipo) {
