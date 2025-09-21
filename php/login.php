@@ -1,4 +1,7 @@
 <?php
+// Limpar qualquer output anterior
+ob_clean();
+
 session_start();
 require_once 'config.php';
 
