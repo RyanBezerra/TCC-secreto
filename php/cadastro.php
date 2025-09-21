@@ -4,13 +4,27 @@ require_once 'config.php';
 $mensagem = '';
 $tipoMensagem = '';
 
+// Se for uma requisição AJAX para buscar empresas
+if (isset($_GET['action']) && $_GET['action'] === 'get_empresas') {
+    header('Content-Type: application/json');
+    try {
+        $stmt = $pdo->query("SELECT id, nome_empresa FROM empresas ORDER BY nome_empresa");
+        $empresas = $stmt->fetchAll();
+        echo json_encode($empresas);
+        exit;
+    } catch (PDOException $e) {
+        echo json_encode(['error' => 'Erro ao carregar empresas: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
 // Verificar se o formulário foi enviado
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
     $cargo = trim($_POST['cargo'] ?? '');
-    $empresa_id = trim($_POST['empresa_id'] ?? '');
+    $empresa_nome = trim($_POST['empresa_nome'] ?? '');
     
     // Validações
     $erros = [];
@@ -35,18 +49,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erros[] = 'Cargo é obrigatório';
     }
     
-    if (empty($empresa_id)) {
+    if (empty($empresa_nome)) {
         $erros[] = 'Empresa é obrigatória';
     } else {
-        // Verificar se a empresa existe no banco
+        // Verificar se a empresa existe no banco ou criar uma nova
         try {
-            $stmt = $pdo->prepare("SELECT id FROM empresas WHERE id = ?");
-            $stmt->execute([$empresa_id]);
-            if (!$stmt->fetch()) {
-                $erros[] = 'Empresa selecionada não existe no banco de dados';
+            $stmt = $pdo->prepare("SELECT id FROM empresas WHERE nome_empresa = ?");
+            $stmt->execute([$empresa_nome]);
+            $empresa_existente = $stmt->fetch();
+            
+            if ($empresa_existente) {
+                $empresa_id = $empresa_existente['id'];
+            } else {
+                // Criar nova empresa se não existir
+                $stmt = $pdo->prepare("INSERT INTO empresas (nome_empresa, data_cadastro) VALUES (?, NOW())");
+                $stmt->execute([$empresa_nome]);
+                $empresa_id = $pdo->lastInsertId();
             }
         } catch (PDOException $e) {
-            $erros[] = 'Erro ao verificar empresa: ' . $e->getMessage();
+            $erros[] = 'Erro ao verificar/criar empresa: ' . $e->getMessage();
         }
     }
     
@@ -79,8 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tipoMensagem = 'sucesso';
             
             // Limpar campos do formulário
-            $nome = $email = $cargo = '';
-            $empresa_id = '';
+            $nome = $email = $cargo = $empresa_nome = '';
             
         } catch (PDOException $e) {
             $mensagem = 'Erro ao cadastrar usuário: ' . $e->getMessage();
@@ -92,22 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Buscar empresas para o select
-try {
-    $stmt = $pdo->query("SELECT id, nome_empresa FROM empresas ORDER BY nome_empresa");
-    $empresas = $stmt->fetchAll();
-    
-    // Debug: mostrar empresas disponíveis (remover em produção)
-    if (empty($empresas)) {
-        $mensagem = 'Nenhuma empresa encontrada no banco de dados.';
-        $tipoMensagem = 'erro';
-    }
-} catch (PDOException $e) {
-    $empresas = [];
-    if (empty($mensagem)) {
-        $mensagem = 'Erro ao carregar empresas: ' . $e->getMessage();
-        $tipoMensagem = 'erro';
-    }
+// Inicializar variável empresa_nome se não estiver definida
+if (!isset($empresa_nome)) {
+    $empresa_nome = '';
 }
 ?>
 
@@ -262,16 +269,8 @@ try {
             </div>
             
             <div class="form-group">
-                <label for="empresa_id">Empresa <span class="required">*</span></label>
-                <select id="empresa_id" name="empresa_id" required>
-                    <option value="">Selecione uma empresa</option>
-                    <?php foreach ($empresas as $empresa): ?>
-                        <option value="<?php echo $empresa['id']; ?>" 
-                                <?php echo (isset($empresa_id) && $empresa_id == $empresa['id']) ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($empresa['nome_empresa']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <label for="empresa_nome">Empresa <span class="required">*</span></label>
+                <input type="text" id="empresa_nome" name="empresa_nome" value="<?php echo htmlspecialchars($empresa_nome); ?>" required placeholder="Digite o nome da empresa">
             </div>
             
             <button type="submit" class="btn">Cadastrar Usuário</button>
