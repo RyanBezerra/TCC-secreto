@@ -90,7 +90,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             // Verificar se empresa_id foi definido
             if (!isset($empresa_id) || empty($empresa_id)) {
-                throw new Exception('ID da empresa não foi definido');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID da empresa não foi definido'
+                ]);
+                exit;
             }
             
             // Debug: verificar valores antes da inserção
@@ -104,7 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Verificar se algum valor está vazio
             foreach ($debug_values as $key => $value) {
                 if (empty($value) && $value !== 0) {
-                    throw new Exception("Campo '$key' está vazio: '$value'");
+                    echo json_encode([
+                        'success' => false,
+                        'message' => "Campo '$key' está vazio: '$value'"
+                    ]);
+                    exit;
                 }
             }
             
@@ -114,14 +122,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt_check = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
             $stmt_check->execute([$email]);
             if ($stmt_check->fetch()) {
-                throw new Exception('Email já cadastrado no sistema');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Email já cadastrado no sistema'
+                ]);
+                exit;
             }
             
             // Verificar se a empresa existe
             $stmt_empresa = $pdo->prepare("SELECT id FROM empresas WHERE id = ?");
             $stmt_empresa->execute([$empresa_id]);
             if (!$stmt_empresa->fetch()) {
-                throw new Exception('Empresa não encontrada no sistema');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Empresa não encontrada no sistema'
+                ]);
+                exit;
             }
             
             // Gerar UUID para o usuário
@@ -146,19 +162,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cargo_trim = trim($cargo);
             
             if (empty($empresa_id_trim)) {
-                throw new Exception('ID da empresa não pode estar vazio');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID da empresa não pode estar vazio'
+                ]);
+                exit;
             }
             
             if (empty($nome_trim)) {
-                throw new Exception('Nome não pode estar vazio');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Nome não pode estar vazio'
+                ]);
+                exit;
             }
             
             if (empty($email_trim)) {
-                throw new Exception('Email não pode estar vazio');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Email não pode estar vazio'
+                ]);
+                exit;
             }
             
             if (empty($cargo_trim)) {
-                throw new Exception('Cargo não pode estar vazio');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Cargo não pode estar vazio'
+                ]);
+                exit;
             }
             
             $result = $stmt->execute([
@@ -172,7 +204,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             
             if (!$result) {
-                throw new Exception('Falha ao inserir usuário no banco de dados');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Falha ao inserir usuário no banco de dados'
+                ]);
+                exit;
             }
             
             echo json_encode([

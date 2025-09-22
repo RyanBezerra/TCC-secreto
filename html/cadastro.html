@@ -377,8 +377,14 @@
         method: 'POST',
         body: formData
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Erro na requisição: ' + response.status);
+        }
+        return response.json();
+      })
       .then(data => {
+        console.log('Resposta do servidor:', data); // Debug
         if (data.success) {
           mostrarMensagem(data.message, 'sucesso');
           // Limpar formulário
