@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Esqueceu a Senha - GestiX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="esqueceu-senha.css">
+</head>
+<body>
+  <div class="forgot-container">
+    <div class="brand-logo">
+      <i data-feather="briefcase"></i>
+      <span class="brand-logo-text">GestiX</span>
+    </div>
+    
+    <div class="forgot-header">
+      <h1 class="forgot-title">Esqueceu a senha?</h1>
+      <p class="forgot-subtitle">Digite seu email e enviaremos instruções para redefinir sua senha</p>
+    </div>
+    
+    <div class="form-container">
+      <!-- Mensagens de sucesso/erro serão inseridas aqui -->
+      <div id="mensagem-container"></div>
+      
+      <div class="info-box">
+        <div class="info-box-title">
+          <i data-feather="info"></i>
+          Como funciona
+        </div>
+        <div class="info-box-text">
+          Digite o email cadastrado em sua conta. Se o email for encontrado, enviaremos um link para redefinir sua senha.
+        </div>
+      </div>
+      
+      <form id="forgot-form" method="POST" action="esqueceu-senha.php">
+        <div class="form-group">
+          <label for="email" class="form-label">
+            Email cadastrado
+            <span class="required">*</span>
+          </label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-input" 
+            required
+            placeholder="Digite seu email"
+            autocomplete="email"
+          >
+          <div class="form-help">Digite o email que você usou para se cadastrar</div>
+        </div>
+        
+        <button type="submit" class="btn-send" id="btn-send">
+          <i data-feather="mail"></i>
+          Enviar instruções
+        </button>
+        
+        <div class="divider"></div>
+        
+        <div class="back-actions">
+          <a href="../login/login.html" class="back-link">
+            <i data-feather="arrow-left"></i>
+            Voltar ao login
+          </a>
+          <a href="../cadastro/cadastro.html" class="back-link">
+            <i data-feather="user-plus"></i>
+            Criar nova conta
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/feather-icons"></script>
+  <script>
+    // Inicializar ícones
+    feather.replace();
+    
+    // Inicialização da página
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Página de esqueceu senha carregada');
+    });
+    
+    // Validação do formulário
+    document.getElementById('forgot-form').addEventListener('submit', function(e) {
+      const email = document.getElementById('email').value;
+      const btnSend = document.getElementById('btn-send');
+      
+      if (!email.includes('@')) {
+        e.preventDefault();
+        mostrarMensagem('Digite um email válido', 'erro');
+        return;
+      }
+      
+      // Desabilitar botão durante envio
+      btnSend.disabled = true;
+      btnSend.innerHTML = '<i data-feather="loader"></i> Enviando...';
+      feather.replace();
+    });
+    
+    function mostrarMensagem(texto, tipo) {
+      const container = document.getElementById('mensagem-container');
+      container.innerHTML = `<div class="mensagem ${tipo}">${texto}</div>`;
+      
+      // Scroll para a mensagem
+      container.scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

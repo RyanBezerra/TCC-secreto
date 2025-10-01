@@ -1,9 +1,11 @@
 <?php
 // Limpar qualquer output anterior
-ob_clean();
+if (ob_get_level()) {
+    ob_clean();
+}
 
 session_start();
-require_once 'config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/configDB.php';
 
 // Definir header para JSON
 header('Content-Type: application/json');
