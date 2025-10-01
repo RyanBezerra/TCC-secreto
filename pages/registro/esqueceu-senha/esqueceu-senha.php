@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/configDB.php';
 
 $mensagem = '';
 $tipoMensagem = '';
@@ -442,11 +442,11 @@ function enviarEmailRedefinicao($email, $nome, $link) {
                 <div class="divider"></div>
                 
                 <div class="back-actions">
-                    <a href="login.php" class="back-link">
+                    <a href="../login/login.html" class="back-link">
                         <i data-feather="arrow-left"></i>
                         Voltar ao login
                     </a>
-                    <a href="../html/cadastro.html" class="back-link">
+                    <a href="../cadastro/cadastro.html" class="back-link">
                         <i data-feather="user-plus"></i>
                         Criar nova conta
                     </a>

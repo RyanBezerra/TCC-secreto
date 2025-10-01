@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/configDB.php';
 
 // Definir header para JSON
 header('Content-Type: application/json');
