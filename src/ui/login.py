@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, Signal
 from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor, QPalette
 import qtawesome as qta
-from database import db_manager
+from ..core.database import db_manager
 
 class LoginWindow(QMainWindow):
     # Sinal emitido quando o login é bem-sucedido

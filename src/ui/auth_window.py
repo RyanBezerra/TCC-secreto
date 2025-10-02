@@ -14,7 +14,10 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, Signal, QTimer
 from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor, QPalette
 import qtawesome as qta
-from database import db_manager
+from ..core.database import db_manager
+from ..config import config, constants
+from ..utils import get_logger, validator, LogOperation
+from ..utils.logger import logger_manager
 
 class AuthWindow(QMainWindow):
     # Sinais emitidos quando login ou cadastro são bem-sucedidos
@@ -23,9 +26,10 @@ class AuthWindow(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("EduAI - Autenticação")
-        self.setGeometry(100, 100, 1000, 700)
-        self.setMinimumSize(800, 600)
+        self.logger = logger_manager
+        self.setWindowTitle(f"{config.app.app_name} - Autenticação")
+        self.setGeometry(100, 100, config.ui.window_width, config.ui.window_height)
+        self.setMinimumSize(config.ui.min_window_width, config.ui.min_window_height)
         
         # Centralizar janela
         self._center_window()
@@ -96,7 +100,7 @@ class AuthWindow(QMainWindow):
         logo_icon = QLabel()
         logo_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # Carregar logo personalizada
-        logo_pixmap = QPixmap("Imagens/LogoBrancaSemFundo - Editado.png")
+        logo_pixmap = QPixmap(str(constants.LOGO_WHITE))
         if not logo_pixmap.isNull():
             # Redimensionar para 135x135 mantendo proporção
             logo_pixmap = logo_pixmap.scaled(135, 135, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -651,116 +655,129 @@ class AuthWindow(QMainWindow):
     
     def _attempt_login(self):
         """Tenta fazer login com as credenciais fornecidas"""
-        username = self.login_username_input.text().strip()
-        password = self.login_password_input.text().strip()
-        
-        if not username or not password:
-            self._show_error("Por favor, preencha todos os campos.")
-            return
-        
-        # Desabilitar botão durante autenticação
-        self.login_button.setEnabled(False)
-        self.login_button.setText("Autenticando...")
-        
-        try:
-            # Autenticar usuário no banco de dados
-            user = db_manager.authenticate_user(username, password)
+        with LogOperation("User login attempt"):
+            username = self.login_username_input.text().strip()
+            password = self.login_password_input.text().strip()
             
-            if user:
-                # Login bem-sucedido
-                user_name = user['nome']
-                self._show_success(f"Bem-vindo, {user_name}!")
-                
-                # Emitir sinal de sucesso com informações do usuário
-                self.login_successful.emit(user_name)
-                
-                # Fechar janela de autenticação
-                self.close()
+            # Validar dados de entrada
+            username_validation = validator.validate_username(username)
+            if not username_validation.is_valid:
+                self._show_error("Nome de usuário inválido: " + "; ".join(username_validation.errors))
+                self.logger.log_user_action(username, "LOGIN_ATTEMPT", False, "Invalid username")
                 return
-            else:
-                # Login falhou
-                self._show_error("Nome de usuário ou senha incorretos.")
+            
+            if not password:
+                self._show_error("Senha é obrigatória.")
+                self.logger.log_user_action(username, "LOGIN_ATTEMPT", False, "Empty password")
+                return
         
-        except Exception as e:
-            self._show_error(f"Erro ao conectar com o banco de dados: {str(e)}")
-        
-        finally:
-            # Reabilitar botão
-            self.login_button.setEnabled(True)
-            self.login_button.setText("Entrar")
+            # Desabilitar botão durante autenticação
+            self.login_button.setEnabled(False)
+            self.login_button.setText("Autenticando...")
+            
+            try:
+                # Autenticar usuário no banco de dados
+                user = db_manager.authenticate_user(username, password)
+                
+                if user:
+                    # Login bem-sucedido
+                    user_name = user['nome']
+                    self._show_success(f"Bem-vindo, {user_name}!")
+                    self.logger.log_user_action(user_name, "LOGIN_SUCCESS", True)
+                    
+                    # Emitir sinal de sucesso com informações do usuário
+                    self.login_successful.emit(user_name)
+                    
+                    # Fechar janela de autenticação
+                    self.close()
+                    return
+                else:
+                    # Login falhou
+                    self._show_error("Nome de usuário ou senha incorretos.")
+                    self.logger.log_user_action(username, "LOGIN_FAILED", False, "Invalid credentials")
+            
+            except Exception as e:
+                self._show_error(f"Erro ao conectar com o banco de dados: {str(e)}")
+                self.logger.log_user_action(username, "LOGIN_ERROR", False, str(e))
+            
+            finally:
+                # Reabilitar botão
+                self.login_button.setEnabled(True)
+                self.login_button.setText("Entrar")
     
     def _attempt_signup(self):
         """Tenta criar uma nova conta"""
-        username = self.signup_username_input.text().strip()
-        age_text = self.signup_age_input.text().strip()
-        password = self.signup_password_input.text().strip()
-        confirm_password = self.signup_confirm_password_input.text().strip()
-        
-        # Validações
-        if not username or not age_text or not password or not confirm_password:
-            self._show_error("Por favor, preencha todos os campos.")
-            return
-        
-        # Validar idade
-        try:
-            age = int(age_text)
-            if age < 1 or age > 120:
-                self._show_error("Por favor, digite uma idade válida (entre 1 e 120 anos).")
-                return
-        except ValueError:
-            self._show_error("Por favor, digite uma idade válida (número inteiro).")
-            return
-        
-        # Validar senha
-        if len(password) < 6:
-            self._show_error("A senha deve ter pelo menos 6 caracteres.")
-            return
-        
-        # Validar confirmação de senha
-        if password != confirm_password:
-            self._show_error("As senhas não coincidem.")
-            return
-        
-        # Verificar se usuário já existe
-        existing_user = db_manager.get_user_by_name(username)
-        if existing_user:
-            self._show_error("Este nome de usuário já está em uso. Escolha outro.")
-            return
-        
-        # Desabilitar botão durante cadastro
-        self.signup_button.setEnabled(False)
-        self.signup_button.setText("Criando conta...")
-        
-        try:
-            # Criar usuário no banco de dados
-            success = db_manager.create_user(
-                nome=username,
-                idade=age,
-                senha=password,
-                nota=0.0
-            )
+        with LogOperation("User signup attempt"):
+            username = self.signup_username_input.text().strip()
+            age_text = self.signup_age_input.text().strip()
+            password = self.signup_password_input.text().strip()
+            confirm_password = self.signup_confirm_password_input.text().strip()
             
-            if success:
-                # Cadastro bem-sucedido
-                self._show_success(f"Conta criada com sucesso! Bem-vindo, {username}!")
-                
-                # Emitir sinal de sucesso com informações do usuário
-                self.signup_successful.emit(username)
-                
-                # Fechar janela de autenticação
-                self.close()
+            # Validar dados usando o sistema de validação
+            user_data = {
+                'nome': username,
+                'idade': age_text,
+                'senha': password,
+                'confirmar_senha': confirm_password
+            }
+            
+            validation_result = validator.validate_user_data(user_data)
+            if not validation_result.is_valid:
+                self._show_error("Dados inválidos: " + "; ".join(validation_result.errors))
+                self.logger.log_user_action(username, "SIGNUP_ATTEMPT", False, "Invalid data")
                 return
-            else:
-                # Cadastro falhou
-                self._show_error("Erro ao criar conta. Tente novamente.")
+            
+            # Mostrar avisos se houver
+            if validation_result.has_warnings():
+                warning_msg = "Avisos: " + "; ".join(validation_result.warnings)
+                self.logger.log_user_action(username, "SIGNUP_WARNING", True, warning_msg)
+            
+            age = int(age_text)
         
-        except Exception as e:
-            self._show_error(f"Erro ao conectar com o banco de dados: {str(e)}")
-        
-        finally:
-            # Reabilitar botão
-            self.signup_button.setEnabled(True)
-            self.signup_button.setText("Criar Conta")
+            # Verificar se usuário já existe
+            existing_user = db_manager.get_user_by_name(username)
+            if existing_user:
+                self._show_error("Este nome de usuário já está em uso. Escolha outro.")
+                self.logger.log_user_action(username, "SIGNUP_ATTEMPT", False, "Username already exists")
+                return
+            
+            # Desabilitar botão durante cadastro
+            self.signup_button.setEnabled(False)
+            self.signup_button.setText("Criando conta...")
+            
+            try:
+                # Criar usuário no banco de dados
+                success = db_manager.create_user(
+                    nome=username,
+                    idade=age,
+                    senha=password,
+                    nota=0.0
+                )
+                
+                if success:
+                    # Cadastro bem-sucedido
+                    self._show_success(f"Conta criada com sucesso! Bem-vindo, {username}!")
+                    self.logger.log_user_action(username, "SIGNUP_SUCCESS", True)
+                    
+                    # Emitir sinal de sucesso com informações do usuário
+                    self.signup_successful.emit(username)
+                    
+                    # Fechar janela de autenticação
+                    self.close()
+                    return
+                else:
+                    # Cadastro falhou
+                    self._show_error("Erro ao criar conta. Tente novamente.")
+                    self.logger.log_user_action(username, "SIGNUP_FAILED", False, "Database error")
+            
+            except Exception as e:
+                self._show_error(f"Erro ao conectar com o banco de dados: {str(e)}")
+                self.logger.log_user_action(username, "SIGNUP_ERROR", False, str(e))
+            
+            finally:
+                # Reabilitar botão
+                self.signup_button.setEnabled(True)
+                self.signup_button.setText("Criar Conta")
     
     def _show_error(self, message):
         """Mostra mensagem de erro"""

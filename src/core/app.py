@@ -12,8 +12,11 @@ from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
 import json
 import time
 import qtawesome as qta
-from auth_window import AuthWindow
-from profile import ProfileWindow
+from ..ui.auth_window import AuthWindow
+from ..ui.profile import ProfileWindow
+from ..config import config, constants
+from ..utils import get_logger, search_validator, LogOperation
+from ..utils.logger import logger_manager
 
 class EduAIApp(QMainWindow):
     # Sinal emitido quando o usuário quer fazer logout
@@ -21,9 +24,10 @@ class EduAIApp(QMainWindow):
     
     def __init__(self, user_name="Usuário"):
         super().__init__()
+        self.logger = logger_manager
         self.user_name = user_name
-        self.setWindowTitle(f"EduAI - Plataforma de Ensino Inteligente - {user_name}")
-        self.setGeometry(100, 100, 1200, 800)
+        self.setWindowTitle(f"{config.app.app_name} - {config.app.app_description} - {user_name}")
+        self.setGeometry(100, 100, config.ui.window_width, config.ui.window_height)
         
         # Widget central padrão (sem scroll externo)
         central_widget = QWidget()
@@ -69,7 +73,7 @@ class EduAIApp(QMainWindow):
         
         # Logo personalizada
         logo_icon = QLabel()
-        logo_pixmap = QPixmap("Imagens/LogoPretaSemFundo - Editado.png")
+        logo_pixmap = QPixmap(str(constants.LOGO_BLACK))
         if not logo_pixmap.isNull():
             # Redimensionar para 48x48 mantendo proporção
             logo_pixmap = logo_pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -80,7 +84,7 @@ class EduAIApp(QMainWindow):
         logo_container.addWidget(logo_icon)
         
         # Título
-        logo_label = QLabel("EduAI - Plataforma de Ensino Inteligente")
+        logo_label = QLabel(f"{config.app.app_name} - {config.app.app_description}")
         logo_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
         logo_label.setFont(logo_font)
         logo_label.setStyleSheet("color: #2c3e50;")
@@ -520,15 +524,27 @@ class EduAIApp(QMainWindow):
         
     def _on_search(self):
         """Processa a busca da aula"""
-        query = self.search_input.text().strip()
-        if not query:
-            return
+        with LogOperation("Search lesson"):
+            query = self.search_input.text().strip()
             
-        # Adicionar ao histórico com limite de 3 itens
-        self.search_history.append(query)
-        if len(self.search_history) > 3:
-            self.search_history = self.search_history[-3:]
-        self._update_history_display()
+            # Validar query de busca
+            validation_result = search_validator.validate_search_query(query)
+            if not validation_result.is_valid:
+                self._show_error("Query de busca inválida: " + "; ".join(validation_result.errors))
+                self.logger.log_user_action(self.user_name, "SEARCH_ATTEMPT", False, "Invalid query")
+                return
+            
+            # Mostrar avisos se houver
+            if validation_result.has_warnings():
+                self.logger.log_user_action(self.user_name, "SEARCH_WARNING", True, "; ".join(validation_result.warnings))
+                
+            # Adicionar ao histórico com limite de 3 itens
+            self.search_history.append(query)
+            if len(self.search_history) > 3:
+                self.search_history = self.search_history[-3:]
+            self._update_history_display()
+            
+            self.logger.log_user_action(self.user_name, "SEARCH_QUERY", True, f"Query: {query}")
         
         # Simular geração de aula
         self.search_button.setEnabled(False)
@@ -733,8 +749,8 @@ Para mais informações, entre em contato conosco!"""
 class EduAIManager:
     """Gerenciador principal da aplicação EduAI"""
     
-    def __init__(self):
-        self.app = QApplication(sys.argv)
+    def __init__(self, app=None):
+        self.app = app or QApplication.instance()
         self.current_window = None
     
     def start(self):

@@ -5,33 +5,52 @@ Sistema de conexão e operações com PostgreSQL
 
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 import hashlib
 import bcrypt
 from datetime import datetime
 from typing import Optional, Dict, List, Tuple
-import logging
+from contextlib import contextmanager
+from ..config import config
+from ..utils.logger import get_logger, LogOperation
+from ..utils.cache import cached, get_user_cache, get_aula_cache, get_historico_cache
+from ..utils.validators import db_validator
 
 # Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger('database')
 
 class DatabaseManager:
     """Classe para gerenciar conexões e operações com o banco de dados PostgreSQL"""
     
-    def __init__(self):
-        # Configurações de conexão com o banco Railway
-        self.host = "centerbeam.proxy.rlwy.net"
-        self.port = 38802
-        self.database = "railway"
-        self.user = "postgres"
-        self.password = "wQzRPlMlCdkfNjwMkZHyfabrZubqFKPC"
-        self.connection = None
-        self.cursor = None
+    _instance = None
+    _initialized = False
     
-    def connect(self) -> bool:
-        """Estabelece conexão com o banco de dados"""
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def __init__(self):
+        if not DatabaseManager._initialized:
+            # Configurações de conexão
+            self.host = config.database.host
+            self.port = config.database.port
+            self.database = config.database.database
+            self.user = config.database.user
+            self.password = config.database.password
+            
+            # Pool de conexões
+            self.connection_pool = None
+            self._initialize_pool()
+            
+            DatabaseManager._initialized = True
+    
+    def _initialize_pool(self):
+        """Inicializa o pool de conexões"""
         try:
-            self.connection = psycopg2.connect(
+            self.connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=config.database.max_connections,
                 host=self.host,
                 port=self.port,
                 database=self.database,
@@ -39,50 +58,72 @@ class DatabaseManager:
                 password=self.password,
                 cursor_factory=psycopg2.extras.RealDictCursor
             )
-            self.cursor = self.connection.cursor()
-            logger.info("Conexão com banco de dados estabelecida com sucesso")
-            return True
+            logger.info("Pool de conexões inicializado com sucesso")
         except psycopg2.Error as e:
-            logger.error(f"Erro ao conectar com banco de dados: {e}")
-            return False
+            logger.error(f"Erro ao inicializar pool de conexões: {e}")
+            self.connection_pool = None
     
-    def disconnect(self):
-        """Fecha a conexão com o banco de dados"""
-        if self.cursor:
-            self.cursor.close()
-        if self.connection:
-            self.connection.close()
-        logger.info("Conexão com banco de dados fechada")
+    @contextmanager
+    def get_connection(self):
+        """Context manager para obter conexão do pool"""
+        connection = None
+        try:
+            if not self.connection_pool:
+                raise psycopg2.Error("Pool de conexões não inicializado")
+            
+            connection = self.connection_pool.getconn()
+            yield connection
+        except psycopg2.Error as e:
+            logger.error(f"Erro ao obter conexão: {e}")
+            raise
+        finally:
+            if connection:
+                self.connection_pool.putconn(connection)
+    
+    @contextmanager
+    def get_cursor(self):
+        """Context manager para obter cursor"""
+        with self.get_connection() as connection:
+            cursor = connection.cursor()
+            try:
+                yield cursor
+                connection.commit()
+            except Exception as e:
+                connection.rollback()
+                raise
+            finally:
+                cursor.close()
+    
+    def close_pool(self):
+        """Fecha o pool de conexões"""
+        if self.connection_pool:
+            self.connection_pool.closeall()
+            logger.info("Pool de conexões fechado")
     
     def execute_query(self, query: str, params: tuple = None) -> List[Dict]:
         """Executa uma consulta SELECT e retorna os resultados"""
-        try:
-            if not self.connection or self.connection.closed:
-                if not self.connect():
-                    return []
-            
-            self.cursor.execute(query, params)
-            results = self.cursor.fetchall()
-            return [dict(row) for row in results]
-        except psycopg2.Error as e:
-            logger.error(f"Erro ao executar consulta: {e}")
-            return []
+        with LogOperation(f"Query: {query[:50]}..."):
+            try:
+                with self.get_cursor() as cursor:
+                    cursor.execute(query, params)
+                    results = cursor.fetchall()
+                    logger.info(f"Database SELECT operation successful - returned {len(results)} rows")
+                    return [dict(row) for row in results]
+            except psycopg2.Error as e:
+                logger.error(f"Database SELECT operation failed: {str(e)}")
+                return []
     
     def execute_update(self, query: str, params: tuple = None) -> bool:
         """Executa uma consulta INSERT, UPDATE ou DELETE"""
-        try:
-            if not self.connection or self.connection.closed:
-                if not self.connect():
-                    return False
-            
-            self.cursor.execute(query, params)
-            self.connection.commit()
-            return True
-        except psycopg2.Error as e:
-            logger.error(f"Erro ao executar atualização: {e}")
-            if self.connection:
-                self.connection.rollback()
-            return False
+        with LogOperation(f"Update: {query[:50]}..."):
+            try:
+                with self.get_cursor() as cursor:
+                    cursor.execute(query, params)
+                    logger.info("Database UPDATE operation successful")
+                    return True
+            except psycopg2.Error as e:
+                logger.error(f"Database UPDATE operation failed: {str(e)}")
+                return False
     
     def hash_password(self, password: str) -> str:
         """Cria hash da senha usando SHA-256 (para compatibilidade)"""
@@ -122,6 +163,7 @@ class DatabaseManager:
         params = (nome, idade, senha_hash, nota, datetime.now())
         return self.execute_update(query, params)
     
+    @cached('users', ttl=300)
     def get_user_by_name(self, nome: str) -> Optional[Dict]:
         """Busca usuário pelo nome"""
         query = "SELECT * FROM usuario WHERE nome = %s"
@@ -132,8 +174,15 @@ class DatabaseManager:
         """Busca usuário pelo nome de usuário (alias para get_user_by_name)"""
         return self.get_user_by_name(username)
     
+    @cached('users', ttl=300)
     def get_user_by_id(self, user_id: int) -> Optional[Dict]:
         """Busca usuário pelo ID"""
+        # Validar ID
+        validation = db_validator.validate_user_id(user_id)
+        if not validation.is_valid:
+            logger.error(f"Invalid user ID: {validation.errors}")
+            return None
+            
         query = "SELECT * FROM usuario WHERE id = %s"
         results = self.execute_query(query, (user_id,))
         return results[0] if results else None
@@ -257,18 +306,14 @@ class DatabaseManager:
     def test_connection(self) -> bool:
         """Testa a conexão com o banco de dados"""
         try:
-            if not self.connect():
-                return False
-            
-            # Testar consulta simples
-            self.cursor.execute("SELECT 1")
-            result = self.cursor.fetchone()
-            return result is not None
+            with self.get_cursor() as cursor:
+                cursor.execute("SELECT 1")
+                result = cursor.fetchone()
+                logger.info("Teste de conexão com banco de dados: SUCESSO")
+                return result is not None
         except psycopg2.Error as e:
             logger.error(f"Erro ao testar conexão: {e}")
             return False
-        finally:
-            self.disconnect()
 
 # Instância global do gerenciador de banco de dados
 db_manager = DatabaseManager()

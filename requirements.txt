@@ -13,6 +13,13 @@ psycopg2-binary>=2.9.0
 # Bcrypt - Para hash seguro de senhas
 bcrypt>=4.0.0
 
+# Dependências adicionais para funcionalidades melhoradas
+dataclasses>=0.6; python_version<"3.7"  # Para compatibilidade com Python < 3.7
+typing-extensions>=4.0.0  # Para type hints avançados
+
 # Para desenvolvimento (opcional)
 # pip install pillow  # Para manipulação de imagens (se necessário no futuro)
 # pip install requests  # Para requisições HTTP (se integrar com APIs)
+# pip install pytest  # Para testes (desenvolvimento)
+# pip install black  # Para formatação de código (desenvolvimento)
+# pip install flake8  # Para linting (desenvolvimento)

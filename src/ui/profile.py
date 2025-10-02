@@ -716,7 +716,7 @@ class ProfileWindow(QMainWindow):
     def _save_changes(self):
         """Salva as alterações no banco de dados"""
         try:
-            from database import db_manager
+            from ..core.database import db_manager
             
             # Validar dados
             nome = self.name_input.text().strip()
