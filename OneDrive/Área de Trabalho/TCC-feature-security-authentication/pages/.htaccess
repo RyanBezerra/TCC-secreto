@@ -1,0 +1,11 @@
+# Proteger páginas sensíveis - requer autenticação
+# Aplicar a todas as páginas que precisam de login
+
+RewriteEngine On
+
+# Lista de páginas que requerem autenticação
+RewriteCond %{REQUEST_FILENAME} \.html$
+RewriteCond %{REQUEST_URI} !/registro/login/login\.html$
+RewriteCond %{REQUEST_URI} !/registro/cadastro/cadastro\.html$
+RewriteCond %{REQUEST_URI} !/registro/esqueceu-senha/esqueceu-senha\.html$
+RewriteRule ^(.*)$ ../../auth_check.php [L]

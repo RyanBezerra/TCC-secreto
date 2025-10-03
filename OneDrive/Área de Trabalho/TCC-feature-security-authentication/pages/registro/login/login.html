@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - GestiX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="brand-logo">
+      <i data-feather="briefcase"></i>
+      <span class="brand-logo-text">GestiX</span>
+    </div>
+    
+    <div class="login-header">
+      <h1 class="login-title">Bem-vindo de volta</h1>
+      <p class="login-subtitle">Faça login para acessar sua conta</p>
+    </div>
+    
+    <div class="form-container">
+      <!-- Mensagens de sucesso/erro serão inseridas aqui -->
+      <div id="mensagem-container"></div>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email" class="form-label">
+            Email
+            <span class="required">*</span>
+          </label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-input" 
+            required
+            placeholder="Digite seu email"
+            autocomplete="email"
+          >
+          <div class="form-help">Digite o email cadastrado</div>
+        </div>
+        
+        <div class="form-group">
+          <label for="senha" class="form-label">
+            Senha
+            <span class="required">*</span>
+          </label>
+          <input 
+            type="password" 
+            id="senha" 
+            name="senha" 
+            class="form-input" 
+            required
+            placeholder="Digite sua senha"
+            autocomplete="current-password"
+          >
+          <div class="form-help">Digite sua senha de acesso</div>
+        </div>
+        
+        <button type="submit" class="btn-login">
+          <i data-feather="log-in"></i>
+          Entrar
+        </button>
+        
+        <div class="divider"></div>
+        
+        <div class="login-actions">
+          <a href="../cadastro/cadastro.html" class="login-link">
+            <i data-feather="user-plus"></i>
+            Criar nova conta
+          </a>
+          <a href="#" class="login-link" onclick="esqueceuSenha()">
+            <i data-feather="help-circle"></i>
+            Esqueceu a senha?
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/feather-icons"></script>
+  <script src="/index.js"></script>
+  <script>
+    // Inicializar ícones
+    feather.replace();
+    
+    // Inicialização da página
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Página de login carregada');
+    });
+    
+    // Validação e envio do formulário
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+      
+      // Validações
+      if (!email.includes('@')) {
+        mostrarMensagem('Digite um email válido', 'erro');
+        return;
+      }
+      
+      if (senha.length < 1) {
+        mostrarMensagem('Digite sua senha', 'erro');
+        return;
+      }
+      
+      // Enviar dados via AJAX
+      console.log('Enviando dados:', { email, senha });
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('senha', senha);
+      
+      fetch('login.php', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+      })
+      .then(response => {
+        console.log('Resposta recebida:', response.status, response.statusText);
+        // Verificar se a resposta é JSON
+        const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
+        if (contentType && contentType.includes('application/json')) {
+          return response.json();
+        } else {
+          // Se não for JSON, tratar como erro
+          console.error('Resposta não é JSON');
+          throw new Error('Resposta inválida do servidor');
+        }
+      })
+      .then(data => {
+        if (data.success) {
+          mostrarMensagem(data.message, 'sucesso');
+          // Redirecionar para dashboard após 1 segundo
+          setTimeout(() => {
+            window.location.href = '/pages/dashboard/dashboard.php';
+          }, 1000);
+        } else {
+          mostrarMensagem(data.message, 'erro');
+        }
+      })
+      .catch(error => {
+        console.error('Erro:', error);
+        mostrarMensagem('Erro ao processar login. Tente novamente.', 'erro');
+      });
+    });
+    
+    function mostrarMensagem(texto, tipo) {
+      const container = document.getElementById('mensagem-container');
+      
+      // Criar popup mais visível
+      const popup = document.createElement('div');
+      popup.className = `mensagem ${tipo}`;
+      popup.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        max-width: 400px;
+        padding: 16px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideDown 0.3s ease-out;
+      `;
+      
+      if (tipo === 'sucesso') {
+        popup.style.backgroundColor = '#d4edda';
+        popup.style.color = '#155724';
+        popup.style.border = '1px solid #c3e6cb';
+      } else {
+        popup.style.backgroundColor = '#f8d7da';
+        popup.style.color = '#721c24';
+        popup.style.border = '1px solid #f5c6cb';
+      }
+      
+      popup.innerHTML = texto;
+      
+      // Adicionar CSS para animação
+      if (!document.getElementById('popup-styles')) {
+        const style = document.createElement('style');
+        style.id = 'popup-styles';
+        style.textContent = `
+          @keyframes slideDown {
+            from {
+              opacity: 0;
+              transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(-50%) translateY(0);
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      // Remover popup anterior se existir
+      const existingPopup = document.querySelector('.mensagem[style*="position: fixed"]');
+      if (existingPopup) {
+        existingPopup.remove();
+      }
+      
+      // Adicionar popup ao body
+      document.body.appendChild(popup);
+      
+      // Remover popup após 5 segundos
+      setTimeout(() => {
+        if (popup.parentNode) {
+          popup.style.animation = 'slideDown 0.3s ease-out reverse';
+          setTimeout(() => {
+            if (popup.parentNode) {
+              popup.remove();
+            }
+          }, 300);
+        }
+      }, 5000);
+      
+      // Scroll para a mensagem no container também
+      container.innerHTML = `<div class="mensagem ${tipo}">${texto}</div>`;
+      container.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function esqueceuSenha() {
+      const email = document.getElementById('email').value;
+      if (email && email.includes('@')) {
+        mostrarMensagem('Funcionalidade de recuperação de senha será implementada em breve', 'sucesso');
+      } else {
+        mostrarMensagem('Digite seu email primeiro para recuperar a senha', 'erro');
+      }
+    }
+  </script>
+</body>
+</html>
