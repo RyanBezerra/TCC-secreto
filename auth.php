@@ -19,7 +19,7 @@ class AuthManager {
      */
     public function isAuthenticated() {
         return isset($_SESSION['logado']) && $_SESSION['logado'] === true && 
-               isset($_SESSION['usuario_id']) && !empty($_SESSION['usuario_id']);
+               isset($_SESSION['usuario_email']) && !empty($_SESSION['usuario_email']);
     }
     
     /**

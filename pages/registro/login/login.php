@@ -4,7 +4,7 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-require_once '../../auth.php';
+require_once __DIR__ . '/../../../auth.php';
 
 // Definir header para JSON
 header('Content-Type: application/json');

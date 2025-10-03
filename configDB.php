@@ -16,6 +16,10 @@ try {
         PDO::ATTR_TIMEOUT => 10
     ]);
 } catch (PDOException $e) {
-    die("Erro de conexão: " . $e->getMessage());
+    // Não encerrar a execução aqui. Permitir que as camadas superiores tratem o erro.
+    $pdo = null;
+    $GLOBALS['DB_CONNECTION_ERROR'] = $e->getMessage();
 }
+
+// Sem fallback SQLite - usar apenas MySQL remoto
 ?>

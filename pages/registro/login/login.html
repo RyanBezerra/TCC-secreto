@@ -112,21 +112,26 @@
       }
       
       // Enviar dados via AJAX
+      console.log('Enviando dados:', { email, senha });
       const formData = new FormData();
       formData.append('email', email);
       formData.append('senha', senha);
       
       fetch('login.php', {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'same-origin'
       })
       .then(response => {
+        console.log('Resposta recebida:', response.status, response.statusText);
         // Verificar se a resposta é JSON
         const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
         if (contentType && contentType.includes('application/json')) {
           return response.json();
         } else {
           // Se não for JSON, tratar como erro
+          console.error('Resposta não é JSON');
           throw new Error('Resposta inválida do servidor');
         }
       })
@@ -135,7 +140,7 @@
           mostrarMensagem(data.message, 'sucesso');
           // Redirecionar para dashboard após 1 segundo
           setTimeout(() => {
-            window.location.href = '/pages/dashboard/dashboard.html';
+            window.location.href = '/pages/dashboard/dashboard.php';
           }, 1000);
         } else {
           mostrarMensagem(data.message, 'erro');
