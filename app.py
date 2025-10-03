@@ -1,0 +1,563 @@
+"""
+EduAI - Plataforma de Ensino Inteligente
+"""
+
+import sys
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
+                             QHBoxLayout, QLabel, QLineEdit, QPushButton, 
+                             QTextEdit, QFrame, QScrollArea, QGridLayout, QGraphicsDropShadowEffect,
+                             QSizePolicy)
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
+from PyQt6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
+import json
+import time
+import qtawesome as qta
+
+class EduAIApp(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("EduAI - Plataforma de Ensino Inteligente")
+        self.setGeometry(100, 100, 1200, 800)
+        
+        # Widget central padrão (sem scroll externo)
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        # Layout principal em grid (2 colunas)
+        main_layout = QGridLayout(central_widget)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(30, 30, 30, 30)
+        self.main_layout = main_layout
+        
+        # Criar seções
+        self._create_header(main_layout)
+        self._create_search_section(main_layout)
+        self._create_selected_class_section(main_layout)
+        self._create_side_panel(main_layout)
+        self._create_footer(main_layout)
+        
+        # Aplicar estilo
+        self._apply_styles()
+
+        # Ajuste responsivo inicial
+        self._update_responsive_layout()
+        self._apply_scale_metrics()
+
+        # Iniciar maximizada (tela cheia com borda)
+        self.showMaximized()
+        
+        # Histórico de buscas
+        self.search_history = []
+        
+    def _create_header(self, parent_layout):
+        """Cria o cabeçalho com logo e título"""
+        header_widget = QWidget()
+        header_layout = QVBoxLayout(header_widget)
+        
+        # Logo e título
+        logo_label = QLabel("▣ EduAI - Plataforma de Ensino Inteligente")
+        logo_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
+        logo_label.setFont(logo_font)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        logo_label.setStyleSheet("color: #2c3e50; margin-bottom: 5px;")
+        header_layout.addWidget(logo_label)
+        
+        # Subtítulo
+        subtitle_label = QLabel("Faça uma pergunta sobre o que deseja aprender e nossa IA selecionará a melhor aula para você")
+        subtitle_font = QFont("Segoe UI", 11)
+        subtitle_label.setFont(subtitle_font)
+        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subtitle_label.setStyleSheet("color: #7f8c8d; margin-bottom: 20px;")
+        subtitle_label.setWordWrap(True)
+        header_layout.addWidget(subtitle_label)
+        
+        parent_layout.addWidget(header_widget, 0, 0, 1, 2)
+        
+    def _create_search_section(self, parent_layout):
+        """Cria a seção de busca (esquerda superior)"""
+        search_card = QFrame()
+        search_card.setObjectName("searchCard")
+        search_layout = QVBoxLayout(search_card)
+        self.search_card = search_card
+        search_layout.setSpacing(8)
+        
+        # Título com ícone (Font Awesome)
+        title_row = QHBoxLayout()
+        title_icon_label = QLabel()
+        title_icon_label.setPixmap(qta.icon('fa5s.comment', color="#000000").pixmap(20, 20))
+        title_row.addWidget(title_icon_label)
+        title_label = QLabel("O que você gostaria de aprender hoje?")
+        title_font = QFont("Segoe UI", 14, QFont.Weight.Bold)
+        title_label.setFont(title_font)
+        title_label.setStyleSheet("color: #2c3e50; margin-bottom: 10px;")
+        title_row.addWidget(title_label)
+        title_row.addStretch()
+        search_layout.addLayout(title_row)
+        
+        # Instrução
+        instruction_label = QLabel("Digite sua pergunta de forma natural, como \"Como programar em Python?\" ou \"Quero aprender álgebra\"")
+        instruction_font = QFont("Segoe UI", 10)
+        instruction_label.setFont(instruction_font)
+        instruction_label.setStyleSheet("color: #7f8c8d; margin-bottom: 15px;")
+        instruction_label.setWordWrap(True)
+        search_layout.addWidget(instruction_label)
+        
+        # Campo de entrada e botão
+        input_layout = QHBoxLayout()
+        
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Ex: Como fazer equações de primeiro grau?")
+        self.search_input.setFont(QFont("Segoe UI", 11))
+        self.search_input.setStyleSheet("""
+            QLineEdit {
+                padding: 8px;
+                border: 2px solid #ecf0f1;
+                border-radius: 6px;
+                background-color: white;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border-color: #3498db;
+            }
+        """)
+        input_layout.addWidget(self.search_input)
+        
+        # Botão de busca (com ícone Font Awesome)
+        self.search_button = QPushButton("Buscar")
+        self.search_button.setIcon(qta.icon('fa5s.search', color="#ffffff"))
+        self.search_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        self.search_button.setStyleSheet("""
+            QPushButton {
+                background-color: #000000;
+                color: #ffffff;
+                padding: 8px 14px;
+                border: none;
+                border-radius: 8px;
+                font-size: 13px;
+                min-width: 90px;
+            }
+            QPushButton:hover {
+                background-color: #111111;
+            }
+            QPushButton:pressed {
+                background-color: #222222;
+            }
+        """)
+        self.search_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.search_button.clicked.connect(self._on_search)
+        input_layout.addWidget(self.search_button)
+        
+        # Igualar altura do botão à do input e ajustar o tamanho do ícone
+        input_height = self.search_input.sizeHint().height()
+        self.search_input.setFixedHeight(input_height)
+        self.search_button.setFixedHeight(input_height)
+        self.search_button.setIconSize(QSize(int(input_height * 0.5), int(input_height * 0.5)))
+        
+        search_layout.addLayout(input_layout)
+        # Sombra
+        self._apply_card_shadow(search_card)
+        parent_layout.addWidget(search_card, 1, 0, 1, 2)
+        
+    def _create_selected_class_section(self, parent_layout):
+        """Cria a seção de aula selecionada (esquerda inferior)"""
+        class_card = QFrame()
+        class_card.setObjectName("classCard")
+        class_layout = QVBoxLayout(class_card)
+        class_layout.setContentsMargins(0, 0, 0, 0)
+        self.class_card = class_card
+        class_layout.setSpacing(8)
+        
+        # Ícone de monitor (Font Awesome)
+        monitor_label = QLabel()
+        monitor_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        monitor_label.setPixmap(qta.icon('fa5s.book', color="#000000").pixmap(36, 36))
+        monitor_label.setStyleSheet("margin: 20px 0;")
+        class_layout.addWidget(monitor_label)
+        
+        # Texto de nenhuma aula selecionada
+        no_class_label = QLabel("Nenhuma aula selecionada")
+        no_class_font = QFont("Segoe UI", 12, QFont.Weight.Bold)
+        no_class_label.setFont(no_class_font)
+        no_class_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        no_class_label.setStyleSheet("color: #7f8c8d; margin-bottom: 10px;")
+        class_layout.addWidget(no_class_label)
+        
+        # Instrução
+        instruction_label = QLabel("Faça uma pergunta para que nossa IA encontre a aula ideal para você")
+        instruction_font = QFont("Segoe UI", 10)
+        instruction_label.setFont(instruction_font)
+        instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        instruction_label.setStyleSheet("color: #95a5a6;")
+        instruction_label.setWordWrap(True)
+        class_layout.addWidget(instruction_label)
+        
+        # Área de resultado (inicialmente oculta)
+        self.result_text = QTextEdit()
+        self.result_text.setFont(QFont("Segoe UI", 10))
+        self.result_text.setStyleSheet("""
+            QTextEdit {
+                border: 2px solid #ecf0f1;
+                border-radius: 8px;
+                padding: 10px;
+                background-color: white;
+                line-height: 1.6;
+            }
+        """)
+        self.result_text.setVisible(False)
+        class_layout.addWidget(self.result_text)
+        
+        # Sombra
+        self._apply_card_shadow(class_card)
+        parent_layout.addWidget(class_card, 2, 0)
+        parent_layout.setAlignment(class_card, Qt.AlignmentFlag.AlignTop)
+        
+    def _create_side_panel(self, parent_layout):
+        """Cria o painel lateral direito"""
+        side_widget = QWidget()
+        side_layout = QVBoxLayout(side_widget)
+        side_layout.setContentsMargins(0, 0, 0, 0)
+        self.side_widget = side_widget
+        side_layout.setSpacing(20)
+        side_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.MinimumExpanding)
+        
+        # Card de histórico
+        history_card = QFrame()
+        history_card.setObjectName("historyCard")
+        history_layout = QVBoxLayout(history_card)
+        history_layout.setContentsMargins(0, 0, 0, 0)
+        history_layout.setSpacing(8)
+        history_card.setMinimumHeight(220)
+        self.history_card = history_card
+        
+        # Título do histórico (com ícone Font Awesome)
+        history_row = QHBoxLayout()
+        history_icon = QLabel()
+        history_icon.setPixmap(qta.icon('fa5s.history', color="#000000").pixmap(20, 20))
+        history_row.addWidget(history_icon)
+        history_title = QLabel("Histórico de Buscas")
+        history_title.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        history_title.setStyleSheet("color: #2c3e50; margin-bottom: 10px;")
+        history_row.addWidget(history_title)
+        history_row.addStretch()
+        history_layout.addLayout(history_row)
+        
+        # Subtítulo
+        history_subtitle = QLabel("Suas últimas perguntas e aulas encontradas")
+        history_subtitle.setFont(QFont("Segoe UI", 10))
+        history_subtitle.setStyleSheet("color: #7f8c8d; margin-bottom: 15px;")
+        history_subtitle.setWordWrap(True)
+        history_layout.addWidget(history_subtitle)
+        
+        # Lista de histórico
+        self.history_list = QLabel("Nenhuma busca realizada ainda")
+        self.history_list.setFont(QFont("Segoe UI", 9))
+        self.history_list.setStyleSheet("color: #95a5a6;")
+        self.history_list.setWordWrap(True)
+        self.history_list.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        history_layout.addWidget(self.history_list)
+        
+        # Sombra
+        self._apply_card_shadow(history_card)
+        side_layout.addWidget(history_card, 1)
+        
+        # Card de dica
+        tip_card = QFrame()
+        tip_card.setObjectName("tipCard")
+        tip_layout = QVBoxLayout(tip_card)
+        tip_layout.setContentsMargins(0, 0, 0, 0)
+        tip_layout.setSpacing(8)
+        tip_card.setMinimumHeight(160)
+        self.tip_card = tip_card
+        
+        # Título da dica (com ícone Font Awesome)
+        tip_row = QHBoxLayout()
+        tip_icon = QLabel()
+        tip_icon.setPixmap(qta.icon('fa5s.lightbulb', color="#000000").pixmap(20, 20))
+        tip_row.addWidget(tip_icon)
+        tip_title = QLabel("Dica:")
+        tip_title.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        tip_title.setStyleSheet("color: #2c3e50; margin-bottom: 10px;")
+        tip_row.addWidget(tip_title)
+        tip_row.addStretch()
+        tip_layout.addLayout(tip_row)
+        
+        # Texto da dica
+        tip_text = QLabel("Seja específico em suas perguntas. Em vez de \"matemática\", pergunte \"como resolver equações do segundo grau?\".")
+        tip_text.setFont(QFont("Segoe UI", 10))
+        tip_text.setStyleSheet("color: #7f8c8d; line-height: 1.5;")
+        tip_text.setWordWrap(True)
+        tip_layout.addWidget(tip_text)
+        
+        # Sombra
+        self._apply_card_shadow(tip_card)
+        side_layout.addWidget(tip_card, 1)
+        
+        parent_layout.addWidget(side_widget, 2, 1, 1, 1)
+        parent_layout.setAlignment(side_widget, Qt.AlignmentFlag.AlignTop)
+        
+    def _create_footer(self, parent_layout):
+        """Cria o rodapé com botão de ajuda"""
+        footer_widget = QWidget()
+        footer_layout = QHBoxLayout(footer_widget)
+        self.footer_widget = footer_widget
+        footer_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Espaçador à esquerda
+        footer_layout.addStretch()
+        
+        # Botão de ajuda (com ícone Font Awesome)
+        help_button = QPushButton()
+        help_button.setIcon(qta.icon('fa5s.question', color="#ffffff"))
+        help_button.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        help_button.setFixedSize(44, 44)
+        help_button.setStyleSheet("""
+            QPushButton {
+                background-color: #000000;
+                color: white;
+                border: none;
+                border-radius: 22px;
+            }
+            QPushButton:hover {
+                background-color: #111111;
+            }
+        """)
+        help_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        help_button.clicked.connect(self._show_help)
+        # Tornar o botão "sticky": reparent para a janela e posicionar via resizeEvent
+        self.help_button = help_button
+        self.help_button.setParent(self)
+        self.help_button.show()
+
+        # Footer fica sem altura visível (apenas placeholder para agrid)
+        self.footer_widget.setMaximumHeight(0)
+        
+        parent_layout.addWidget(footer_widget, 3, 0, 1, 2)
+        
+    def _apply_styles(self):
+        """Aplica estilos globais"""
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #ffffff;
+            }
+            QFrame#searchCard, QFrame#classCard, QFrame#historyCard, QFrame#tipCard {
+                background-color: #ffffff;
+                border-radius: 10px;
+                padding: 14px;
+                border: 1px solid #d1d5db;
+            }
+            QLabel {
+                color: #111827;
+            }
+            QLabel#title {
+                color: #111827;
+            }
+            QLineEdit {
+                background: #ffffff;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+            }
+            QTextEdit {
+                background: #ffffff;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+            }
+            QPushButton {
+                letter-spacing: 0.2px;
+            }
+        """)
+
+    def _apply_card_shadow(self, widget: QWidget) -> None:
+        # Sombras desativadas
+        widget.setGraphicsEffect(None)
+        
+    def _update_responsive_layout(self):
+        """Alterna entre 1 e 2 colunas baseado na largura da janela."""
+        width = self.width()
+        if not hasattr(self, 'main_layout'):
+            return
+        # Remover widgets para reposicionar sem duplicar
+        for w in [self.search_card, self.class_card, self.side_widget, self.footer_widget]:
+            try:
+                self.main_layout.removeWidget(w)
+            except Exception:
+                pass
+        if width < 900:
+            # 1 coluna: busca, aula, painel, rodapé
+            self.main_layout.setColumnStretch(0, 1)
+            self.main_layout.setColumnStretch(1, 0)
+            self.main_layout.addWidget(self.search_card, 1, 0, 1, 1)
+            self.main_layout.addWidget(self.class_card, 2, 0, 1, 1)
+            self.main_layout.addWidget(self.side_widget, 3, 0, 1, 1)
+            self.main_layout.addWidget(self.footer_widget, 4, 0, 1, 1)
+        else:
+            # 2 colunas: busca em toda a largura, conteúdo + lateral
+            self.main_layout.setColumnStretch(0, 3)
+            self.main_layout.setColumnStretch(1, 2)
+            self.main_layout.addWidget(self.search_card, 1, 0, 1, 2)
+            self.main_layout.addWidget(self.class_card, 2, 0, 1, 1)
+            self.main_layout.addWidget(self.side_widget, 2, 1, 1, 1)
+            self.main_layout.addWidget(self.footer_widget, 3, 0, 1, 2)
+
+    def _apply_scale_metrics(self):
+        """Escala margens e alturas mínimas com base na resolução disponível."""
+        screen = self.screen() or QApplication.primaryScreen()
+        geo = screen.availableGeometry() if screen else None
+        height = geo.height() if geo else max(self.height(), 900)
+        scale = max(0.85, min(1.15, height / 900))
+        # Margens/espacamentos
+        margin = int(24 * scale)
+        spacing = int(16 * scale)
+        self.main_layout.setContentsMargins(margin, margin, margin, margin)
+        self.main_layout.setSpacing(spacing)
+        # Mínimos painel lateral
+        if hasattr(self, 'history_card'):
+            self.history_card.setMinimumHeight(int(200 * scale))
+        if hasattr(self, 'tip_card'):
+            self.tip_card.setMinimumHeight(int(150 * scale))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._update_responsive_layout()
+        # Posicionar botão de ajuda sticky no canto inferior direito com margens
+        if hasattr(self, 'help_button') and self.help_button is not None:
+            margin = 20
+            x = self.width() - self.help_button.width() - margin
+            y = self.height() - self.help_button.height() - margin
+            self.help_button.move(x, y)
+        self._apply_scale_metrics()
+        
+    def _on_search(self):
+        """Processa a busca da aula"""
+        query = self.search_input.text().strip()
+        if not query:
+            return
+            
+        # Adicionar ao histórico com limite de 3 itens
+        self.search_history.append(query)
+        if len(self.search_history) > 3:
+            self.search_history = self.search_history[-3:]
+        self._update_history_display()
+        
+        # Simular geração de aula
+        self.search_button.setEnabled(False)
+        self.search_button.setIcon(qta.icon('fa5s.hourglass-half', color="#ffffff"))
+        self.search_button.setText("Buscando...")
+        
+        # Simular processamento
+        QApplication.processEvents()
+        time.sleep(1)
+        
+        # Gerar aula simulada
+        lesson = self._generate_mock_lesson(query)
+        self.result_text.setPlainText(lesson)
+        self.result_text.setVisible(True)
+        
+        # Restaurar botão
+        self.search_button.setEnabled(True)
+        self.search_button.setIcon(qta.icon('fa5s.search', color="#ffffff"))
+        self.search_button.setText("Buscar")
+        
+    def _update_history_display(self):
+        """Atualiza a exibição do histórico"""
+        if not self.search_history:
+            self.history_list.setText("Nenhuma busca realizada ainda")
+            return
+            
+        # Limitar a 3 itens mais recentes
+        history_text = ""
+        for i, query in enumerate(self.search_history[-3:], 1):
+            history_text += f"{i}. {query}\n"
+        
+        self.history_list.setText(history_text)
+        
+    def _generate_mock_lesson(self, query):
+        """Gera uma aula simulada baseada na pergunta"""
+        lesson = f"""AULA ENCONTRADA: {query.upper()}
+
+OBJETIVOS DE APRENDIZAGEM:
+• Compreender os conceitos fundamentais relacionados ao tema
+• Aplicar o conhecimento em situações práticas
+• Desenvolver habilidades de análise e resolução de problemas
+
+CONTEÚDO PRINCIPAL:
+
+1. INTRODUÇÃO AO TEMA
+   {query} é um conceito fundamental que merece nossa atenção especial.
+   Vamos explorar os aspectos mais importantes deste tópico.
+
+2. CONCEITOS BÁSICOS
+   • Definição e características principais
+   • Elementos fundamentais
+   • Relacionamentos e conexões
+
+3. APLICAÇÕES PRÁTICAS
+   • Exemplos do mundo real
+   • Casos de estudo
+   • Implementações práticas
+
+4. EXERCÍCIOS INTERATIVOS
+   • Questão 1: Como você aplicaria este conhecimento?
+   • Questão 2: Quais são os desafios principais?
+   • Questão 3: Como isso se relaciona com outros conceitos?
+
+DICAS DE ESTUDO:
+• Revise o conteúdo regularmente
+• Pratique com exercícios adicionais
+• Discuta com colegas para reforçar o aprendizado
+• Aplique o conhecimento em projetos práticos
+
+PRÓXIMOS PASSOS:
+• Explore tópicos relacionados
+• Consulte recursos adicionais
+• Pratique com mais exercícios
+• Compartilhe seu conhecimento
+
+Lembre-se: O aprendizado é um processo contínuo. Continue explorando e questionando!
+"""
+        return lesson
+        
+    def _show_help(self):
+        """Mostra a ajuda"""
+        help_text = """AJUDA - EduAI
+
+COMO USAR:
+1. Digite sua pergunta no campo de busca
+2. Clique em "Buscar" ou pressione Enter
+3. Nossa IA encontrará a melhor aula para você
+4. Visualize o conteúdo na área de aula selecionada
+
+DICAS:
+• Seja específico em suas perguntas
+• Use linguagem natural
+• Explore diferentes tópicos
+• Consulte o histórico de buscas
+
+EXEMPLOS DE PERGUNTAS:
+• "Como resolver equações do segundo grau?"
+• "Quero aprender programação em Python"
+• "Explique a fotossíntese"
+• "Como funciona a democracia?"
+
+FUNCIONALIDADES:
+• Busca inteligente de aulas
+• Histórico de perguntas
+• Conteúdo personalizado
+• Interface intuitiva
+
+Para mais informações, entre em contato conosco!"""
+        
+        self.result_text.setPlainText(help_text)
+        self.result_text.setVisible(True)
+
+def main():
+    app = QApplication(sys.argv)
+    
+    # Criar e mostrar a janela principal
+    window = EduAIApp()
+    window.show()
+    
+    # Executar a aplicação
+    sys.exit(app.exec())
+
+if __name__ == '__main__':
+    main()
