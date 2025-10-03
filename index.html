@@ -233,6 +233,19 @@
   <script src="https://unpkg.com/feather-icons"></script>
   <script>
     feather.replace();
+    
+    // Verificar se o usuário já está logado
+    fetch('check_session.php')
+      .then(response => response.json())
+      .then(data => {
+        if (data.valid) {
+          // Se já estiver logado, redirecionar para dashboard
+          window.location.href = 'pages/dashboard/dashboard.php';
+        }
+      })
+      .catch(error => {
+        console.log('Usuário não logado, mostrando página de boas-vindas');
+      });
   </script>
 </body>
 </html>

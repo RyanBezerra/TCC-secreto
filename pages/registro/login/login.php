@@ -4,8 +4,7 @@ if (ob_get_level()) {
     ob_clean();
 }
 
-session_start();
-require_once $_SERVER['DOCUMENT_ROOT'] . '/configDB.php';
+require_once '../../auth.php';
 
 // Definir header para JSON
 header('Content-Type: application/json');
@@ -60,7 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['empresa_nome'] = $usuario['nome_empresa'];
                         $_SESSION['logado'] = true;
                         
-                        // Login bem-sucedido - não há coluna ultimo_acesso na tabela
+                        // Registrar login na tabela log
+                        $auth->logLogin($usuario['id'], $usuario['empresa_id'] ?? null, 
+                                      $_SERVER['REMOTE_ADDR'] ?? 'unknown', 
+                                      $_SERVER['HTTP_USER_AGENT'] ?? 'unknown');
                         
                         echo json_encode([
                             'success' => true,
