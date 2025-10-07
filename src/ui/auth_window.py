@@ -610,6 +610,9 @@ class AuthWindow(QMainWindow):
                 background-color: #ffffff;
                 border-radius: 0px;
             }
+            QLabel { color: #111827; }
+            QLineEdit { color: #111827; }
+            QLineEdit::placeholder { color: #6b7280; }
         """)
     
     def _setup_animations(self):

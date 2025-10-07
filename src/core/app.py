@@ -17,6 +17,7 @@ from ..ui.profile import ProfileWindow
 from ..config import config, constants
 from ..utils import get_logger, search_validator, LogOperation
 from ..utils.logger import logger_manager
+from ..utils.embeddings import search_similar_aulas, ensure_aula_embeddings
 
 class EduAIApp(QMainWindow):
     # Sinal emitido quando o usuário quer fazer logout
@@ -432,34 +433,41 @@ class EduAIApp(QMainWindow):
     def _apply_styles(self):
         """Aplica estilos globais"""
         self.setStyleSheet("""
-            QMainWindow {
-                background-color: #ffffff;
-            }
+            QMainWindow { background-color: #ffffff; }
+            /* Cards */
             QFrame#searchCard, QFrame#classCard, QFrame#historyCard, QFrame#tipCard {
                 background-color: #ffffff;
                 border-radius: 10px;
                 padding: 14px;
                 border: 1px solid #d1d5db;
             }
-            QLabel {
-                color: #111827;
-            }
-            QLabel#title {
-                color: #111827;
-            }
+            /* Texto padrão preto para (quase) tudo */
+            QWidget { color: #111827; }
+            QLabel { color: #111827; }
+            QLabel#title { color: #111827; }
             QLineEdit {
                 background: #ffffff;
                 border: 2px solid #e5e7eb;
                 border-radius: 8px;
+                color: #111827;
             }
+            QLineEdit::placeholder { color: #6b7280; }
             QTextEdit {
                 background: #ffffff;
                 border: 2px solid #e5e7eb;
                 border-radius: 8px;
+                color: #111827;
             }
-            QPushButton {
-                letter-spacing: 0.2px;
-            }
+            QPlainTextEdit { color: #111827; background: #ffffff; border: 2px solid #e5e7eb; border-radius: 8px; }
+            QCheckBox { color: #111827; }
+            QRadioButton { color: #111827; }
+            QComboBox { color: #111827; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px; }
+            QTableWidget { color: #111827; }
+            QHeaderView::section { color: #111827; }
+            /* Botões mantêm texto branco apenas quando o fundo é preto */
+            QPushButton { letter-spacing: 0.2px; }
+            QPushButton[style*="background-color: #000000"], QPushButton[style*="background: #000000"],
+            QPushButton[style*="background-color:#000000"] { color: #ffffff; }
         """)
 
     def _apply_card_shadow(self, widget: QWidget) -> None:
@@ -546,19 +554,34 @@ class EduAIApp(QMainWindow):
             
             self.logger.log_user_action(self.user_name, "SEARCH_QUERY", True, f"Query: {query}")
         
-        # Simular geração de aula
+        # Iniciar busca semântica
         self.search_button.setEnabled(False)
         self.search_button.setIcon(qta.icon('fa5s.hourglass-half', color="#ffffff"))
         self.search_button.setText("Buscando...")
-        
-        # Simular processamento
         QApplication.processEvents()
-        time.sleep(1)
-        
-        # Gerar aula simulada
-        lesson = self._generate_mock_lesson(query)
-        self.result_text.setPlainText(lesson)
-        self.result_text.setVisible(True)
+        try:
+            candidates = search_similar_aulas(query, top_k=1)
+            if candidates:
+                aula = candidates[0]
+                titulo = aula.get('titulo') or 'Aula'
+                descricao = aula.get('descricao') or ''
+                conteudo = f"AULA ENCONTRADA: {titulo}\n\n{descricao}"
+                self.result_text.setPlainText(conteudo)
+                self.result_text.setVisible(True)
+                # salvar no histórico
+                try:
+                    from ..core.database import db_manager
+                    user = db_manager.get_user_by_name(self.user_name)
+                    if user:
+                        aula_id = aula.get('id_aula') or aula.get('id') or aula.get('idAula')
+                        db_manager.create_historico(user['id'], int(aula_id) if aula_id else None, query, conteudo)
+                except Exception:
+                    pass
+            else:
+                self.result_text.setPlainText("Não encontramos uma aula adequada ainda.")
+                self.result_text.setVisible(True)
+        except Exception as e:
+            self.result_text.setPlainText(f"Erro na busca semântica: {e}")
         
         # Restaurar botão
         self.search_button.setEnabled(True)
@@ -771,11 +794,24 @@ class EduAIManager:
         if self.current_window:
             self.current_window.close()
         
-        # Criar e mostrar o dashboard
-        dashboard = EduAIApp(user_name)
-        dashboard.logout_requested.connect(self._on_logout_requested)
-        dashboard.show()
-        self.current_window = dashboard
+        # Verificar perfil do usuário para redirecionar
+        try:
+            from .database import db_manager  # import relativo dentro do método
+        except Exception:
+            from ..core.database import db_manager  # fallback quando chamado de main
+        user = db_manager.get_user_by_name(user_name)
+        perfil = (user or {}).get('perfil')
+
+        if perfil == 'educador':
+            from ..ui.educator_dashboard import EducatorDashboard
+            window = EducatorDashboard(user_name)
+        else:
+            window = EduAIApp(user_name)
+
+        if hasattr(window, 'logout_requested'):
+            window.logout_requested.connect(self._on_logout_requested)
+        window.show()
+        self.current_window = window
     
     def _on_logout_requested(self):
         """Chamado quando o usuário solicita logout"""

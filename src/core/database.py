@@ -234,7 +234,7 @@ class DatabaseManager:
     
     def get_all_users(self) -> List[Dict]:
         """Retorna todos os usuários"""
-        query = "SELECT id, nome, idade, nota, data_cadastro, ultimo_acesso FROM usuario ORDER BY nome"
+        query = "SELECT id, nome, idade, nota, data_cadastro, ultimo_acesso, perfil FROM usuario ORDER BY nome"
         return self.execute_query(query)
     
     def get_all_users_with_passwords(self) -> List[Dict]:
@@ -263,11 +263,102 @@ class DatabaseManager:
         """Retorna todas as aulas"""
         query = "SELECT * FROM aulas ORDER BY titulo"
         return self.execute_query(query)
+
+    def ensure_aulas_embedding_column(self) -> None:
+        """Garante a existência da coluna embedding_json em aulas."""
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute("""
+                    ALTER TABLE aulas
+                    ADD COLUMN IF NOT EXISTS embedding_json TEXT
+                """)
+        except Exception:
+            pass
+
+    def update_aula_embedding_json(self, aula_id: int, vec: List[float]) -> bool:
+        """Atualiza o embedding (JSON) de uma aula."""
+        import json as _json
+        query = "UPDATE aulas SET embedding_json = %s WHERE id_aula = %s"
+        return self.execute_update(query, (_json.dumps(vec), aula_id))
+
+    def get_all_aulas_with_embeddings(self) -> List[Dict]:
+        query = "SELECT * FROM aulas WHERE embedding_json IS NOT NULL"
+        return self.execute_query(query)
     
     def search_aulas_by_tag(self, tag: str) -> List[Dict]:
         """Busca aulas por tag"""
         query = "SELECT * FROM aulas WHERE tags ILIKE %s ORDER BY titulo"
         params = (f"%{tag}%",)
+        return self.execute_query(query, params)
+
+    def search_aulas_keyword(self, query_text: str, limit: int = 5) -> List[Dict]:
+        """Fallback melhorado por palavras-chave quando embeddings não estão disponíveis."""
+        # Dividir a query em palavras e remover palavras muito pequenas
+        words = [word.strip() for word in query_text.split() if len(word.strip()) > 2]
+        
+        # Filtrar palavras muito comuns que não ajudam na busca
+        common_words = {'como', 'para', 'queria', 'saber', 'meu', 'uma', 'fazer', 'usar', 'aprender'}
+        words = [word for word in words if word.lower() not in common_words]
+        
+        if not words:
+            # Se não há palavras válidas, buscar a string completa
+            words = [query_text]
+        
+        # Construir condições OR para cada palavra
+        conditions = []
+        params = []
+        
+        for word in words:
+            like_pattern = f"%{word}%"
+            conditions.append("(titulo ILIKE %s OR descricao ILIKE %s OR tags ILIKE %s OR legendas ILIKE %s)")
+            params.extend([like_pattern, like_pattern, like_pattern, like_pattern])
+        
+        # Query final com cálculo de relevância melhorado
+        query = f"""
+            SELECT *, 
+                   (
+                       -- Score base por campo
+                       (CASE WHEN titulo ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 10 ELSE 0 END) +
+                       (CASE WHEN descricao ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 3 ELSE 0 END) +
+                       (CASE WHEN tags ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 5 ELSE 0 END) +
+                       (CASE WHEN legendas ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 2 ELSE 0 END) +
+                       -- Bonus para palavras específicas no título (mais de 4 caracteres)
+                       (CASE WHEN titulo ILIKE ANY(ARRAY[{','.join(['%s'] * len([w for w in words if len(w) > 4]))}]) THEN 5 ELSE 0 END) +
+                       -- Bonus extra para palavras muito específicas (mais de 6 caracteres)
+                       (CASE WHEN titulo ILIKE ANY(ARRAY[{','.join(['%s'] * len([w for w in words if len(w) > 6]))}]) THEN 10 ELSE 0 END)
+                   ) as relevance_score
+            FROM aulas 
+            WHERE {' OR '.join(conditions)}
+            ORDER BY relevance_score DESC, titulo
+            LIMIT %s
+        """
+        
+        # Adicionar parâmetros para o cálculo de relevância (todas as palavras)
+        relevance_params = []
+        for word in words:
+            like_pattern = f"%{word}%"
+            relevance_params.extend([like_pattern, like_pattern, like_pattern, like_pattern])
+        
+        # Adicionar parâmetros para palavras específicas (bonus)
+        specific_words = [w for w in words if len(w) > 4]
+        for word in specific_words:
+            like_pattern = f"%{word}%"
+            relevance_params.append(like_pattern)
+        
+        # Adicionar parâmetros para palavras muito específicas (bonus extra)
+        very_specific_words = [w for w in words if len(w) > 6]
+        for word in very_specific_words:
+            like_pattern = f"%{word}%"
+            relevance_params.append(like_pattern)
+        
+        # Se não há palavras específicas, adicionar um placeholder para evitar array vazio
+        if not specific_words:
+            relevance_params.append('%')
+        if not very_specific_words:
+            relevance_params.append('%')
+        
+        params = relevance_params + params + [limit]
+        
         return self.execute_query(query, params)
     
     # Métodos específicos para histórico
@@ -302,6 +393,101 @@ class DatabaseManager:
             ORDER BY h.timestamp DESC
         """
         return self.execute_query(query, (aula_id,))
+
+    # ==========================
+    # Relatórios para Educador
+    # ==========================
+    def get_all_students(self) -> List[Dict]:
+        """Lista todos os usuários com perfil aluno."""
+        query = """
+            SELECT id, nome, idade, nota, ultimo_acesso, data_cadastro, perfil
+            FROM usuario
+            WHERE perfil = 'aluno'
+            ORDER BY nome
+        """
+        return self.execute_query(query)
+
+    def get_all_students_with_search_count(self) -> List[Dict]:
+        """Lista alunos e total de pesquisas (entradas no histórico)."""
+        query = """
+            SELECT u.id,
+                   u.nome,
+                   u.idade,
+                   u.nota,
+                   u.ultimo_acesso,
+                   u.data_cadastro,
+                   u.perfil,
+                   COUNT(*) FILTER (WHERE h.id_usuario IS NOT NULL) AS total_pesquisas
+            FROM usuario u
+            LEFT JOIN historico h ON h.id_usuario = u.id
+            WHERE u.perfil = 'aluno'
+            GROUP BY u.id, u.nome, u.idade, u.nota, u.ultimo_acesso, u.data_cadastro, u.perfil
+            ORDER BY u.nome
+        """
+        return self.execute_query(query)
+
+    def get_student_searches(self, student_id: int) -> List[Dict]:
+        """Retorna todas as pesquisas do aluno (histórico com detalhes da aula)."""
+        query = """
+            SELECT h.timestamp,
+                   h.mensagem_usuario AS pergunta,
+                   h.resposta_llm,
+                   a.id_aula,
+                   a.titulo AS aula_titulo
+            FROM historico h
+            LEFT JOIN aulas a ON a.id_aula = h.id_aula
+            WHERE h.id_usuario = %s
+            ORDER BY h.timestamp DESC
+        """
+        return self.execute_query(query, (student_id,))
+
+    def get_dashboard_kpis(self) -> Dict:
+        """KPIs principais do painel (totais)."""
+        # Total de alunos
+        total_alunos = self.execute_query("SELECT COUNT(*) AS c FROM usuario WHERE perfil = 'aluno'")
+        # Total de pesquisas (historico)
+        total_pesquisas = self.execute_query("SELECT COUNT(*) AS c FROM historico")
+        # "Interações com IA" pode ser igual a pesquisas para este contexto
+        total_interacoes = total_pesquisas
+        return {
+            'total_alunos': (total_alunos[0]['c'] if total_alunos else 0),
+            'total_pesquisas': (total_pesquisas[0]['c'] if total_pesquisas else 0),
+            'total_interacoes': (total_interacoes[0]['c'] if total_interacoes else 0),
+        }
+
+    def get_monthly_search_counts(self, months: int = 6) -> List[Dict]:
+        """Retorna contagem de pesquisas por mês (últimos N meses)."""
+        query = """
+            SELECT TO_CHAR(date_trunc('month', h.timestamp), 'Mon') AS mes,
+                   date_trunc('month', h.timestamp) AS mes_data,
+                   COUNT(*) AS total
+            FROM historico h
+            GROUP BY mes, mes_data
+            ORDER BY mes_data DESC
+            LIMIT %s
+        """
+        rows = self.execute_query(query, (months,))
+        return list(reversed(rows)) if rows else []
+
+    def get_nota_distribution(self) -> List[Dict]:
+        """Distribuição de notas dos alunos por faixas (baixo/médio/alto)."""
+        query = """
+            SELECT
+                SUM(CASE WHEN nota < 4 THEN 1 ELSE 0 END) AS baixo,
+                SUM(CASE WHEN nota >= 4 AND nota < 7 THEN 1 ELSE 0 END) AS medio,
+                SUM(CASE WHEN nota >= 7 THEN 1 ELSE 0 END) AS alto
+            FROM usuario
+            WHERE perfil = 'aluno'
+        """
+        rows = self.execute_query(query)
+        if not rows:
+            return []
+        row = rows[0]
+        return [
+            {'categoria': 'Baixo', 'valor': row.get('baixo', 0)},
+            {'categoria': 'Médio', 'valor': row.get('medio', 0)},
+            {'categoria': 'Alto', 'valor': row.get('alto', 0)},
+        ]
     
     def test_connection(self) -> bool:
         """Testa a conexão com o banco de dados"""

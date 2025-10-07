@@ -17,6 +17,9 @@ bcrypt>=4.0.0
 dataclasses>=0.6; python_version<"3.7"  # Para compatibilidade com Python < 3.7
 typing-extensions>=4.0.0  # Para type hints avançados
 
+# OpenAI - Embeddings para busca semântica
+openai>=1.42.0
+
 # Para desenvolvimento (opcional)
 # pip install pillow  # Para manipulação de imagens (se necessário no futuro)
 # pip install requests  # Para requisições HTTP (se integrar com APIs)
