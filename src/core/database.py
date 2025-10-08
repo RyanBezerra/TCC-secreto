@@ -73,6 +73,8 @@ class DatabaseManager:
             self.ensure_suggestions_table()
             # Garantir coluna de embeddings nas aulas
             self.ensure_aulas_embedding_column()
+            # Garantir tabela de feedback
+            self.ensure_feedback_table()
             logger.info("Tabelas verificadas e criadas com sucesso")
         except Exception as e:
             logger.error(f"Erro ao verificar/criar tabelas: {e}")
@@ -588,6 +590,135 @@ class DatabaseManager:
         except psycopg2.Error as e:
             logger.error(f"Erro ao testar conexão: {e}")
             return False
+    
+    # ==========================
+    # Métodos específicos para feedback
+    # ==========================
+    
+    def ensure_feedback_table(self) -> None:
+        """Garante a existência da tabela de feedback"""
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS feedback (
+                        id SERIAL PRIMARY KEY,
+                        id_usuario INTEGER REFERENCES usuario(id) ON DELETE CASCADE,
+                        id_aula INTEGER REFERENCES aulas(id_aula) ON DELETE CASCADE,
+                        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+                        comentario TEXT,
+                        tipo_feedback VARCHAR(50) DEFAULT 'aula' CHECK (tipo_feedback IN ('aula', 'conteudo', 'dificuldade', 'geral')),
+                        anonimo BOOLEAN DEFAULT false,
+                        data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                # Criar índices se não existirem
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_feedback_usuario ON feedback(id_usuario)
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_feedback_aula ON feedback(id_aula)
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_feedback_rating ON feedback(rating)
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_feedback_data ON feedback(data_criacao)
+                """)
+        except Exception as e:
+            logger.error(f"Erro ao criar tabela de feedback: {e}")
+    
+    def create_feedback(self, user_id: int, aula_id: int, rating: int, comment: str = None, 
+                       feedback_type: str = 'aula', is_anonymous: bool = False) -> bool:
+        """Cria um novo feedback"""
+        query = """
+            INSERT INTO feedback (id_usuario, id_aula, rating, comentario, tipo_feedback, anonimo, data_criacao)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+        params = (user_id, aula_id, rating, comment, feedback_type, is_anonymous, datetime.now())
+        return self.execute_update(query, params)
+    
+    def get_feedback_by_user(self, user_id: int) -> List[Dict]:
+        """Retorna todos os feedbacks de um usuário"""
+        query = """
+            SELECT f.*, a.titulo as aula_titulo, a.descricao as aula_descricao
+            FROM feedback f
+            JOIN aulas a ON f.id_aula = a.id_aula
+            WHERE f.id_usuario = %s
+            ORDER BY f.data_criacao DESC
+        """
+        return self.execute_query(query, (user_id,))
+    
+    def get_feedback_by_aula(self, aula_id: int) -> List[Dict]:
+        """Retorna todos os feedbacks de uma aula"""
+        query = """
+            SELECT f.*, u.nome as usuario_nome
+            FROM feedback f
+            JOIN usuario u ON f.id_usuario = u.id
+            WHERE f.id_aula = %s
+            ORDER BY f.data_criacao DESC
+        """
+        return self.execute_query(query, (aula_id,))
+    
+    def get_feedback_stats_by_aula(self, aula_id: int) -> Dict:
+        """Retorna estatísticas de feedback de uma aula"""
+        query = """
+            SELECT 
+                COUNT(*) as total_feedbacks,
+                AVG(rating) as media_rating,
+                COUNT(*) FILTER (WHERE rating = 5) as cinco_estrelas,
+                COUNT(*) FILTER (WHERE rating = 4) as quatro_estrelas,
+                COUNT(*) FILTER (WHERE rating = 3) as tres_estrelas,
+                COUNT(*) FILTER (WHERE rating = 2) as duas_estrelas,
+                COUNT(*) FILTER (WHERE rating = 1) as uma_estrela
+            FROM feedback 
+            WHERE id_aula = %s
+        """
+        results = self.execute_query(query, (aula_id,))
+        return results[0] if results else {
+            'total_feedbacks': 0,
+            'media_rating': 0,
+            'cinco_estrelas': 0,
+            'quatro_estrelas': 0,
+            'tres_estrelas': 0,
+            'duas_estrelas': 0,
+            'uma_estrela': 0
+        }
+    
+    def update_feedback(self, feedback_id: int, rating: int = None, comment: str = None) -> bool:
+        """Atualiza um feedback existente"""
+        updates = []
+        params = []
+        
+        if rating is not None:
+            updates.append("rating = %s")
+            params.append(rating)
+        
+        if comment is not None:
+            updates.append("comentario = %s")
+            params.append(comment)
+        
+        if not updates:
+            return True  # Nada para atualizar
+        
+        updates.append("data_atualizacao = %s")
+        params.append(datetime.now())
+        params.append(feedback_id)
+        
+        query = f"UPDATE feedback SET {', '.join(updates)} WHERE id = %s"
+        return self.execute_update(query, tuple(params))
+    
+    def delete_feedback(self, feedback_id: int) -> bool:
+        """Remove um feedback"""
+        query = "DELETE FROM feedback WHERE id = %s"
+        return self.execute_update(query, (feedback_id,))
+    
+    def get_user_feedback_count(self, user_id: int) -> int:
+        """Retorna o número total de feedbacks de um usuário"""
+        query = "SELECT COUNT(*) as total FROM feedback WHERE id_usuario = %s"
+        results = self.execute_query(query, (user_id,))
+        return results[0]['total'] if results else 0
 
 # Instância global do gerenciador de banco de dados
 db_manager = DatabaseManager()

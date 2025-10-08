@@ -73,6 +73,19 @@ CREATE TABLE IF NOT EXISTS eduai.embeddings (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabela de feedback dos alunos sobre as aulas
+CREATE TABLE IF NOT EXISTS eduai.feedback (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES eduai.users(id) ON DELETE CASCADE,
+    class_id UUID REFERENCES eduai.classes(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    feedback_type VARCHAR(50) DEFAULT 'lesson' CHECK (feedback_type IN ('lesson', 'content', 'difficulty', 'general')),
+    is_anonymous BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Índices para performance
 CREATE INDEX IF NOT EXISTS idx_users_username ON eduai.users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON eduai.users(email);
@@ -83,6 +96,10 @@ CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON eduai.conversations(user
 CREATE INDEX IF NOT EXISTS idx_conversations_session_id ON eduai.conversations(session_id);
 CREATE INDEX IF NOT EXISTS idx_embeddings_content_type ON eduai.embeddings(content_type);
 CREATE INDEX IF NOT EXISTS idx_embeddings_content_id ON eduai.embeddings(content_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON eduai.feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_class_id ON eduai.feedback(class_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_rating ON eduai.feedback(rating);
+CREATE INDEX IF NOT EXISTS idx_feedback_created_at ON eduai.feedback(created_at);
 
 -- Índice para busca semântica (requer extensão vector)
 -- CREATE INDEX IF NOT EXISTS idx_embeddings_vector ON eduai.embeddings USING ivfflat (embedding vector_cosine_ops);
@@ -103,6 +120,9 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON eduai.users
 CREATE TRIGGER update_classes_updated_at BEFORE UPDATE ON eduai.classes
     FOR EACH ROW EXECUTE FUNCTION eduai.update_updated_at_column();
 
+CREATE TRIGGER update_feedback_updated_at BEFORE UPDATE ON eduai.feedback
+    FOR EACH ROW EXECUTE FUNCTION eduai.update_updated_at_column();
+
 -- Inserir usuário administrador padrão (senha: admin123)
 INSERT INTO eduai.users (username, email, password_hash, full_name, role) 
 VALUES (
@@ -119,6 +139,7 @@ COMMENT ON TABLE eduai.classes IS 'Aulas criadas pelos educadores';
 COMMENT ON TABLE eduai.ai_suggestions IS 'Sugestões geradas pela IA';
 COMMENT ON TABLE eduai.conversations IS 'Histórico de conversas com a IA';
 COMMENT ON TABLE eduai.embeddings IS 'Embeddings para busca semântica';
+COMMENT ON TABLE eduai.feedback IS 'Feedback dos alunos sobre as aulas';
 
 -- Configurações de performance
 ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements';

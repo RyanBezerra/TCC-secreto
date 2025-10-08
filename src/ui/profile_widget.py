@@ -5,12 +5,15 @@ Widget que pode ser integrado na mesma janela
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QFrame, QGridLayout,
-                             QSizePolicy, QMessageBox)
+                             QSizePolicy, QMessageBox, QTextEdit, QComboBox, 
+                             QScrollArea, QListWidget, QListWidgetItem, QDialog,
+                             QDialogButtonBox, QFormLayout, QSpinBox, QCheckBox)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPixmap, QCursor
 import qtawesome as qta
 from datetime import datetime
 from ..utils.font_utils import get_portable_font
+from .feedback_dialog import FeedbackDialog
 
 
 class ProfileWidget(QWidget):
@@ -80,10 +83,14 @@ class ProfileWidget(QWidget):
             logo_icon.setPixmap(qta.icon('fa5s.graduation-cap', color="#2c3e50").pixmap(32, 32))
         logo_container.addWidget(logo_icon)
         
-        # Título
+        # Título com gradiente
         logo_label = QLabel("EduAI - Meu Perfil")
-        logo_label.setFont(get_portable_font("Segoe UI", 18, QFont.Weight.Bold))
-        logo_label.setStyleSheet("color: #2c3e50;")
+        logo_label.setFont(get_portable_font("Segoe UI", 20, QFont.Weight.Bold))
+        logo_label.setStyleSheet("""
+            color: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                                  stop:0 #3498db, stop:1 #2c3e50);
+            background: transparent;
+        """)
         logo_container.addWidget(logo_label)
         
         top_row.addLayout(logo_container)
@@ -91,25 +98,31 @@ class ProfileWidget(QWidget):
         # Espaçador
         top_row.addStretch()
         
-        # Botão de voltar
+        # Botão de voltar com design moderno
         back_button = QPushButton("Voltar ao Dashboard")
         back_button.setIcon(qta.icon('fa5s.arrow-left', color="#ffffff"))
         back_button.setFont(get_portable_font("Segoe UI", 11, QFont.Weight.Bold))
         back_button.setStyleSheet("""
             QPushButton {
-                background-color: #000000;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #34495e, stop:1 #2c3e50);
                 color: #ffffff;
-                padding: 8px 16px;
+                padding: 10px 20px;
                 border: none;
-                border-radius: 8px;
+                border-radius: 12px;
                 font-size: 12px;
-                min-width: 150px;
+                min-width: 160px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             }
             QPushButton:hover {
-                background-color: #111111;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #2c3e50, stop:1 #34495e);
+                transform: translateY(-2px);
             }
             QPushButton:pressed {
-                background-color: #222222;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #1b2631, stop:1 #2c3e50);
+                transform: translateY(0px);
             }
         """)
         back_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -118,11 +131,18 @@ class ProfileWidget(QWidget):
         
         header_layout.addLayout(top_row)
         
-        # Subtítulo
+        # Subtítulo com design elegante
         subtitle_label = QLabel("Visualize e edite suas informações pessoais")
-        subtitle_label.setFont(get_portable_font("Segoe UI", 11))
+        subtitle_label.setFont(get_portable_font("Segoe UI", 12, QFont.Weight.Normal))
         subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle_label.setStyleSheet("color: #7f8c8d; margin-bottom: 20px;")
+        subtitle_label.setStyleSheet("""
+            color: #7f8c8d; 
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(52, 152, 219, 0.2);
+        """)
         subtitle_label.setWordWrap(True)
         header_layout.addWidget(subtitle_label)
         
@@ -133,14 +153,18 @@ class ProfileWidget(QWidget):
         # Container principal
         content_widget = QWidget()
         content_layout = QHBoxLayout(content_widget)
-        content_layout.setSpacing(30)
+        content_layout.setSpacing(20)
         
         # Coluna esquerda - Informações pessoais
         left_column = self._create_personal_info_section()
         content_layout.addWidget(left_column, 1)
         
-        # Coluna direita - Estatísticas e ações
-        right_column = self._create_stats_section()
+        # Coluna central - Estatísticas e ações
+        center_column = self._create_stats_section()
+        content_layout.addWidget(center_column, 1)
+        
+        # Coluna direita - Feedback
+        right_column = self._create_feedback_section()
         content_layout.addWidget(right_column, 1)
         
         parent_layout.addWidget(content_widget, 1)
@@ -164,25 +188,32 @@ class ProfileWidget(QWidget):
         title_row.addWidget(title_label)
         title_row.addStretch()
         
-        # Botão de editar
+        # Botão de editar com design moderno
         self.edit_button = QPushButton("Editar")
         self.edit_button.setIcon(qta.icon('fa5s.edit', color="#ffffff"))
         self.edit_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         self.edit_button.setStyleSheet("""
             QPushButton {
-                background-color: #3498db;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #3498db, stop:1 #2980b9);
                 color: #ffffff;
-                padding: 6px 12px;
+                padding: 8px 16px;
                 border: none;
-                border-radius: 6px;
+                border-radius: 8px;
                 font-size: 11px;
-                min-width: 80px;
+                min-width: 90px;
+                box-shadow: 0 2px 6px rgba(52, 152, 219, 0.3);
             }
             QPushButton:hover {
-                background-color: #2980b9;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #2980b9, stop:1 #21618c);
+                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+                transform: translateY(-1px);
             }
             QPushButton:pressed {
-                background-color: #21618c;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #21618c, stop:1 #1b4f72);
+                transform: translateY(0px);
             }
         """)
         self.edit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -223,15 +254,21 @@ class ProfileWidget(QWidget):
         self.name_input.setFont(QFont("Segoe UI", 11))
         self.name_input.setStyleSheet("""
             QLineEdit {
-                padding: 8px;
-                border: 2px solid #ecf0f1;
-                border-radius: 6px;
-                background-color: #f8f9fa;
+                padding: 10px 12px;
+                border: 2px solid rgba(236, 240, 241, 0.8);
+                border-radius: 8px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #ffffff, stop:1 #f8f9fa);
                 font-size: 12px;
+                color: #2c3e50;
             }
             QLineEdit:focus {
                 border-color: #3498db;
                 background-color: white;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+            QLineEdit:hover {
+                border-color: rgba(52, 152, 219, 0.3);
             }
         """)
         self.name_input.setReadOnly(True)
@@ -247,15 +284,21 @@ class ProfileWidget(QWidget):
         self.age_input.setFont(QFont("Segoe UI", 11))
         self.age_input.setStyleSheet("""
             QLineEdit {
-                padding: 8px;
-                border: 2px solid #ecf0f1;
-                border-radius: 6px;
-                background-color: #f8f9fa;
+                padding: 10px 12px;
+                border: 2px solid rgba(236, 240, 241, 0.8);
+                border-radius: 8px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #ffffff, stop:1 #f8f9fa);
                 font-size: 12px;
+                color: #2c3e50;
             }
             QLineEdit:focus {
                 border-color: #3498db;
                 background-color: white;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+            QLineEdit:hover {
+                border-color: rgba(52, 152, 219, 0.3);
             }
         """)
         self.age_input.setReadOnly(True)
@@ -271,15 +314,21 @@ class ProfileWidget(QWidget):
         self.grade_input.setFont(QFont("Segoe UI", 11))
         self.grade_input.setStyleSheet("""
             QLineEdit {
-                padding: 8px;
-                border: 2px solid #ecf0f1;
-                border-radius: 6px;
-                background-color: #f8f9fa;
+                padding: 10px 12px;
+                border: 2px solid rgba(236, 240, 241, 0.8);
+                border-radius: 8px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #ffffff, stop:1 #f8f9fa);
                 font-size: 12px;
+                color: #2c3e50;
             }
             QLineEdit:focus {
                 border-color: #3498db;
                 background-color: white;
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            }
+            QLineEdit:hover {
+                border-color: rgba(52, 152, 219, 0.3);
             }
         """)
         self.grade_input.setReadOnly(True)
@@ -492,25 +541,32 @@ class ProfileWidget(QWidget):
         actions_layout = QVBoxLayout()
         actions_layout.setSpacing(10)
         
-        # Botão de histórico
+        # Botão de histórico com design moderno
         history_button = QPushButton("Ver Histórico de Aulas")
         history_button.setIcon(qta.icon('fa5s.history', color="#ffffff"))
         history_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
         history_button.setStyleSheet("""
             QPushButton {
-                background-color: #9b59b6;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #9b59b6, stop:1 #8e44ad);
                 color: #ffffff;
-                padding: 10px 16px;
+                padding: 12px 18px;
                 border: none;
-                border-radius: 8px;
+                border-radius: 10px;
                 font-size: 12px;
                 text-align: left;
+                box-shadow: 0 3px 8px rgba(155, 89, 182, 0.3);
             }
             QPushButton:hover {
-                background-color: #8e44ad;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #8e44ad, stop:1 #7d3c98);
+                box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
+                transform: translateY(-2px);
             }
             QPushButton:pressed {
-                background-color: #7d3c98;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #7d3c98, stop:1 #6c3483);
+                transform: translateY(0px);
             }
         """)
         history_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -569,6 +625,106 @@ class ProfileWidget(QWidget):
         
         parent_layout.addLayout(actions_layout)
     
+    def _create_feedback_section(self):
+        """Cria a seção de feedback"""
+        feedback_widget = QWidget()
+        feedback_layout = QVBoxLayout(feedback_widget)
+        feedback_layout.setSpacing(20)
+        
+        # Card de feedback
+        feedback_card = QFrame()
+        feedback_card.setObjectName("feedbackCard")
+        feedback_card_layout = QVBoxLayout(feedback_card)
+        feedback_card_layout.setSpacing(15)
+        
+        # Título
+        feedback_title_row = QHBoxLayout()
+        feedback_icon = QLabel()
+        feedback_icon.setPixmap(qta.icon('fa5s.star', color="#000000").pixmap(20, 20))
+        feedback_title_row.addWidget(feedback_icon)
+        feedback_title = QLabel("Meus Feedbacks")
+        feedback_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        feedback_title.setStyleSheet("color: #2c3e50;")
+        feedback_title_row.addWidget(feedback_title)
+        feedback_title_row.addStretch()
+        feedback_card_layout.addLayout(feedback_title_row)
+        
+        # Botão para adicionar feedback com design moderno
+        add_feedback_button = QPushButton("Deixar Feedback")
+        add_feedback_button.setIcon(qta.icon('fa5s.plus', color="#ffffff"))
+        add_feedback_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        add_feedback_button.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #e67e22, stop:1 #d35400);
+                color: #ffffff;
+                padding: 12px 18px;
+                border: none;
+                border-radius: 10px;
+                font-size: 12px;
+                text-align: left;
+                box-shadow: 0 3px 8px rgba(230, 126, 34, 0.3);
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #d35400, stop:1 #c0392b);
+                box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4);
+                transform: translateY(-2px);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #c0392b, stop:1 #a93226);
+                transform: translateY(0px);
+            }
+        """)
+        add_feedback_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        add_feedback_button.clicked.connect(self._open_feedback_dialog)
+        feedback_card_layout.addWidget(add_feedback_button)
+        
+        # Lista de feedbacks com design moderno
+        self.feedback_list = QListWidget()
+        self.feedback_list.setStyleSheet("""
+            QListWidget {
+                border: 1px solid rgba(52, 152, 219, 0.2);
+                border-radius: 12px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #ffffff, stop:1 #f8f9fa);
+                padding: 8px;
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            }
+            QListWidget::item {
+                padding: 10px;
+                border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+                border-radius: 8px;
+                margin: 3px;
+                background-color: rgba(255, 255, 255, 0.7);
+            }
+            QListWidget::item:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 rgba(52, 152, 219, 0.1), 
+                                          stop:1 rgba(52, 152, 219, 0.05));
+                border: 1px solid rgba(52, 152, 219, 0.2);
+                transform: translateX(2px);
+            }
+            QListWidget::item:selected {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 rgba(52, 152, 219, 0.2), 
+                                          stop:1 rgba(52, 152, 219, 0.1));
+                border: 1px solid rgba(52, 152, 219, 0.3);
+            }
+        """)
+        self.feedback_list.setMaximumHeight(200)
+        feedback_card_layout.addWidget(self.feedback_list)
+        
+        # Carregar feedbacks existentes
+        self._load_user_feedbacks()
+        
+        # Sombra
+        self._apply_card_shadow(feedback_card)
+        feedback_layout.addWidget(feedback_card)
+        
+        return feedback_widget
+    
     def _create_footer(self, parent_layout):
         """Cria o rodapé"""
         footer_widget = QWidget()
@@ -596,13 +752,21 @@ class ProfileWidget(QWidget):
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
             }
             
-            /* Cards de seção */
-            QFrame#infoCard, QFrame#statsCard, QFrame#actionsCard {
-                background-color: #ffffff;
-                border-radius: 10px;
-                padding: 20px;
-                border: 1px solid #d1d5db;
-                margin: 4px;
+            /* Cards de seção com design moderno */
+            QFrame#infoCard, QFrame#statsCard, QFrame#actionsCard, QFrame#feedbackCard {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+                                          stop:0 #ffffff, stop:1 #f8f9fa);
+                border-radius: 16px;
+                padding: 24px;
+                border: 1px solid rgba(52, 152, 219, 0.1);
+                margin: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            }
+            
+            QFrame#infoCard:hover, QFrame#statsCard:hover, 
+            QFrame#actionsCard:hover, QFrame#feedbackCard:hover {
+                box-shadow: 0 8px 24px rgba(52, 152, 219, 0.15);
+                transform: translateY(-2px);
             }
             
             /* Labels padrão */
@@ -820,6 +984,62 @@ class ProfileWidget(QWidget):
             "Central de Ajuda", 
             "Funcionalidade de ajuda será implementada em breve!"
         )
+    
+    def _load_user_feedbacks(self):
+        """Carrega os feedbacks do usuário"""
+        try:
+            from ..core.database import db_manager
+            
+            user_id = self.user_data.get('id')
+            if not user_id:
+                return
+            
+            feedbacks = db_manager.get_feedback_by_user(user_id)
+            self.feedback_list.clear()
+            
+            if not feedbacks:
+                item = QListWidgetItem("Nenhum feedback enviado ainda")
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+                self.feedback_list.addItem(item)
+                return
+            
+            for feedback in feedbacks[:5]:  # Mostrar apenas os 5 mais recentes
+                aula_titulo = feedback.get('aula_titulo', 'Aula sem título')
+                rating = feedback.get('rating', 0)
+                comentario = feedback.get('comentario', '')
+                data = feedback.get('data_criacao', '')
+                
+                # Formatar data
+                if data:
+                    try:
+                        if isinstance(data, str):
+                            date_obj = datetime.fromisoformat(data.replace('Z', '+00:00'))
+                        else:
+                            date_obj = data
+                        formatted_date = date_obj.strftime("%d/%m/%Y")
+                    except:
+                        formatted_date = str(data)
+                else:
+                    formatted_date = 'Data não disponível'
+                
+                # Criar texto do item
+                stars = '★' * rating + '☆' * (5 - rating)
+                item_text = f"{aula_titulo}\n{stars} - {formatted_date}"
+                if comentario:
+                    item_text += f"\n\"{comentario[:50]}{'...' if len(comentario) > 50 else ''}\""
+                
+                item = QListWidgetItem(item_text)
+                item.setData(Qt.ItemDataRole.UserRole, feedback)
+                self.feedback_list.addItem(item)
+                
+        except Exception as e:
+            self._show_error(f"Erro ao carregar feedbacks: {str(e)}")
+    
+    def _open_feedback_dialog(self):
+        """Abre o diálogo para criar novo feedback"""
+        dialog = FeedbackDialog(self.user_data, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._load_user_feedbacks()  # Recarregar lista
     
     def _go_back(self):
         """Volta para o dashboard"""
