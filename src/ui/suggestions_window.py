@@ -693,13 +693,6 @@ class SuggestionsWidget(QWidget):
         """Cria a seção de informações básicas"""
         section_card = QFrame()
         section_card.setObjectName("sectionCard")
-        section_card.setStyleSheet("""
-            QFrame#sectionCard {
-                background: #ffffff;
-                border-radius: 16px;
-                border: 1px solid #e2e8f0;
-            }
-        """)
         
         section_layout = QVBoxLayout(section_card)
         section_layout.setContentsMargins(30, 30, 30, 30)
@@ -756,13 +749,6 @@ class SuggestionsWidget(QWidget):
         """Cria a seção de descrição da aula"""
         section_card = QFrame()
         section_card.setObjectName("sectionCard")
-        section_card.setStyleSheet("""
-            QFrame#sectionCard {
-                background: #ffffff;
-                border-radius: 16px;
-                border: 1px solid #e2e8f0;
-            }
-        """)
         
         section_layout = QVBoxLayout(section_card)
         section_layout.setContentsMargins(30, 30, 30, 30)
@@ -819,13 +805,6 @@ class SuggestionsWidget(QWidget):
         """Cria a seção de objetivos de aprendizagem"""
         section_card = QFrame()
         section_card.setObjectName("sectionCard")
-        section_card.setStyleSheet("""
-            QFrame#sectionCard {
-                background: #ffffff;
-                border-radius: 16px;
-                border: 1px solid #e2e8f0;
-            }
-        """)
         
         section_layout = QVBoxLayout(section_card)
         section_layout.setContentsMargins(30, 30, 30, 30)
@@ -885,29 +864,42 @@ class SuggestionsWidget(QWidget):
         self.setStyleSheet("""
             /* Estilos globais da aplicação */
             QMainWindow {
-                background: #ffffff;
+                background: #ffffff !important;
                 color: #1e293b;
                 font-family: 'Segoe UI', Arial, sans-serif;
             }
             
-            /* Cards de seção */
+            /* Widget principal */
+            QWidget {
+                background: #ffffff !important;
+            }
+            
+            /* Cards de seção - FORÇA BACKGROUND BRANCO */
             QFrame#sectionCard {
-                background: #ffffff;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 border-radius: 16px;
                 border: 1px solid #e2e8f0;
                 margin: 8px;
+            }
+            
+            /* Todos os QFrame devem ter background branco */
+            QFrame {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
             }
             
             /* Labels padrão */
             QLabel {
                 color: #1e293b;
                 font-family: 'Segoe UI', Arial, sans-serif;
+                background: transparent !important;
             }
             
             /* Áreas de scroll */
             QScrollArea {
                 border: none;
-                background: transparent;
+                background: transparent !important;
             }
             
             /* Scrollbars personalizadas */
@@ -951,6 +943,7 @@ class SuggestionsWidget(QWidget):
                 font-family: 'Segoe UI', Arial, sans-serif;
                 border-radius: 8px;
                 padding: 8px 12px;
+                background: #ffffff !important;
             }
             
             /* Comboboxes */
@@ -958,6 +951,7 @@ class SuggestionsWidget(QWidget):
                 font-family: 'Segoe UI', Arial, sans-serif;
                 border-radius: 8px;
                 padding: 8px 12px;
+                background: #ffffff !important;
             }
         """)
     
