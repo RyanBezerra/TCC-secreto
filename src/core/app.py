@@ -46,6 +46,10 @@ class EduAIApp(QMainWindow):
         self._create_side_panel(main_layout)
         self._create_footer(main_layout)
         
+        # Armazenar referência ao layout principal para navegação
+        self.main_layout = main_layout
+        self.central_widget = central_widget
+        
         # Aplicar estilo
         self._apply_styles()
 
@@ -729,21 +733,64 @@ Para mais informações, entre em contato conosco!"""
     def _open_suggestions(self):
         """Abre a tela de sugestões de aulas"""
         try:
-            from ..ui.suggestions_window import SuggestionsWindow
+            from ..ui.suggestions_window import SuggestionsWidget
             
-            # Criar janela de sugestões
-            self.suggestions_window = SuggestionsWindow(self.user_name)
-            self.suggestions_window.back_to_dashboard.connect(self._on_suggestions_back)
+            # Criar widget de sugestões
+            self.suggestions_widget = SuggestionsWidget(self.user_name)
+            self.suggestions_widget.back_to_dashboard.connect(self._on_suggestions_back)
             
-            # Conectar evento de fechamento
-            self.suggestions_window.closeEvent = self._on_suggestions_close
+            # Substituir o conteúdo da janela principal
+            self._show_suggestions_view()
             
-            # Mostrar janela
-            self.suggestions_window.show()
-            self.suggestions_window.raise_()  # Trazer para frente
-            self.suggestions_window.activateWindow()  # Ativar janela
         except Exception as e:
             self._show_error(f"Erro ao abrir sugestões: {str(e)}")
+    
+    def _show_suggestions_view(self):
+        """Mostra a view de sugestões na janela principal"""
+        # Adicionar o widget de sugestões
+        self.setCentralWidget(self.suggestions_widget)
+        
+        # Atualizar título da janela
+        self.setWindowTitle(f"EduAI - Sugestões de Aulas - {self.user_name}")
+    
+    def _show_dashboard_view(self):
+        """Mostra a view do dashboard na janela principal"""
+        # Limpar o widget atual
+        if hasattr(self, 'suggestions_widget'):
+            self.suggestions_widget.setParent(None)
+            self.suggestions_widget = None
+        
+        # Recriar o widget do dashboard
+        self._recreate_dashboard()
+        
+        # Atualizar título da janela
+        self.setWindowTitle(f"{config.app.app_name} - {config.app.app_description} - {self.user_name}")
+    
+    def _recreate_dashboard(self):
+        """Recria o widget do dashboard"""
+        # Criar novo widget central
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        # Layout principal em grid (2 colunas)
+        main_layout = QGridLayout(central_widget)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(30, 30, 30, 30)
+        self.main_layout = main_layout
+        
+        # Criar seções
+        self._create_header(main_layout)
+        self._create_search_section(main_layout)
+        self._create_selected_class_section(main_layout)
+        self._create_side_panel(main_layout)
+        self._create_footer(main_layout)
+        
+        # Aplicar estilo
+        self._apply_styles()
+        
+        # Ajuste responsivo inicial
+        self._update_responsive_layout()
+        self._apply_scale_metrics()
     
     def _open_profile(self):
         """Abre a tela de perfil do usuário"""
@@ -769,18 +816,13 @@ Para mais informações, entre em contato conosco!"""
         except Exception as e:
             self._show_error(f"Erro ao abrir perfil: {str(e)}")
     
-    def _on_suggestions_close(self, event):
-        """Chamado quando a janela de sugestões é fechada"""
-        # Limpar referência
-        if hasattr(self, 'suggestions_window'):
-            self.suggestions_window = None
-        event.accept()
-    
     def _on_suggestions_back(self, user_name):
         """Chamado quando o usuário volta das sugestões"""
         # Atualizar nome do usuário se necessário
         self.user_name = user_name
-        self.setWindowTitle(f"EduAI - Plataforma de Ensino Inteligente - {user_name}")
+        
+        # Voltar para a view do dashboard
+        self._show_dashboard_view()
         
         # Atualizar label do usuário no cabeçalho
         if hasattr(self, 'user_label'):

@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPixmap, QCursor
 import qtawesome as qta
 from datetime import datetime
+from ..utils.font_utils import get_portable_font
 
 class ProfileWindow(QMainWindow):
     # Sinal emitido quando o usuário volta para o dashboard
@@ -59,18 +60,37 @@ class ProfileWindow(QMainWindow):
         
         # Logo personalizada
         logo_icon = QLabel()
-        logo_pixmap = QPixmap("Imagens/LogoPretaSemFundo - Editado.png")
+        import os
+        # Tentar diferentes caminhos possíveis para a logo
+        logo_paths = [
+            os.path.join("assets", "images", "LogoPretaSemFundo - Editado.png"),
+            os.path.join("assets", "images", "LogoPretaSemFundo.png"),
+            os.path.join("Imagens", "LogoPretaSemFundo - Editado.png"),
+            os.path.join("Imagens", "LogoPretaSemFundo.png"),
+            "assets/images/LogoPretaSemFundo - Editado.png",
+            "assets/images/LogoPretaSemFundo.png",
+            "Imagens/LogoPretaSemFundo - Editado.png",
+            "Imagens/LogoPretaSemFundo.png"
+        ]
+        
+        logo_pixmap = QPixmap()
+        for path in logo_paths:
+            if os.path.exists(path):
+                logo_pixmap = QPixmap(path)
+                if not logo_pixmap.isNull():
+                    break
+        
         if not logo_pixmap.isNull():
             logo_pixmap = logo_pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             logo_icon.setPixmap(logo_pixmap)
         else:
+            # Fallback para ícone do qtawesome se a imagem não for encontrada
             logo_icon.setPixmap(qta.icon('fa5s.graduation-cap', color="#2c3e50").pixmap(32, 32))
         logo_container.addWidget(logo_icon)
         
         # Título
         logo_label = QLabel("EduAI - Meu Perfil")
-        logo_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
-        logo_label.setFont(logo_font)
+        logo_label.setFont(get_portable_font("Segoe UI", 18, QFont.Weight.Bold))
         logo_label.setStyleSheet("color: #2c3e50;")
         logo_container.addWidget(logo_label)
         
@@ -82,7 +102,7 @@ class ProfileWindow(QMainWindow):
         # Botão de voltar
         back_button = QPushButton("Voltar ao Dashboard")
         back_button.setIcon(qta.icon('fa5s.arrow-left', color="#ffffff"))
-        back_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        back_button.setFont(get_portable_font("Segoe UI", 11, QFont.Weight.Bold))
         back_button.setStyleSheet("""
             QPushButton {
                 background-color: #000000;
@@ -108,8 +128,7 @@ class ProfileWindow(QMainWindow):
         
         # Subtítulo
         subtitle_label = QLabel("Visualize e edite suas informações pessoais")
-        subtitle_font = QFont("Segoe UI", 11)
-        subtitle_label.setFont(subtitle_font)
+        subtitle_label.setFont(get_portable_font("Segoe UI", 11))
         subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle_label.setStyleSheet("color: #7f8c8d; margin-bottom: 20px;")
         subtitle_label.setWordWrap(True)
@@ -576,19 +595,71 @@ class ProfileWindow(QMainWindow):
         parent_layout.addWidget(footer_widget)
     
     def _apply_styles(self):
-        """Aplica estilos globais"""
+        """Aplica estilos globais com melhor portabilidade"""
         self.setStyleSheet("""
+            /* Estilos globais da aplicação */
             QMainWindow {
                 background-color: #ffffff;
+                color: #1e293b;
+                font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
             }
+            
+            /* Cards de seção */
             QFrame#infoCard, QFrame#statsCard, QFrame#actionsCard {
                 background-color: #ffffff;
                 border-radius: 10px;
                 padding: 20px;
                 border: 1px solid #d1d5db;
+                margin: 4px;
             }
+            
+            /* Labels padrão */
             QLabel {
                 color: #111827;
+                font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            }
+            
+            /* Botões padrão */
+            QPushButton {
+                font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+                font-weight: 600;
+                border-radius: 8px;
+                padding: 8px 16px;
+            }
+            
+            /* Inputs padrão */
+            QLineEdit {
+                font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+                border-radius: 8px;
+                padding: 8px 12px;
+            }
+            
+            /* Scrollbars personalizadas */
+            QScrollBar:vertical {
+                background: #f1f5f9;
+                width: 12px;
+                border-radius: 6px;
+                margin: 0px;
+            }
+            
+            QScrollBar::handle:vertical {
+                background: #cbd5e1;
+                border-radius: 6px;
+                min-height: 20px;
+            }
+            
+            QScrollBar::handle:vertical:hover {
+                background: #94a3b8;
+            }
+            
+            QScrollBar::add-line:vertical, 
+            QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            
+            QScrollBar::add-page:vertical, 
+            QScrollBar::sub-page:vertical {
+                background: none;
             }
         """)
     

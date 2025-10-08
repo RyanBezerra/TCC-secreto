@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt, Signal, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QCursor, QPixmap, QPainter, QColor, QLinearGradient
 import qtawesome as qta
 from ..core.database import db_manager
+from ..utils.font_utils import get_portable_font
 
 
 class ChatMessageWidget(QWidget):
@@ -52,7 +53,7 @@ class ChatMessageWidget(QWidget):
             
             # Texto da mensagem
             message_label = QLabel(message)
-            message_label.setFont(QFont("Segoe UI", 12))
+            message_label.setFont(get_portable_font("Segoe UI", 12))
             message_label.setStyleSheet("color: #ffffff; line-height: 1.4;")
             message_label.setWordWrap(True)
             message_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -61,7 +62,7 @@ class ChatMessageWidget(QWidget):
             # Timestamp
             if timestamp:
                 time_label = QLabel(timestamp)
-                time_label.setFont(QFont("Segoe UI", 9))
+                time_label.setFont(get_portable_font("Segoe UI", 9))
                 time_label.setStyleSheet("color: #e2e8f0;")
                 time_label.setAlignment(Qt.AlignmentFlag.AlignRight)
                 message_layout.addWidget(time_label)
@@ -103,7 +104,7 @@ class ChatMessageWidget(QWidget):
             
             # Texto da mensagem
             message_label = QLabel(message)
-            message_label.setFont(QFont("Segoe UI", 12))
+            message_label.setFont(get_portable_font("Segoe UI", 12))
             message_label.setStyleSheet("color: #2c3e50; line-height: 1.4;")
             message_label.setWordWrap(True)
             message_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -112,7 +113,7 @@ class ChatMessageWidget(QWidget):
             # Timestamp
             if timestamp:
                 time_label = QLabel(timestamp)
-                time_label.setFont(QFont("Segoe UI", 9))
+                time_label.setFont(get_portable_font("Segoe UI", 9))
                 time_label.setStyleSheet("color: #7f8c8d;")
                 time_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
                 message_layout.addWidget(time_label)
@@ -143,11 +144,11 @@ class ChatInterface(QWidget):
         self.messages_scroll.setStyleSheet("""
             QScrollArea {
                 border: none;
-                background: #f8fafc;
+                background: #ffffff;
                 border-radius: 12px;
             }
             QScrollBar:vertical {
-                background: #e2e8f0;
+                background: #f1f5f9;
                 width: 8px;
                 border-radius: 4px;
                 margin: 0px;
@@ -158,7 +159,7 @@ class ChatInterface(QWidget):
                 min-height: 20px;
             }
             QScrollBar::handle:vertical:hover {
-                background: #a0aec0;
+                background: #94a3b8;
             }
         """)
         
@@ -192,11 +193,11 @@ class ChatInterface(QWidget):
         # Campo de entrada
         self.message_input = QTextEdit()
         self.message_input.setPlaceholderText(self.placeholder_text)
-        self.message_input.setFont(QFont("Segoe UI", 12))
+        self.message_input.setFont(get_portable_font("Segoe UI", 12))
         self.message_input.setMaximumHeight(100)
         self.message_input.setStyleSheet("""
             QTextEdit {
-                background: #f8fafc;
+                background: #ffffff;
                 border: 2px solid #e2e8f0;
                 border-radius: 8px;
                 padding: 12px 15px;
@@ -205,11 +206,11 @@ class ChatInterface(QWidget):
                 line-height: 1.4;
             }
             QTextEdit:focus {
-                border-color: #3498db;
+                border-color: #3b82f6;
                 background: #ffffff;
             }
             QTextEdit::placeholder {
-                color: #95a5a6;
+                color: #94a3b8;
             }
         """)
         self.message_input.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -310,23 +311,16 @@ class ChatInterface(QWidget):
         return "\n".join(conversation)
 
 
-class SuggestionsWindow(QMainWindow):
+class SuggestionsWidget(QWidget):
     # Sinal emitido quando o usuário volta para o dashboard
     back_to_dashboard = Signal(str)  # Emite o nome do usuário
     
     def __init__(self, user_name: str):
         super().__init__()
         self.user_name = user_name
-        self.setWindowTitle(f"EduAI - Sugestões de Aulas - {user_name}")
-        self.setGeometry(100, 100, 1400, 900)
-        self.setMinimumSize(1200, 800)
-        
-        # Widget central
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
         
         # Layout principal com splitter
-        main_layout = QHBoxLayout(central_widget)
+        main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
@@ -381,7 +375,7 @@ class SuggestionsWindow(QMainWindow):
         
         # Logo/Ícone
         logo_label = QLabel()
-        logo_label.setPixmap(qta.icon('fa5s.lightbulb', color="#2c3e50").pixmap(48, 48))
+        logo_label.setPixmap(qta.icon('fa5s.graduation-cap', color="#2c3e50").pixmap(48, 48))
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_container.addWidget(logo_label)
         
@@ -409,7 +403,9 @@ class SuggestionsWindow(QMainWindow):
         nav_container.setSpacing(10)
         
         # Botão Nova Sugestão
-        new_suggestion_btn = QPushButton("💬 Nova Sugestão")
+        new_suggestion_btn = QPushButton()
+        new_suggestion_btn.setIcon(qta.icon('fa5s.plus-circle', color="#ffffff"))
+        new_suggestion_btn.setText("Nova Sugestão")
         new_suggestion_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         new_suggestion_btn.setMinimumHeight(50)
         new_suggestion_btn.setStyleSheet("""
@@ -433,7 +429,9 @@ class SuggestionsWindow(QMainWindow):
         nav_container.addWidget(new_suggestion_btn)
         
         # Botão Minhas Sugestões
-        my_suggestions_btn = QPushButton("📋 Minhas Sugestões")
+        my_suggestions_btn = QPushButton()
+        my_suggestions_btn.setIcon(qta.icon('fa5s.list-alt', color="#2c3e50"))
+        my_suggestions_btn.setText("Minhas Sugestões")
         my_suggestions_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         my_suggestions_btn.setMinimumHeight(50)
         my_suggestions_btn.setStyleSheet("""
@@ -454,7 +452,9 @@ class SuggestionsWindow(QMainWindow):
         nav_container.addWidget(my_suggestions_btn)
         
         # Botão Histórico
-        history_btn = QPushButton("📊 Histórico")
+        history_btn = QPushButton()
+        history_btn.setIcon(qta.icon('fa5s.chart-line', color="#2c3e50"))
+        history_btn.setText("Histórico")
         history_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         history_btn.setMinimumHeight(50)
         history_btn.setStyleSheet("""
@@ -494,7 +494,9 @@ class SuggestionsWindow(QMainWindow):
         user_layout = QVBoxLayout(user_info)
         user_layout.setSpacing(8)
         
-        user_name_label = QLabel(f"👤 {self.user_name}")
+        user_name_label = QLabel()
+        user_name_label.setPixmap(qta.icon('fa5s.user', color="#2c3e50").pixmap(16, 16))
+        user_name_label.setText(f" {self.user_name}")
         user_name_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         user_name_label.setStyleSheet("color: #2c3e50;")
         user_layout.addWidget(user_name_label)
@@ -507,7 +509,9 @@ class SuggestionsWindow(QMainWindow):
         footer_container.addWidget(user_info)
         
         # Botão voltar
-        back_button = QPushButton("← Voltar ao Dashboard")
+        back_button = QPushButton()
+        back_button.setIcon(qta.icon('fa5s.arrow-left', color="#2c3e50"))
+        back_button.setText("Voltar ao Dashboard")
         back_button.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         back_button.setMinimumHeight(45)
         back_button.setStyleSheet("""
@@ -537,7 +541,7 @@ class SuggestionsWindow(QMainWindow):
         main_content_widget.setObjectName("mainContent")
         main_content_widget.setStyleSheet("""
             QWidget#mainContent {
-                background: #f8fafc;
+                background: #ffffff;
             }
         """)
         
@@ -608,7 +612,9 @@ class SuggestionsWindow(QMainWindow):
         header_layout.setSpacing(20)
         
         # Título principal
-        title_label = QLabel("💡 Criar Nova Sugestão de Aula")
+        title_label = QLabel()
+        title_label.setPixmap(qta.icon('fa5s.lightbulb', color="#2c3e50").pixmap(32, 32))
+        title_label.setText(" Criar Nova Sugestão de Aula")
         title_font = QFont("Segoe UI", 24, QFont.Weight.Bold)
         title_label.setFont(title_font)
         title_label.setStyleSheet("color: #2c3e50;")
@@ -621,7 +627,9 @@ class SuggestionsWindow(QMainWindow):
         actions_layout.setSpacing(15)
         
         # Botão salvar rascunho
-        save_draft_btn = QPushButton("💾 Salvar Rascunho")
+        save_draft_btn = QPushButton()
+        save_draft_btn.setIcon(qta.icon('fa5s.save', color="#2c3e50"))
+        save_draft_btn.setText("Salvar Rascunho")
         save_draft_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         save_draft_btn.setMinimumHeight(45)
         save_draft_btn.setStyleSheet("""
@@ -642,7 +650,9 @@ class SuggestionsWindow(QMainWindow):
         actions_layout.addWidget(save_draft_btn)
         
         # Botão enviar
-        submit_btn = QPushButton("🚀 Enviar Sugestão")
+        submit_btn = QPushButton()
+        submit_btn.setIcon(qta.icon('fa5s.paper-plane', color="#ffffff"))
+        submit_btn.setText("Enviar Sugestão")
         submit_btn.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
         submit_btn.setMinimumHeight(45)
         submit_btn.setStyleSheet("""
@@ -735,7 +745,7 @@ class SuggestionsWindow(QMainWindow):
             ChatInterface {
                 border: 2px solid #e2e8f0;
                 border-radius: 12px;
-                background: #f8fafc;
+                background: #ffffff;
             }
         """)
         section_layout.addWidget(self.basic_info_chat)
@@ -798,7 +808,7 @@ class SuggestionsWindow(QMainWindow):
             ChatInterface {
                 border: 2px solid #e2e8f0;
                 border-radius: 12px;
-                background: #f8fafc;
+                background: #ffffff;
             }
         """)
         section_layout.addWidget(self.description_chat)
@@ -861,7 +871,7 @@ class SuggestionsWindow(QMainWindow):
             ChatInterface {
                 border: 2px solid #e2e8f0;
                 border-radius: 12px;
-                background: #f8fafc;
+                background: #ffffff;
             }
         """)
         section_layout.addWidget(self.objectives_chat)
@@ -871,44 +881,83 @@ class SuggestionsWindow(QMainWindow):
     
     
     def _apply_styles(self):
-        """Aplica estilos globais"""
+        """Aplica estilos globais com melhor portabilidade CSS"""
         self.setStyleSheet("""
+            /* Estilos globais da aplicação */
             QMainWindow {
-                background: #f8fafc;
+                background: #ffffff;
+                color: #1e293b;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }
+            
+            /* Cards de seção */
             QFrame#sectionCard {
                 background: #ffffff;
                 border-radius: 16px;
                 border: 1px solid #e2e8f0;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-                           0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                margin: 8px;
             }
+            
+            /* Labels padrão */
             QLabel {
-                color: #2d3748;
+                color: #1e293b;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }
+            
+            /* Áreas de scroll */
             QScrollArea {
                 border: none;
                 background: transparent;
             }
+            
+            /* Scrollbars personalizadas */
             QScrollBar:vertical {
-                background: #e2e8f0;
+                background: #f1f5f9;
                 width: 12px;
                 border-radius: 6px;
                 margin: 0px;
             }
+            
             QScrollBar::handle:vertical {
                 background: #cbd5e1;
                 border-radius: 6px;
                 min-height: 20px;
             }
+            
             QScrollBar::handle:vertical:hover {
-                background: #a0aec0;
+                background: #94a3b8;
             }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            
+            QScrollBar::add-line:vertical, 
+            QScrollBar::sub-line:vertical {
                 height: 0px;
             }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            
+            QScrollBar::add-page:vertical, 
+            QScrollBar::sub-page:vertical {
                 background: none;
+            }
+            
+            /* Botões padrão */
+            QPushButton {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-weight: 600;
+                border-radius: 8px;
+                padding: 8px 16px;
+            }
+            
+            /* Inputs padrão */
+            QLineEdit, QTextEdit {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                border-radius: 8px;
+                padding: 8px 12px;
+            }
+            
+            /* Comboboxes */
+            QComboBox {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                border-radius: 8px;
+                padding: 8px 12px;
             }
         """)
     
@@ -971,7 +1020,6 @@ class SuggestionsWindow(QMainWindow):
     def _go_back(self):
         """Volta para o dashboard"""
         self.back_to_dashboard.emit(self.user_name)
-        self.close()
     
     def _show_error(self, message):
         """Mostra mensagem de erro"""
@@ -1005,12 +1053,6 @@ class SuggestionsWindow(QMainWindow):
         """)
         msg.exec()
     
-    
-    def closeEvent(self, event):
-        """Chamado quando a janela é fechada"""
-        # Emitir sinal de volta ao dashboard
-        self.back_to_dashboard.emit(self.user_name)
-        event.accept()
 
 
 def main():
@@ -1019,9 +1061,9 @@ def main():
     
     app = QApplication(sys.argv)
     
-    # Criar e mostrar a janela de sugestões
-    window = SuggestionsWindow("Teste")
-    window.show()
+    # Criar e mostrar o widget de sugestões
+    widget = SuggestionsWidget("Teste")
+    widget.show()
     
     # Executar a aplicação
     sys.exit(app.exec())
