@@ -12,7 +12,6 @@ from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
 import json
 import time
 import qtawesome as qta
-from ..ui.auth_window import AuthWindow
 from ..ui.profile import ProfileWindow
 from ..config import config, constants
 from ..utils import get_logger, search_validator, LogOperation
@@ -111,6 +110,28 @@ class EduAIApp(QMainWindow):
         self.user_label.setFont(user_font)
         self.user_label.setStyleSheet("color: #2c3e50;")
         user_container.addWidget(self.user_label)
+        
+        # Botão de sugestões
+        suggestions_button = QPushButton()
+        suggestions_button.setIcon(qta.icon('fa5s.lightbulb', color="#f39c12"))
+        suggestions_button.setToolTip("Sugerir Aulas")
+        suggestions_button.setFixedSize(32, 32)
+        suggestions_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 2px solid #f39c12;
+                border-radius: 16px;
+            }
+            QPushButton:hover {
+                background-color: #f39c12;
+            }
+            QPushButton:hover QIcon {
+                color: white;
+            }
+        """)
+        suggestions_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        suggestions_button.clicked.connect(self._open_suggestions)
+        user_container.addWidget(suggestions_button)
         
         # Botão de perfil
         profile_button = QPushButton()
@@ -700,9 +721,29 @@ Para mais informações, entre em contato conosco!"""
     
     def _create_login_window(self):
         """Cria uma nova janela de login"""
-        login_window = LoginWindow()
+        from ..ui.auth_window import AuthWindow
+        login_window = AuthWindow()
         login_window.login_successful.connect(self._on_login_success)
         login_window.show()
+    
+    def _open_suggestions(self):
+        """Abre a tela de sugestões de aulas"""
+        try:
+            from ..ui.suggestions_window import SuggestionsWindow
+            
+            # Criar janela de sugestões
+            self.suggestions_window = SuggestionsWindow(self.user_name)
+            self.suggestions_window.back_to_dashboard.connect(self._on_suggestions_back)
+            
+            # Conectar evento de fechamento
+            self.suggestions_window.closeEvent = self._on_suggestions_close
+            
+            # Mostrar janela
+            self.suggestions_window.show()
+            self.suggestions_window.raise_()  # Trazer para frente
+            self.suggestions_window.activateWindow()  # Ativar janela
+        except Exception as e:
+            self._show_error(f"Erro ao abrir sugestões: {str(e)}")
     
     def _open_profile(self):
         """Abre a tela de perfil do usuário"""
@@ -727,6 +768,23 @@ Para mais informações, entre em contato conosco!"""
                 self._show_error("Erro ao carregar dados do usuário")
         except Exception as e:
             self._show_error(f"Erro ao abrir perfil: {str(e)}")
+    
+    def _on_suggestions_close(self, event):
+        """Chamado quando a janela de sugestões é fechada"""
+        # Limpar referência
+        if hasattr(self, 'suggestions_window'):
+            self.suggestions_window = None
+        event.accept()
+    
+    def _on_suggestions_back(self, user_name):
+        """Chamado quando o usuário volta das sugestões"""
+        # Atualizar nome do usuário se necessário
+        self.user_name = user_name
+        self.setWindowTitle(f"EduAI - Plataforma de Ensino Inteligente - {user_name}")
+        
+        # Atualizar label do usuário no cabeçalho
+        if hasattr(self, 'user_label'):
+            self.user_label.setText(f"Olá, {user_name}")
     
     def _on_profile_close(self, event):
         """Chamado quando a janela de perfil é fechada"""
@@ -783,6 +841,7 @@ class EduAIManager:
     
     def show_login(self):
         """Mostra a tela de autenticação (login/cadastro)"""
+        from ..ui.auth_window import AuthWindow
         auth_window = AuthWindow()
         auth_window.login_successful.connect(self._on_login_success)
         auth_window.signup_successful.connect(self._on_login_success)  # Usar o mesmo handler

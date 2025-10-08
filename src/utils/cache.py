@@ -7,7 +7,7 @@ import time
 import threading
 from typing import Any, Dict, Optional, Callable
 from dataclasses import dataclass
-from config import config
+from ..config import config
 
 @dataclass
 class CacheItem:

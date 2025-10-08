@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
-from config import config
+from ..config import config
 
 class EduAILogger:
     """Classe para gerenciamento de logs da aplicação"""

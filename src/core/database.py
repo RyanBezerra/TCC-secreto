@@ -43,6 +43,9 @@ class DatabaseManager:
             self.connection_pool = None
             self._initialize_pool()
             
+            # Garantir que as tabelas necessárias existam
+            self._ensure_tables()
+            
             DatabaseManager._initialized = True
     
     def _initialize_pool(self):
@@ -62,6 +65,17 @@ class DatabaseManager:
         except psycopg2.Error as e:
             logger.error(f"Erro ao inicializar pool de conexões: {e}")
             self.connection_pool = None
+    
+    def _ensure_tables(self):
+        """Garante que todas as tabelas necessárias existam"""
+        try:
+            # Garantir tabela de sugestões
+            self.ensure_suggestions_table()
+            # Garantir coluna de embeddings nas aulas
+            self.ensure_aulas_embedding_column()
+            logger.info("Tabelas verificadas e criadas com sucesso")
+        except Exception as e:
+            logger.error(f"Erro ao verificar/criar tabelas: {e}")
     
     @contextmanager
     def get_connection(self):
@@ -489,6 +503,80 @@ class DatabaseManager:
             {'categoria': 'Alto', 'valor': row.get('alto', 0)},
         ]
     
+    # Métodos específicos para sugestões de aulas
+    
+    def create_suggestion(self, suggestion_data: Dict) -> bool:
+        """Cria uma nova sugestão de aula"""
+        query = """
+            INSERT INTO sugestoes_aulas (
+                titulo, categoria, nivel_dificuldade, duracao_estimada, 
+                descricao, objetivos, sugerido_por, status, data_criacao
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        params = (
+            suggestion_data.get('titulo'),
+            suggestion_data.get('categoria'),
+            suggestion_data.get('nivel_dificuldade'),
+            suggestion_data.get('duracao_estimada'),
+            suggestion_data.get('descricao'),
+            suggestion_data.get('objetivos'),
+            suggestion_data.get('sugerido_por'),
+            suggestion_data.get('status', 'Pendente'),
+            datetime.now()
+        )
+        return self.execute_update(query, params)
+    
+    def get_user_suggestions(self, user_name: str) -> List[Dict]:
+        """Retorna todas as sugestões de um usuário"""
+        query = """
+            SELECT * FROM sugestoes_aulas 
+            WHERE sugerido_por = %s 
+            ORDER BY data_criacao DESC
+        """
+        return self.execute_query(query, (user_name,))
+    
+    def get_all_suggestions(self) -> List[Dict]:
+        """Retorna todas as sugestões (para administradores)"""
+        query = """
+            SELECT * FROM sugestoes_aulas 
+            ORDER BY data_criacao DESC
+        """
+        return self.execute_query(query)
+    
+    def update_suggestion_status(self, suggestion_id: int, status: str, feedback: str = None) -> bool:
+        """Atualiza o status de uma sugestão"""
+        query = """
+            UPDATE sugestoes_aulas 
+            SET status = %s, feedback = %s, data_avaliacao = %s
+            WHERE id = %s
+        """
+        params = (status, feedback, datetime.now(), suggestion_id)
+        return self.execute_update(query, params)
+    
+    def ensure_suggestions_table(self) -> None:
+        """Garante a existência da tabela de sugestões"""
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS sugestoes_aulas (
+                        id SERIAL PRIMARY KEY,
+                        titulo VARCHAR(255) NOT NULL,
+                        categoria VARCHAR(100) NOT NULL,
+                        nivel_dificuldade VARCHAR(50) NOT NULL,
+                        duracao_estimada INTEGER NOT NULL,
+                        descricao TEXT NOT NULL,
+                        objetivos TEXT,
+                        sugerido_por VARCHAR(100) NOT NULL,
+                        status VARCHAR(50) DEFAULT 'Pendente',
+                        feedback TEXT,
+                        data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        data_avaliacao TIMESTAMP
+                    )
+                """)
+        except Exception as e:
+            logger.error(f"Erro ao criar tabela de sugestões: {e}")
+
     def test_connection(self) -> bool:
         """Testa a conexão com o banco de dados"""
         try:

@@ -6,7 +6,7 @@ Sistema centralizado de validação de dados
 import re
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
-from config import constants
+from ..config import constants
 
 @dataclass
 class ValidationResult:
