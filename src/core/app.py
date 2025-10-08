@@ -735,10 +735,12 @@ Para mais informações, entre em contato conosco!"""
     
     def _create_login_window(self):
         """Cria uma nova janela de login"""
-        from ..ui.auth_window import AuthWindow
-        login_window = AuthWindow()
-        login_window.login_successful.connect(self._on_login_success)
-        login_window.show()
+        # Emitir sinal de logout para o gerenciador principal
+        if hasattr(self, 'logout_requested'):
+            self.logout_requested.emit()
+        else:
+            # Fallback: fechar aplicação
+            self.close()
     
     def _open_suggestions(self):
         """Abre a tela de sugestões de aulas"""
@@ -927,12 +929,6 @@ Para mais informações, entre em contato conosco!"""
         """)
         msg.exec()
     
-    def _on_login_success(self, user_name):
-        """Chamado quando o login é bem-sucedido"""
-        # Fechar janela atual e abrir nova com o usuário logado
-        self.close()
-        new_window = EduAIApp(user_name)
-        new_window.show()
 
 class EduAIManager:
     """Gerenciador principal da aplicação EduAI"""
@@ -957,9 +953,16 @@ class EduAIManager:
     
     def _on_login_success(self, user_name):
         """Chamado quando o login é bem-sucedido"""
+        # Fechar janela atual primeiro
         if self.current_window:
             self.current_window.close()
+            self.current_window = None
         
+        # Abrir dashboard imediatamente
+        self._open_dashboard(user_name)
+    
+    def _open_dashboard(self, user_name):
+        """Abre o dashboard apropriado para o usuário"""
         # Verificar perfil do usuário para redirecionar
         try:
             from .database import db_manager  # import relativo dentro do método
@@ -968,7 +971,7 @@ class EduAIManager:
         user = db_manager.get_user_by_name(user_name)
         perfil = (user or {}).get('perfil')
 
-        if perfil == 'educador':
+        if perfil == 'educador' or perfil == 'admin':
             from ..ui.educator_dashboard import EducatorDashboard
             window = EducatorDashboard(user_name)
         else:

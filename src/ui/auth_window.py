@@ -685,13 +685,12 @@ class AuthWindow(QMainWindow):
                 if user:
                     # Login bem-sucedido
                     user_name = user['nome']
-                    self._show_success(f"Bem-vindo, {user_name}!")
                     self.logger.log_user_action(user_name, "LOGIN_SUCCESS", True)
                     
                     # Emitir sinal de sucesso com informações do usuário
                     self.login_successful.emit(user_name)
                     
-                    # Fechar janela de autenticação
+                    # Fechar janela de autenticação imediatamente
                     self.close()
                     return
                 else:

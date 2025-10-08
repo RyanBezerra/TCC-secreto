@@ -1,0 +1,72 @@
+{
+  "connections": [
+    {
+      "name": "EduAI - Railway PostgreSQL",
+      "driver": "postgresql",
+      "host": "centerbeam.proxy.rlwy.net",
+      "port": 38802,
+      "database": "railway",
+      "username": "postgres",
+      "password": "wQzRPlMlCdkfNjwMkZHyfabrZubqFKPC",
+      "description": "Conexão principal do EduAI com banco PostgreSQL no Railway",
+      "properties": {
+        "connectTimeout": "30",
+        "socketTimeout": "30",
+        "loginTimeout": "30",
+        "tcpKeepAlive": "true",
+        "ssl": "false",
+        "sslmode": "disable"
+      },
+      "schemas": [
+        {
+          "name": "public",
+          "description": "Schema principal do banco"
+        }
+      ]
+    },
+    {
+      "name": "EduAI - Local PostgreSQL (Docker)",
+      "driver": "postgresql", 
+      "host": "localhost",
+      "port": 5432,
+      "database": "eduai",
+      "username": "eduai_user",
+      "password": "eduai_password",
+      "description": "Conexão local do EduAI com PostgreSQL via Docker",
+      "properties": {
+        "connectTimeout": "30",
+        "socketTimeout": "30",
+        "loginTimeout": "30",
+        "tcpKeepAlive": "true",
+        "ssl": "false",
+        "sslmode": "disable"
+      },
+      "schemas": [
+        {
+          "name": "eduai",
+          "description": "Schema principal do EduAI"
+        },
+        {
+          "name": "public", 
+          "description": "Schema público"
+        }
+      ]
+    }
+  ],
+  "instructions": {
+    "import": "Para importar estas conexões no DBeaver:",
+    "steps": [
+      "1. Abra o DBeaver",
+      "2. Vá em Database > New Database Connection",
+      "3. Selecione PostgreSQL",
+      "4. Use os dados de conexão fornecidos acima",
+      "5. Teste a conexão antes de salvar"
+    ],
+    "notes": [
+      "A conexão Railway é a principal e está sempre disponível",
+      "A conexão local só funciona quando o Docker estiver rodando",
+      "Use a conexão Railway para desenvolvimento e produção",
+      "Use a conexão local apenas para testes locais"
+    ]
+  }
+}

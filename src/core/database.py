@@ -75,6 +75,8 @@ class DatabaseManager:
             self.ensure_aulas_embedding_column()
             # Garantir tabela de feedback
             self.ensure_feedback_table()
+            # Garantir tabela de instituições
+            self.ensure_instituicoes_table()
             logger.info("Tabelas verificadas e criadas com sucesso")
         except Exception as e:
             logger.error(f"Erro ao verificar/criar tabelas: {e}")
@@ -719,6 +721,143 @@ class DatabaseManager:
         query = "SELECT COUNT(*) as total FROM feedback WHERE id_usuario = %s"
         results = self.execute_query(query, (user_id,))
         return results[0]['total'] if results else 0
+    
+    # ==========================
+    # Métodos específicos para instituições
+    # ==========================
+    
+    def ensure_instituicoes_table(self) -> None:
+        """Garante a existência da tabela de instituições"""
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS instituicoes (
+                        id SERIAL PRIMARY KEY,
+                        nome VARCHAR(255) NOT NULL,
+                        cnpj VARCHAR(18) UNIQUE NOT NULL,
+                        tipo_instituicao VARCHAR(100) NOT NULL,
+                        area_atuacao VARCHAR(100) NOT NULL,
+                        data_fundacao DATE NOT NULL,
+                        cep VARCHAR(9) NOT NULL,
+                        logradouro VARCHAR(255) NOT NULL,
+                        numero VARCHAR(20) NOT NULL,
+                        complemento VARCHAR(100),
+                        bairro VARCHAR(100) NOT NULL,
+                        cidade VARCHAR(100) NOT NULL,
+                        estado VARCHAR(2) NOT NULL,
+                        data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        data_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                # Criar índices se não existirem
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_instituicoes_cnpj ON instituicoes(cnpj)
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_instituicoes_nome ON instituicoes(nome)
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_instituicoes_cidade ON instituicoes(cidade)
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_instituicoes_estado ON instituicoes(estado)
+                """)
+        except Exception as e:
+            logger.error(f"Erro ao criar tabela de instituições: {e}")
+    
+    def create_instituicao(self, instituicao_data: Dict) -> Optional[int]:
+        """Cria uma nova instituição e retorna o ID"""
+        query = """
+            INSERT INTO instituicoes (
+                nome, cnpj, tipo_instituicao, area_atuacao, data_fundacao,
+                cep, logradouro, numero, complemento, bairro, cidade, estado
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """
+        params = (
+            instituicao_data.get('nome'),
+            instituicao_data.get('cnpj'),
+            instituicao_data.get('tipo_instituicao'),
+            instituicao_data.get('area_atuacao'),
+            instituicao_data.get('data_fundacao'),
+            instituicao_data.get('cep'),
+            instituicao_data.get('logradouro'),
+            instituicao_data.get('numero'),
+            instituicao_data.get('complemento'),
+            instituicao_data.get('bairro'),
+            instituicao_data.get('cidade'),
+            instituicao_data.get('estado')
+        )
+        
+        try:
+            with self.get_cursor() as cursor:
+                cursor.execute(query, params)
+                result = cursor.fetchone()
+                if result:
+                    instituicao_id = result['id']
+                    return instituicao_id
+                return None
+        except Exception as e:
+            logger.error(f"Erro ao criar instituição: {e}")
+            return None
+    
+    def get_instituicao_by_id(self, instituicao_id: int) -> Optional[Dict]:
+        """Busca instituição pelo ID"""
+        query = "SELECT * FROM instituicoes WHERE id = %s"
+        results = self.execute_query(query, (instituicao_id,))
+        return results[0] if results else None
+    
+    def get_instituicao_by_cnpj(self, cnpj: str) -> Optional[Dict]:
+        """Busca instituição pelo CNPJ"""
+        query = "SELECT * FROM instituicoes WHERE cnpj = %s"
+        results = self.execute_query(query, (cnpj,))
+        return results[0] if results else None
+    
+    def get_all_instituicoes(self) -> List[Dict]:
+        """Retorna todas as instituições"""
+        query = "SELECT * FROM instituicoes ORDER BY nome"
+        return self.execute_query(query)
+    
+    def update_instituicao(self, instituicao_id: int, instituicao_data: Dict) -> bool:
+        """Atualiza uma instituição existente"""
+        updates = []
+        params = []
+        
+        fields = ['nome', 'cnpj', 'tipo_instituicao', 'area_atuacao', 'data_fundacao',
+                 'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado']
+        
+        for field in fields:
+            if field in instituicao_data and instituicao_data[field] is not None:
+                updates.append(f"{field} = %s")
+                params.append(instituicao_data[field])
+        
+        if not updates:
+            return True  # Nada para atualizar
+        
+        updates.append("data_atualizacao = %s")
+        params.append(datetime.now())
+        params.append(instituicao_id)
+        
+        query = f"UPDATE instituicoes SET {', '.join(updates)} WHERE id = %s"
+        return self.execute_update(query, tuple(params))
+    
+    def delete_instituicao(self, instituicao_id: int) -> bool:
+        """Remove uma instituição"""
+        query = "DELETE FROM instituicoes WHERE id = %s"
+        return self.execute_update(query, (instituicao_id,))
+    
+    def search_instituicoes(self, search_term: str) -> List[Dict]:
+        """Busca instituições por nome, CNPJ ou cidade"""
+        query = """
+            SELECT * FROM instituicoes 
+            WHERE nome ILIKE %s OR cnpj ILIKE %s OR cidade ILIKE %s
+            ORDER BY nome
+        """
+        search_pattern = f"%{search_term}%"
+        params = (search_pattern, search_pattern, search_pattern)
+        return self.execute_query(query, params)
 
 # Instância global do gerenciador de banco de dados
 db_manager = DatabaseManager()
