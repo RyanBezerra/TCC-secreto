@@ -1,9 +1,9 @@
 """
-EduAI - Tela de Perfil do Usuário
-Interface para visualização e edição dos dados do perfil
+EduAI - Widget de Perfil do Usuário
+Widget que pode ser integrado na mesma janela
 """
 
-from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, 
                              QLabel, QLineEdit, QPushButton, QFrame, QGridLayout,
                              QSizePolicy, QMessageBox)
 from PySide6.QtCore import Qt, Signal
@@ -12,7 +12,9 @@ import qtawesome as qta
 from datetime import datetime
 from ..utils.font_utils import get_portable_font
 
-class ProfileWindow(QMainWindow):
+
+class ProfileWidget(QWidget):
+    """Widget de perfil que pode ser integrado na mesma janela"""
     # Sinal emitido quando o usuário volta para o dashboard
     back_to_dashboard = Signal(str)  # Emite o nome do usuário atualizado
     
@@ -23,15 +25,8 @@ class ProfileWindow(QMainWindow):
         self.original_data = user_data.copy() if user_data else {}
         self.is_editing = False
         
-        self.setWindowTitle(f"EduAI - Meu Perfil - {user_name}")
-        self.setGeometry(150, 150, 800, 600)
-        
-        # Widget central
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        
         # Layout principal
-        main_layout = QVBoxLayout(central_widget)
+        main_layout = QVBoxLayout(self)
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(30, 30, 30, 30)
         
@@ -42,9 +37,6 @@ class ProfileWindow(QMainWindow):
         
         # Aplicar estilo
         self._apply_styles()
-        
-        # Iniciar maximizada
-        self.showMaximized()
     
     def _create_header(self, parent_layout):
         """Cria o cabeçalho com logo, título e botão de voltar"""
@@ -598,7 +590,7 @@ class ProfileWindow(QMainWindow):
         """Aplica estilos globais com melhor portabilidade"""
         self.setStyleSheet("""
             /* Estilos globais da aplicação */
-            QMainWindow {
+            QWidget {
                 background-color: #ffffff;
                 color: #1e293b;
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
@@ -632,34 +624,6 @@ class ProfileWindow(QMainWindow):
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
                 border-radius: 8px;
                 padding: 8px 12px;
-            }
-            
-            /* Scrollbars personalizadas */
-            QScrollBar:vertical {
-                background: #f1f5f9;
-                width: 12px;
-                border-radius: 6px;
-                margin: 0px;
-            }
-            
-            QScrollBar::handle:vertical {
-                background: #cbd5e1;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            
-            QScrollBar::handle:vertical:hover {
-                background: #94a3b8;
-            }
-            
-            QScrollBar::add-line:vertical, 
-            QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-            
-            QScrollBar::add-page:vertical, 
-            QScrollBar::sub-page:vertical {
-                background: none;
             }
         """)
     
@@ -860,7 +824,6 @@ class ProfileWindow(QMainWindow):
     def _go_back(self):
         """Volta para o dashboard"""
         self.back_to_dashboard.emit(self.user_name)
-        # Não fechar a janela automaticamente - deixar o gerenciador decidir
     
     def _show_error(self, message):
         """Mostra mensagem de erro"""

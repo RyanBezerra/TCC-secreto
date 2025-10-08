@@ -958,11 +958,22 @@ class SuggestionsWidget(QWidget):
     def _clear_form(self):
         """Limpa todos os campos do formulário"""
         # Limpar chats
-        self.basic_info_chat.messages_layout.clear()
+        while self.basic_info_chat.messages_layout.count():
+            child = self.basic_info_chat.messages_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
         self.basic_info_chat.messages_layout.addStretch()
-        self.description_chat.messages_layout.clear()
+        
+        while self.description_chat.messages_layout.count():
+            child = self.description_chat.messages_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
         self.description_chat.messages_layout.addStretch()
-        self.objectives_chat.messages_layout.clear()
+        
+        while self.objectives_chat.messages_layout.count():
+            child = self.objectives_chat.messages_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
         self.objectives_chat.messages_layout.addStretch()
         
         # Adicionar mensagens iniciais da IA

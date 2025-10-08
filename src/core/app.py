@@ -12,7 +12,7 @@ from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
 import json
 import time
 import qtawesome as qta
-from ..ui.profile import ProfileWindow
+from ..ui.profile_widget import ProfileWidget
 from ..config import config, constants
 from ..utils import get_logger, search_validator, LogOperation
 from ..utils.logger import logger_manager
@@ -449,6 +449,9 @@ class EduAIApp(QMainWindow):
         self.help_button = help_button
         self.help_button.setParent(self)
         self.help_button.show()
+        
+        # Posicionar inicialmente no canto inferior direito
+        self._position_help_button()
 
         # Footer fica sem altura visível (apenas placeholder para agrid)
         self.footer_widget.setMaximumHeight(0)
@@ -544,16 +547,23 @@ class EduAIApp(QMainWindow):
         if hasattr(self, 'tip_card'):
             self.tip_card.setMinimumHeight(int(150 * scale))
 
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self._update_responsive_layout()
-        # Posicionar botão de ajuda sticky no canto inferior direito com margens
+    def _position_help_button(self):
+        """Posiciona o botão de ajuda no canto inferior direito"""
         if hasattr(self, 'help_button') and self.help_button is not None:
             margin = 20
             x = self.width() - self.help_button.width() - margin
             y = self.height() - self.help_button.height() - margin
             self.help_button.move(x, y)
-        self._apply_scale_metrics()
+    
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        # Só aplicar ajustes se estivermos no dashboard (não em sugestões ou perfil)
+        if not hasattr(self, 'suggestions_widget') or self.suggestions_widget is None:
+            if not hasattr(self, 'profile_widget') or self.profile_widget is None:
+                self._update_responsive_layout()
+                # Posicionar botão de ajuda sticky no canto inferior direito
+                self._position_help_button()
+                self._apply_scale_metrics()
         
     def _on_search(self):
         """Processa a busca da aula"""
@@ -735,6 +745,9 @@ Para mais informações, entre em contato conosco!"""
         try:
             from ..ui.suggestions_window import SuggestionsWidget
             
+            # Limpar widgets existentes antes de criar novo
+            self._cleanup_widgets()
+            
             # Criar widget de sugestões
             self.suggestions_widget = SuggestionsWidget(self.user_name)
             self.suggestions_widget.back_to_dashboard.connect(self._on_suggestions_back)
@@ -755,16 +768,61 @@ Para mais informações, entre em contato conosco!"""
     
     def _show_dashboard_view(self):
         """Mostra a view do dashboard na janela principal"""
-        # Limpar o widget atual
-        if hasattr(self, 'suggestions_widget'):
-            self.suggestions_widget.setParent(None)
-            self.suggestions_widget = None
+        # Limpar widgets existentes de forma mais robusta
+        self._cleanup_widgets()
         
         # Recriar o widget do dashboard
         self._recreate_dashboard()
         
         # Atualizar título da janela
         self.setWindowTitle(f"{config.app.app_name} - {config.app.app_description} - {self.user_name}")
+    
+    def _cleanup_widgets(self):
+        """Limpa todos os widgets de navegação de forma segura"""
+        # Limpar widget de sugestões
+        if hasattr(self, 'suggestions_widget') and self.suggestions_widget is not None:
+            try:
+                # Desconectar sinais antes de remover
+                if hasattr(self.suggestions_widget, 'back_to_dashboard'):
+                    self.suggestions_widget.back_to_dashboard.disconnect()
+                self.suggestions_widget.setParent(None)
+                self.suggestions_widget.deleteLater()
+            except Exception:
+                pass
+            finally:
+                self.suggestions_widget = None
+        
+        # Limpar widget de perfil
+        if hasattr(self, 'profile_widget') and self.profile_widget is not None:
+            try:
+                # Desconectar sinais antes de remover
+                if hasattr(self.profile_widget, 'back_to_dashboard'):
+                    self.profile_widget.back_to_dashboard.disconnect()
+                self.profile_widget.setParent(None)
+                self.profile_widget.deleteLater()
+            except Exception:
+                pass
+            finally:
+                self.profile_widget = None
+        
+        # Limpar botão de ajuda anterior se existir
+        if hasattr(self, 'help_button') and self.help_button is not None:
+            try:
+                self.help_button.setParent(None)
+                self.help_button.deleteLater()
+            except Exception:
+                pass
+            finally:
+                self.help_button = None
+        
+        # Limpar widget central atual
+        current_central = self.centralWidget()
+        if current_central is not None:
+            try:
+                current_central.setParent(None)
+                current_central.deleteLater()
+            except Exception:
+                pass
     
     def _recreate_dashboard(self):
         """Recria o widget do dashboard"""
@@ -793,28 +851,34 @@ Para mais informações, entre em contato conosco!"""
         self._apply_scale_metrics()
     
     def _open_profile(self):
-        """Abre a tela de perfil do usuário"""
+        """Abre a tela de perfil do usuário na mesma janela"""
         try:
             # Buscar dados do usuário no banco
-            from database import db_manager
+            from .database import db_manager
             user_data = db_manager.get_user_by_name(self.user_name)
             
             if user_data:
-                # Criar janela de perfil
-                self.profile_window = ProfileWindow(self.user_name, user_data)
-                self.profile_window.back_to_dashboard.connect(self._on_profile_back)
+                # Limpar widgets existentes antes de criar novo
+                self._cleanup_widgets()
                 
-                # Conectar evento de fechamento
-                self.profile_window.closeEvent = self._on_profile_close
+                # Criar widget de perfil
+                self.profile_widget = ProfileWidget(self.user_name, user_data)
+                self.profile_widget.back_to_dashboard.connect(self._on_profile_back)
                 
-                # Mostrar janela
-                self.profile_window.show()
-                self.profile_window.raise_()  # Trazer para frente
-                self.profile_window.activateWindow()  # Ativar janela
+                # Substituir o conteúdo da janela principal
+                self._show_profile_view()
             else:
                 self._show_error("Erro ao carregar dados do usuário")
         except Exception as e:
             self._show_error(f"Erro ao abrir perfil: {str(e)}")
+    
+    def _show_profile_view(self):
+        """Mostra a view de perfil na janela principal"""
+        # Adicionar o widget de perfil
+        self.setCentralWidget(self.profile_widget)
+        
+        # Atualizar título da janela
+        self.setWindowTitle(f"EduAI - Meu Perfil - {self.user_name}")
     
     def _on_suggestions_back(self, user_name):
         """Chamado quando o usuário volta das sugestões"""
@@ -827,23 +891,24 @@ Para mais informações, entre em contato conosco!"""
         # Atualizar label do usuário no cabeçalho
         if hasattr(self, 'user_label'):
             self.user_label.setText(f"Olá, {user_name}")
-    
-    def _on_profile_close(self, event):
-        """Chamado quando a janela de perfil é fechada"""
-        # Limpar referência
-        if hasattr(self, 'profile_window'):
-            self.profile_window = None
-        event.accept()
+        
+        # Forçar atualização da interface
+        self.update()
     
     def _on_profile_back(self, user_name):
         """Chamado quando o usuário volta do perfil"""
         # Atualizar nome do usuário se necessário
         self.user_name = user_name
-        self.setWindowTitle(f"EduAI - Plataforma de Ensino Inteligente - {user_name}")
+        
+        # Voltar para a view do dashboard
+        self._show_dashboard_view()
         
         # Atualizar label do usuário no cabeçalho
         if hasattr(self, 'user_label'):
             self.user_label.setText(f"Olá, {user_name}")
+        
+        # Forçar atualização da interface
+        self.update()
     
     def _show_error(self, message):
         """Mostra mensagem de erro"""

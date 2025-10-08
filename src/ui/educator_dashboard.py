@@ -18,6 +18,7 @@ from ..core.database import db_manager
 
 class EducatorDashboard(QMainWindow):
     back_to_app = Signal()
+    logout_requested = Signal()
 
     def __init__(self, user_name: str):
         super().__init__()
@@ -37,6 +38,13 @@ class EducatorDashboard(QMainWindow):
         title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
         header.addWidget(title)
         header.addStretch()
+        
+        # Informações do usuário
+        user_label = QLabel(f"Olá, {user_name}")
+        user_label.setFont(QFont("Segoe UI", 12))
+        user_label.setStyleSheet("color: #6b7280; margin-right: 15px;")
+        header.addWidget(user_label)
+        
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Buscar aluno por nome...")
         self.search_input.returnPressed.connect(self._apply_filter)
@@ -47,6 +55,15 @@ class EducatorDashboard(QMainWindow):
         btn_search.setStyleSheet("QPushButton{background:#000;color:#fff;border-radius:6px;padding:6px 10px}")
         header.addWidget(self.search_input)
         header.addWidget(btn_search)
+        
+        # Botão de logout
+        logout_btn = QPushButton()
+        logout_btn.setIcon(qta.icon('fa5s.sign-out-alt', color="#ffffff"))
+        logout_btn.setText("Sair")
+        logout_btn.clicked.connect(self._logout)
+        logout_btn.setStyleSheet("QPushButton{background:#dc2626;color:#fff;border-radius:6px;padding:6px 10px;margin-left:10px}")
+        header.addWidget(logout_btn)
+        
         root.addLayout(header)
 
         tabs = QTabWidget()
@@ -326,5 +343,19 @@ class EducatorDashboard(QMainWindow):
             self._style_table(self.table_students)
         if hasattr(self, 'table_searches'):
             self._style_table(self.table_searches)
+    
+    def _logout(self):
+        """Realiza logout do usuário"""
+        from PySide6.QtWidgets import QMessageBox
+        reply = QMessageBox.question(
+            self, 
+            'Confirmar Logout', 
+            'Tem certeza que deseja sair da sua conta?',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            self.logout_requested.emit()
 
 
