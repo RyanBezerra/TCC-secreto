@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from ..core.database import db_manager
 
 
-class EducatorDashboard(QMainWindow):
+class AdminDashboard(QMainWindow):
     back_to_app = Signal()
     logout_requested = Signal()
 
@@ -94,19 +94,19 @@ class EducatorDashboard(QMainWindow):
         # Ícone do sistema
         icon_label = QLabel()
         if self.is_admin:
-            icon_label.setPixmap(qta.icon('fa5s.crown', color='#dc2626').pixmap(32, 32))
+            icon_label.setPixmap(qta.icon('fa5s.crown', color='#000000').pixmap(32, 32))
         else:
-            icon_label.setPixmap(qta.icon('fa5s.graduation-cap', color='#3b82f6').pixmap(32, 32))
+            icon_label.setPixmap(qta.icon('fa5s.graduation-cap', color='#000000').pixmap(32, 32))
         title_layout.addWidget(icon_label)
         
         # Título
         title_label = QLabel()
         if self.is_admin:
             title_label.setText("Painel Administrativo")
-            title_label.setStyleSheet("color: #dc2626; font-size: 24px; font-weight: bold; margin-left: 10px;")
+            title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold; margin-left: 10px;")
         else:
             title_label.setText("Painel do Educador")
-            title_label.setStyleSheet("color: #1f2937; font-size: 24px; font-weight: bold; margin-left: 10px;")
+            title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold; margin-left: 10px;")
         title_layout.addWidget(title_label)
         
         header_layout.addLayout(title_layout)
@@ -119,18 +119,24 @@ class EducatorDashboard(QMainWindow):
         # Nome do usuário
         user_name_label = QLabel()
         if self.is_admin:
-            user_name_label.setText(f"👑 {self.user_name}")
-            user_name_label.setStyleSheet("color: #dc2626; font-size: 16px; font-weight: bold;")
+            # Ícone de admin profissional
+            admin_icon = qta.icon('fa5s.user-shield', color='#000000')
+            user_name_label.setPixmap(admin_icon.pixmap(20, 20))
+            user_name_label.setText(f" {self.user_name}")
+            user_name_label.setStyleSheet("color: #000000; font-size: 16px; font-weight: bold;")
         else:
-            user_name_label.setText(f"👤 {self.user_name}")
-            user_name_label.setStyleSheet("color: #6b7280; font-size: 16px; font-weight: bold;")
+            # Ícone de educador profissional
+            educator_icon = qta.icon('fa5s.user-graduate', color='#000000')
+            user_name_label.setPixmap(educator_icon.pixmap(20, 20))
+            user_name_label.setText(f" {self.user_name}")
+            user_name_label.setStyleSheet("color: #000000; font-size: 16px; font-weight: bold;")
         user_info_layout.addWidget(user_name_label)
         
         # Perfil
         profile_label = QLabel()
         if self.is_admin:
             profile_label.setText("Administrador do Sistema")
-            profile_label.setStyleSheet("color: #dc2626; font-size: 12px;")
+            profile_label.setStyleSheet("color: #6b7280; font-size: 12px;")
         else:
             profile_label.setText("Educador")
             profile_label.setStyleSheet("color: #6b7280; font-size: 12px;")
@@ -149,14 +155,14 @@ class EducatorDashboard(QMainWindow):
         refresh_btn.clicked.connect(self._refresh_data)
         refresh_btn.setStyleSheet("""
             QPushButton {
-                background: #10b981;
+                background: #6b7280;
                 border: none;
                 border-radius: 8px;
                 padding: 10px;
                 min-width: 40px;
             }
             QPushButton:hover {
-                background: #059669;
+                background: #4b5563;
             }
         """)
         actions_layout.addWidget(refresh_btn)
@@ -169,7 +175,7 @@ class EducatorDashboard(QMainWindow):
         logout_btn.clicked.connect(self._logout)
         logout_btn.setStyleSheet("""
             QPushButton {
-                background: #dc2626;
+                background: #000000;
                 border: none;
                 border-radius: 8px;
                 padding: 10px 15px;
@@ -177,7 +183,7 @@ class EducatorDashboard(QMainWindow):
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: #b91c1c;
+                background: #333333;
             }
         """)
         actions_layout.addWidget(logout_btn)
@@ -198,7 +204,7 @@ class EducatorDashboard(QMainWindow):
         
         # Título da sidebar
         sidebar_title = QLabel("Navegação")
-        sidebar_title.setStyleSheet("color: #6b7280; font-size: 14px; font-weight: bold; margin-bottom: 10px;")
+        sidebar_title.setStyleSheet("color: #000000; font-size: 14px; font-weight: bold; margin-bottom: 10px;")
         sidebar_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sidebar_layout.addWidget(sidebar_title)
         
@@ -235,10 +241,10 @@ class EducatorDashboard(QMainWindow):
                 }
                 QPushButton:hover {
                     background: #f3f4f6;
-                    color: #374151;
+                    color: #000000;
                 }
                 QPushButton:checked {
-                    background: #3b82f6;
+                    background: #000000;
                     color: white;
                 }
             """)
@@ -270,7 +276,7 @@ class EducatorDashboard(QMainWindow):
         system_layout = QVBoxLayout(system_info)
         
         self.system_status = QLabel("Sistema Online")
-        self.system_status.setStyleSheet("color: #10b981; font-size: 12px;")
+        self.system_status.setStyleSheet("color: #000000; font-size: 12px;")
         system_layout.addWidget(self.system_status)
         
         self.last_update = QLabel("Última atualização: --")
@@ -322,10 +328,10 @@ class EducatorDashboard(QMainWindow):
         
         self.kpi_cards = {}
         kpi_data = [
-            ("users", "Total de Usuários", "0", "#3b82f6"),
-            ("students", "Alunos Ativos", "0", "#10b981"),
-            ("searches", "Pesquisas Hoje", "0", "#f59e0b"),
-            ("interactions", "Interações IA", "0", "#8b5cf6"),
+            ("users", "Total de Usuários", "0", "#000000"),
+            ("students", "Alunos Ativos", "0", "#6b7280"),
+            ("searches", "Pesquisas Hoje", "0", "#374151"),
+            ("interactions", "Interações IA", "0", "#4b5563"),
         ]
         
         for key, title, value, color in kpi_data:
@@ -376,13 +382,15 @@ class EducatorDashboard(QMainWindow):
         
         # Título
         title_label = QLabel(title)
-        title_label.setStyleSheet("color: #6b7280; font-size: 14px; font-weight: 500;")
+        title_label.setStyleSheet("color: #000000; font-size: 14px; font-weight: 500;")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
         
         # Valor
         value_label = QLabel(value)
         value_label.setObjectName("kpiValue")
         value_label.setStyleSheet(f"color: {color}; font-size: 32px; font-weight: bold;")
+        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(value_label)
         
         # Progress bar (opcional)
@@ -422,7 +430,7 @@ class EducatorDashboard(QMainWindow):
         
         # Título
         title_label = QLabel(title)
-        title_label.setStyleSheet("color: #1f2937; font-size: 18px; font-weight: bold; margin-bottom: 15px;")
+        title_label.setStyleSheet("color: #000000; font-size: 18px; font-weight: bold; margin-bottom: 15px;")
         layout.addWidget(title_label)
         
         # Gráfico
@@ -496,7 +504,7 @@ class EducatorDashboard(QMainWindow):
         
         # Título
         title_label = QLabel("Atividade Recente")
-        title_label.setStyleSheet("color: #1f2937; font-size: 18px; font-weight: bold; margin-bottom: 15px;")
+        title_label.setStyleSheet("color: #000000; font-size: 18px; font-weight: bold; margin-bottom: 15px;")
         layout.addWidget(title_label)
         
         # Tabela de atividade
@@ -520,7 +528,7 @@ class EducatorDashboard(QMainWindow):
         header_layout = QHBoxLayout()
         
         title_label = QLabel("Gerenciamento de Usuários")
-        title_label.setStyleSheet("color: #1f2937; font-size: 24px; font-weight: bold;")
+        title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold;")
         header_layout.addWidget(title_label)
         
         header_layout.addStretch()
@@ -530,7 +538,7 @@ class EducatorDashboard(QMainWindow):
         add_user_btn.setIcon(qta.icon('fa5s.plus', color='#ffffff'))
         add_user_btn.setStyleSheet("""
             QPushButton {
-                background: #10b981;
+                background: #000000;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -538,7 +546,7 @@ class EducatorDashboard(QMainWindow):
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: #059669;
+                background: #333333;
             }
         """)
         header_layout.addWidget(add_user_btn)
@@ -559,7 +567,7 @@ class EducatorDashboard(QMainWindow):
                 font-size: 14px;
             }
             QLineEdit:focus {
-                border-color: #3b82f6;
+                border-color: #000000;
             }
         """)
         filters_layout.addWidget(search_input)
@@ -599,7 +607,7 @@ class EducatorDashboard(QMainWindow):
         layout.setSpacing(20)
         
         title_label = QLabel("Relatórios e Análises")
-        title_label.setStyleSheet("color: #1f2937; font-size: 24px; font-weight: bold;")
+        title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold;")
         layout.addWidget(title_label)
         
         # Placeholder para relatórios
@@ -618,7 +626,7 @@ class EducatorDashboard(QMainWindow):
         layout.setSpacing(20)
         
         title_label = QLabel("Configurações do Sistema")
-        title_label.setStyleSheet("color: #1f2937; font-size: 24px; font-weight: bold;")
+        title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold;")
         layout.addWidget(title_label)
         
         # Placeholder para configurações
@@ -640,7 +648,7 @@ class EducatorDashboard(QMainWindow):
         header_layout = QHBoxLayout()
         
         title_label = QLabel("Gerenciamento de Instituições")
-        title_label.setStyleSheet("color: #1f2937; font-size: 24px; font-weight: bold;")
+        title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold;")
         header_layout.addWidget(title_label)
         
         header_layout.addStretch()
@@ -650,7 +658,7 @@ class EducatorDashboard(QMainWindow):
         add_instituicao_btn.setIcon(qta.icon('fa5s.plus', color='#ffffff'))
         add_instituicao_btn.setStyleSheet("""
             QPushButton {
-                background: #10b981;
+                background: #000000;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -658,7 +666,7 @@ class EducatorDashboard(QMainWindow):
                 font-weight: bold;
             }
             QPushButton:hover {
-                background: #059669;
+                background: #333333;
             }
         """)
         add_instituicao_btn.clicked.connect(self._open_instituicao_dialog)
@@ -680,7 +688,7 @@ class EducatorDashboard(QMainWindow):
                 font-size: 14px;
             }
             QLineEdit:focus {
-                border-color: #3b82f6;
+                border-color: #000000;
             }
         """)
         self.search_input.textChanged.connect(self._filter_instituicoes)
@@ -709,43 +717,46 @@ class EducatorDashboard(QMainWindow):
         self.instituicoes_table.setHorizontalHeaderLabels([
             "Nome", "CNPJ", "Tipo", "Área", "Cidade", "Estado", "Data Cadastro", "Ações"
         ])
-        # Configurar redimensionamento das colunas - FORÇAR TAMANHOS FIXOS
+        
+        # Configurar redimensionamento das colunas
         header = self.instituicoes_table.horizontalHeader()
         
-        # Desabilitar completamente o redimensionamento automático
+        # Configurar modo de redimensionamento
         header.setStretchLastSection(False)
         header.setCascadingSectionResizes(False)
         
-        # Configurar TODAS as colunas como FIXAS
-        for i in range(8):
-            header.setSectionResizeMode(i, QHeaderView.ResizeMode.Fixed)
+        # Configurar colunas com tamanhos apropriados
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Nome - estica
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)    # CNPJ - fixo
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)    # Tipo - fixo
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)    # Área - fixo
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)    # Cidade - fixo
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)    # Estado - fixo
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)    # Data - fixo
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)    # Ações - fixo
         
-        # Definir larguras específicas - TAMANHO FINAL FORÇADO
-        header.resizeSection(0, 250)  # Nome
-        header.resizeSection(1, 150)  # CNPJ
+        # Definir larguras específicas para colunas fixas
+        header.resizeSection(1, 140)  # CNPJ
         header.resizeSection(2, 120)  # Tipo
-        header.resizeSection(3, 150)  # Área
-        header.resizeSection(4, 150)  # Cidade
+        header.resizeSection(3, 120)  # Área
+        header.resizeSection(4, 120)  # Cidade
         header.resizeSection(5, 80)   # Estado
-        header.resizeSection(6, 180)  # Data
-        header.resizeSection(7, 80)   # Ações
-        # Garantir que a coluna Ações seja sempre visível
-        self.instituicoes_table.setColumnWidth(7, 80)
+        header.resizeSection(6, 120)  # Data
+        header.resizeSection(7, 100)  # Ações - maior para acomodar botões
+        
+        # Configurações da tabela
         self.instituicoes_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.instituicoes_table.setAlternatingRowColors(True)
         self.instituicoes_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        # Configurar scroll horizontal
         self.instituicoes_table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        # Garantir que a última coluna seja sempre visível
-        self.instituicoes_table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+        self.instituicoes_table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         
-        # FORÇAR LARGURA FIXA DA TABELA
-        self.instituicoes_table.setMinimumWidth(1180)
-        self.instituicoes_table.setMaximumWidth(1180)
-        self.instituicoes_table.setFixedWidth(1180)
+        # Configurar altura das linhas - TAMANHO FIXO
+        self.instituicoes_table.verticalHeader().setDefaultSectionSize(70)
+        self.instituicoes_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         
-        # Configurar política de tamanho
-        self.instituicoes_table.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        # Configurar política de tamanho para expandir
+        self.instituicoes_table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(self.instituicoes_table)
         
         self.content_stack.addWidget(instituicoes_widget)
@@ -758,7 +769,7 @@ class EducatorDashboard(QMainWindow):
         layout.setSpacing(20)
         
         title_label = QLabel("Segurança do Sistema")
-        title_label.setStyleSheet("color: #1f2937; font-size: 24px; font-weight: bold;")
+        title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold;")
         layout.addWidget(title_label)
         
         # Placeholder para segurança
@@ -777,7 +788,7 @@ class EducatorDashboard(QMainWindow):
         layout.setSpacing(20)
         
         title_label = QLabel("Gerenciamento do Banco de Dados")
-        title_label.setStyleSheet("color: #1f2937; font-size: 24px; font-weight: bold;")
+        title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold;")
         layout.addWidget(title_label)
         
         # Placeholder para banco de dados
@@ -828,7 +839,7 @@ class EducatorDashboard(QMainWindow):
         
         # Status da conexão
         self.connection_status = QLabel("Conectado")
-        self.connection_status.setStyleSheet("color: #10b981;")
+        self.connection_status.setStyleSheet("color: #000000;")
         self.status_bar.addWidget(self.connection_status)
         
         # Separador
@@ -915,11 +926,12 @@ class EducatorDashboard(QMainWindow):
                 selection-background-color: #dbeafe;
             }
             
-            QTableWidget::item {
-                padding: 12px;
-                border-bottom: 1px solid #f3f4f6;
-                background: #ffffff !important;
-            }
+             QTableWidget::item {
+                 padding: 12px;
+                 border-bottom: 1px solid #f3f4f6;
+                 background: #ffffff !important;
+                 min-height: 70px;
+             }
             
             QTableWidget::item:selected {
                 background: #dbeafe;
@@ -1088,7 +1100,7 @@ class EducatorDashboard(QMainWindow):
                 actions_btn = QPushButton("Editar")
                 actions_btn.setStyleSheet("""
                     QPushButton {
-                        background: #3b82f6;
+                        background: #000000;
                         color: white;
                         border: none;
                         border-radius: 4px;
@@ -1096,7 +1108,7 @@ class EducatorDashboard(QMainWindow):
                         font-size: 12px;
                     }
                     QPushButton:hover {
-                        background: #2563eb;
+                        background: #333333;
                     }
                 """)
                 self.users_table.setCellWidget(row, 5, actions_btn)
@@ -1187,12 +1199,11 @@ class EducatorDashboard(QMainWindow):
                 # Botão Editar
                 edit_btn = QPushButton("")
                 edit_btn.setIcon(qta.icon('fa5s.edit', color='#ffffff'))
-                edit_btn.setFixedSize(28, 24)
+                edit_btn.setFixedSize(32, 28)
                 edit_btn.setToolTip("Editar Instituição")
                 edit_btn.setStyleSheet("""
                     QPushButton {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #4f46e5, stop:1 #3b82f6);
+                        background: #000000;
                         color: white;
                         border: none;
                         border-radius: 8px;
@@ -1201,13 +1212,10 @@ class EducatorDashboard(QMainWindow):
                         padding: 2px;
                     }
                     QPushButton:hover {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #4338ca, stop:1 #2563eb);
-                        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+                        background: #333333;
                     }
                     QPushButton:pressed {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #3730a3, stop:1 #1d4ed8);
+                        background: #1a1a1a;
                     }
                 """)
                 edit_btn.clicked.connect(lambda checked, data=instituicao: self._open_instituicao_dialog(data))
@@ -1216,12 +1224,11 @@ class EducatorDashboard(QMainWindow):
                 # Botão Excluir
                 delete_btn = QPushButton("")
                 delete_btn.setIcon(qta.icon('fa5s.trash', color='#ffffff'))
-                delete_btn.setFixedSize(28, 24)
+                delete_btn.setFixedSize(32, 28)
                 delete_btn.setToolTip("Excluir Instituição")
                 delete_btn.setStyleSheet("""
                     QPushButton {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #ef4444, stop:1 #dc2626);
+                        background: #6b7280;
                         color: white;
                         border: none;
                         border-radius: 8px;
@@ -1230,13 +1237,10 @@ class EducatorDashboard(QMainWindow):
                         padding: 2px;
                     }
                     QPushButton:hover {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #dc2626, stop:1 #b91c1c);
-                        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+                        background: #4b5563;
                     }
                     QPushButton:pressed {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #b91c1c, stop:1 #991b1b);
+                        background: #374151;
                     }
                 """)
                 delete_btn.clicked.connect(lambda checked, data=instituicao: self._delete_instituicao(data))
@@ -1245,67 +1249,36 @@ class EducatorDashboard(QMainWindow):
                 # Adicionar o widget à tabela
                 self.instituicoes_table.setCellWidget(row, 7, actions_widget)
             
-            # FORÇAR LARGURA FIXA DA TABELA
-            self.instituicoes_table.setFixedWidth(1180)
-            self.instituicoes_table.setMinimumWidth(1180)
-            self.instituicoes_table.setMaximumWidth(1180)
-            
-            # Garantir que todas as colunas tenham larguras fixas
+            # Configurar larguras das colunas após popular a tabela
             header = self.instituicoes_table.horizontalHeader()
             header.setStretchLastSection(False)
             header.setCascadingSectionResizes(False)
             
-            # Configurar TODAS as colunas como FIXAS
-            for i in range(8):
-                header.setSectionResizeMode(i, QHeaderView.ResizeMode.Fixed)
+            # Manter altura fixa das linhas
+            self.instituicoes_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
             
-            # Aplicar larguras específicas - TAMANHO FINAL FORÇADO
-            self.instituicoes_table.setColumnWidth(0, 250)  # Nome
-            self.instituicoes_table.setColumnWidth(1, 150)  # CNPJ
-            self.instituicoes_table.setColumnWidth(2, 120)  # Tipo
-            self.instituicoes_table.setColumnWidth(3, 150)  # Área
-            self.instituicoes_table.setColumnWidth(4, 150)  # Cidade
-            self.instituicoes_table.setColumnWidth(5, 80)   # Estado
-            self.instituicoes_table.setColumnWidth(6, 180)  # Data
-            self.instituicoes_table.setColumnWidth(7, 80)   # Ações
+            # Configurar colunas com tamanhos apropriados
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Nome - estica
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)    # CNPJ - fixo
+            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)    # Tipo - fixo
+            header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)    # Área - fixo
+            header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)    # Cidade - fixo
+            header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)    # Estado - fixo
+            header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)    # Data - fixo
+            header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)    # Ações - fixo
             
-            # Garantir que a coluna de ações seja sempre visível
-            self._ensure_actions_column_visible()
+            # Aplicar larguras específicas
+            header.resizeSection(1, 140)  # CNPJ
+            header.resizeSection(2, 120)  # Tipo
+            header.resizeSection(3, 120)  # Área
+            header.resizeSection(4, 120)  # Cidade
+            header.resizeSection(5, 80)   # Estado
+            header.resizeSection(6, 120)  # Data
+            header.resizeSection(7, 100)  # Ações
                 
         except Exception as e:
             print(f"Erro ao atualizar tabela de instituições: {e}")
     
-    def _ensure_actions_column_visible(self):
-        """Garante que a coluna de ações seja sempre visível"""
-        try:
-            # FORÇAR LARGURA FIXA DA TABELA
-            self.instituicoes_table.setFixedWidth(1180)
-            self.instituicoes_table.setMinimumWidth(1180)
-            self.instituicoes_table.setMaximumWidth(1180)
-            
-            # Configurar larguras fixas para todas as colunas
-            header = self.instituicoes_table.horizontalHeader()
-            header.setStretchLastSection(False)
-            header.setCascadingSectionResizes(False)
-            
-            # Configurar TODAS as colunas como FIXAS
-            for i in range(8):
-                header.setSectionResizeMode(i, QHeaderView.ResizeMode.Fixed)
-            
-            # Aplicar larguras específicas - TAMANHO FINAL FORÇADO
-            self.instituicoes_table.setColumnWidth(0, 250)  # Nome
-            self.instituicoes_table.setColumnWidth(1, 150)  # CNPJ
-            self.instituicoes_table.setColumnWidth(2, 120)  # Tipo
-            self.instituicoes_table.setColumnWidth(3, 150)  # Área
-            self.instituicoes_table.setColumnWidth(4, 150)  # Cidade
-            self.instituicoes_table.setColumnWidth(5, 80)   # Estado
-            self.instituicoes_table.setColumnWidth(6, 180)  # Data
-            self.instituicoes_table.setColumnWidth(7, 80)   # Ações
-            
-            # Forçar atualização da visualização
-            self.instituicoes_table.repaint()
-        except Exception as e:
-            print(f"Erro ao garantir visibilidade da coluna de ações: {e}")
     
     def _filter_instituicoes(self):
         """Filtra a tabela de instituições"""
@@ -1359,12 +1332,11 @@ class EducatorDashboard(QMainWindow):
                 # Botão Editar
                 edit_btn = QPushButton("")
                 edit_btn.setIcon(qta.icon('fa5s.edit', color='#ffffff'))
-                edit_btn.setFixedSize(28, 24)
+                edit_btn.setFixedSize(32, 28)
                 edit_btn.setToolTip("Editar Instituição")
                 edit_btn.setStyleSheet("""
                     QPushButton {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #4f46e5, stop:1 #3b82f6);
+                        background: #000000;
                         color: white;
                         border: none;
                         border-radius: 8px;
@@ -1373,13 +1345,10 @@ class EducatorDashboard(QMainWindow):
                         padding: 2px;
                     }
                     QPushButton:hover {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #4338ca, stop:1 #2563eb);
-                        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+                        background: #333333;
                     }
                     QPushButton:pressed {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #3730a3, stop:1 #1d4ed8);
+                        background: #1a1a1a;
                     }
                 """)
                 edit_btn.clicked.connect(lambda checked, data=instituicao: self._open_instituicao_dialog(data))
@@ -1388,12 +1357,11 @@ class EducatorDashboard(QMainWindow):
                 # Botão Excluir
                 delete_btn = QPushButton("")
                 delete_btn.setIcon(qta.icon('fa5s.trash', color='#ffffff'))
-                delete_btn.setFixedSize(28, 24)
+                delete_btn.setFixedSize(32, 28)
                 delete_btn.setToolTip("Excluir Instituição")
                 delete_btn.setStyleSheet("""
                     QPushButton {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #ef4444, stop:1 #dc2626);
+                        background: #6b7280;
                         color: white;
                         border: none;
                         border-radius: 8px;
@@ -1402,13 +1370,10 @@ class EducatorDashboard(QMainWindow):
                         padding: 2px;
                     }
                     QPushButton:hover {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #dc2626, stop:1 #b91c1c);
-                        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+                        background: #4b5563;
                     }
                     QPushButton:pressed {
-                        background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                            stop:0 #b91c1c, stop:1 #991b1b);
+                        background: #374151;
                     }
                 """)
                 delete_btn.clicked.connect(lambda checked, data=instituicao: self._delete_instituicao(data))
@@ -1416,6 +1381,33 @@ class EducatorDashboard(QMainWindow):
                 
                 # Adicionar o widget à tabela
                 self.instituicoes_table.setCellWidget(row, 7, actions_widget)
+            
+            # Configurar larguras das colunas após filtrar
+            header = self.instituicoes_table.horizontalHeader()
+            header.setStretchLastSection(False)
+            header.setCascadingSectionResizes(False)
+            
+            # Manter altura fixa das linhas
+            self.instituicoes_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+            
+            # Configurar colunas com tamanhos apropriados
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Nome - estica
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)    # CNPJ - fixo
+            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)    # Tipo - fixo
+            header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)    # Área - fixo
+            header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)    # Cidade - fixo
+            header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)    # Estado - fixo
+            header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)    # Data - fixo
+            header.setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)    # Ações - fixo
+            
+            # Aplicar larguras específicas
+            header.resizeSection(1, 140)  # CNPJ
+            header.resizeSection(2, 120)  # Tipo
+            header.resizeSection(3, 120)  # Área
+            header.resizeSection(4, 120)  # Cidade
+            header.resizeSection(5, 80)   # Estado
+            header.resizeSection(6, 120)  # Data
+            header.resizeSection(7, 100)  # Ações
                 
         except Exception as e:
             print(f"Erro ao filtrar instituições: {e}")

@@ -972,8 +972,8 @@ class EduAIManager:
         perfil = (user or {}).get('perfil')
 
         if perfil == 'educador' or perfil == 'admin':
-            from ..ui.educator_dashboard import EducatorDashboard
-            window = EducatorDashboard(user_name)
+            from ..ui.admin_dashboard import AdminDashboard
+            window = AdminDashboard(user_name)
         else:
             window = EduAIApp(user_name)
 
