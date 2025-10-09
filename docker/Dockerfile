@@ -18,8 +18,9 @@ RUN apt-get update && apt-get install -y \
     make \
     pkg-config \
     \
-    # Dependências para PySide6/Qt6
+    # Dependências para PySide6/Qt6 - versão completa e otimizada
     libgl1-mesa-glx \
+    libgl1-mesa-dri \
     libglib2.0-0 \
     libxcb1 \
     libxcb-xinerama0 \
@@ -44,21 +45,39 @@ RUN apt-get update && apt-get install -y \
     libxcb-shm0 \
     libxcb-dri3-0 \
     libxcb-present0 \
-    libxcb-sync1 \
-    libxcb-xfixes0 \
-    libxcb-xinerama0 \
-    libxcb-xkb1 \
-    libxcb-xrandr0 \
-    libxcb-xtest0 \
-    libxcb-xv0 \
-    libxcb-shm0 \
-    libxcb-dri3-0 \
-    libxcb-present0 \
     \
-    # Fontes e renderização de texto
+    # Dependências adicionais para renderização
+    libx11-6 \
+    libx11-xcb1 \
+    libxext6 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    libxi6 \
+    libxrandr2 \
+    libxdamage1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxfixes3 \
+    libxinerama1 \
+    libxmu6 \
+    libxpm4 \
+    libxaw7 \
+    libxft2 \
+    libxmuu1 \
+    libxss1 \
+    libxt6 \
+    libxv1 \
+    \
+    # Fontes e renderização de texto - conjunto mais completo
     fonts-dejavu-core \
+    fonts-dejavu-extra \
     fonts-liberation \
+    fonts-liberation2 \
+    fonts-noto-core \
+    fonts-noto-ui-core \
     fontconfig \
+    fontconfig-config \
     \
     # Dependências para PostgreSQL
     libpq5 \
@@ -66,6 +85,14 @@ RUN apt-get update && apt-get install -y \
     # Utilitários
     curl \
     wget \
+    xvfb \
+    \
+    # Dependências para processamento de imagens
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libwebp-dev \
+    \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -87,12 +114,22 @@ RUN mkdir -p logs cache assets/images
 # Definir permissões adequadas
 RUN chmod -R 755 /app
 
-# Definir variáveis de ambiente
+# Definir variáveis de ambiente para melhor portabilidade
 ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1
 ENV QT_QPA_PLATFORM=offscreen
 ENV QT_X11_NO_MITSHM=1
 ENV DISPLAY=:99
+ENV QT_AUTO_SCREEN_SCALE_FACTOR=1
+ENV QT_SCALE_FACTOR=1
+ENV QT_FONT_DPI=96
+ENV QT_STYLE_OVERRIDE=
+ENV QT_QPA_PLATFORMTHEME=
+ENV QT_LOGGING_RULES="*=false"
+ENV QT_ASSUME_STDERR_HAS_CONSOLE=1
+ENV QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+ENV MESA_GL_VERSION_OVERRIDE=3.3
+ENV MESA_GLSL_VERSION_OVERRIDE=330
 
 # Criar usuário não-root para segurança
 RUN groupadd -r eduai && useradd -r -g eduai eduai

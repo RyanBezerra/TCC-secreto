@@ -69,6 +69,8 @@ class DatabaseManager:
     def _ensure_tables(self):
         """Garante que todas as tabelas necessárias existam"""
         try:
+            # Garantir tabela de usuários
+            self.ensure_usuario_table()
             # Garantir tabela de sugestões
             self.ensure_suggestions_table()
             # Garantir coluna de embeddings nas aulas
@@ -858,6 +860,90 @@ class DatabaseManager:
         search_pattern = f"%{search_term}%"
         params = (search_pattern, search_pattern, search_pattern)
         return self.execute_query(query, params)
+    
+    def ensure_usuario_table(self) -> None:
+        """Garante que a tabela usuario existe com a estrutura correta"""
+        try:
+            with self.get_cursor() as cursor:
+                # Verificar se a tabela existe
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'usuario'
+                    );
+                """)
+                
+                result = cursor.fetchone()
+                table_exists = result['exists'] if result else False
+                
+                if not table_exists:
+                    # Criar tabela usuario
+                    cursor.execute("""
+                        CREATE TABLE usuario (
+                            id SERIAL PRIMARY KEY,
+                            nome VARCHAR(100) UNIQUE NOT NULL,
+                            idade INTEGER,
+                            senha_hash VARCHAR(255) NOT NULL,
+                            nota DECIMAL(5,2),
+                            perfil VARCHAR(20) DEFAULT 'aluno' CHECK (perfil IN ('admin', 'educador', 'aluno')),
+                            data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            ultimo_acesso TIMESTAMP,
+                            ativo BOOLEAN DEFAULT true
+                        );
+                    """)
+                    
+                    # Criar índices
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_usuario_nome ON usuario(nome);")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_usuario_perfil ON usuario(perfil);")
+                    
+                    logger.info("Tabela usuario criada com sucesso")
+                else:
+                    # Verificar se a coluna perfil existe
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.columns 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'usuario' 
+                            AND column_name = 'perfil'
+                        );
+                    """)
+                    
+                    result = cursor.fetchone()
+                    perfil_column_exists = result['exists'] if result else False
+                    
+                    if not perfil_column_exists:
+                        # Adicionar coluna perfil
+                        cursor.execute("""
+                            ALTER TABLE usuario 
+                            ADD COLUMN perfil VARCHAR(20) DEFAULT 'aluno' CHECK (perfil IN ('admin', 'educador', 'aluno'));
+                        """)
+                        logger.info("Coluna perfil adicionada à tabela usuario")
+                    
+                    # Verificar se a coluna ativo existe
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.columns 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'usuario' 
+                            AND column_name = 'ativo'
+                        );
+                    """)
+                    
+                    result = cursor.fetchone()
+                    ativo_column_exists = result['exists'] if result else False
+                    
+                    if not ativo_column_exists:
+                        # Adicionar coluna ativo
+                        cursor.execute("""
+                            ALTER TABLE usuario 
+                            ADD COLUMN ativo BOOLEAN DEFAULT true;
+                        """)
+                        logger.info("Coluna ativo adicionada à tabela usuario")
+                
+        except Exception as e:
+            logger.error(f"Erro ao verificar/criar tabela usuario: {e}")
+            raise
 
 # Instância global do gerenciador de banco de dados
 db_manager = DatabaseManager()

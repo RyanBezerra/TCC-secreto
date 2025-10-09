@@ -456,6 +456,58 @@ class InstituicaoDialog(QDialog):
         
         return errors
     
+    def _get_specific_error_reason(self, error_message):
+        """Analisa a mensagem de erro e retorna o motivo específico"""
+        if 'duplicate key value violates unique constraint' in error_message:
+            if 'instituicoes_cnpj_key' in error_message:
+                return "CNPJ já está cadastrado no sistema"
+            elif 'instituicoes_nome_key' in error_message:
+                return "Nome da instituição já está cadastrado no sistema"
+            else:
+                return "Dados duplicados - algum campo único já existe"
+        
+        elif 'connection' in error_message or 'timeout' in error_message:
+            return "Problema de conexão com o banco de dados"
+        
+        elif 'permission denied' in error_message or 'access denied' in error_message:
+            return "Sem permissão para realizar esta operação"
+        
+        elif 'foreign key constraint' in error_message:
+            return "Violação de integridade referencial - dados relacionados inválidos"
+        
+        elif 'check constraint' in error_message:
+            return "Dados inválidos - não atendem às regras de validação"
+        
+        elif 'not null constraint' in error_message:
+            return "Campo obrigatório não foi preenchido"
+        
+        elif 'value too long' in error_message or 'character varying' in error_message:
+            return "Texto muito longo para algum campo"
+        
+        elif 'invalid input syntax' in error_message:
+            return "Formato de dados inválido"
+        
+        elif 'database' in error_message and 'does not exist' in error_message:
+            return "Banco de dados não encontrado"
+        
+        elif 'table' in error_message and 'does not exist' in error_message:
+            return "Tabela de instituições não existe no banco de dados"
+        
+        elif 'column' in error_message and 'does not exist' in error_message:
+            return "Estrutura do banco de dados está desatualizada"
+        
+        elif 'deadlock detected' in error_message:
+            return "Conflito de acesso ao banco de dados - tente novamente"
+        
+        elif 'out of memory' in error_message or 'memory' in error_message:
+            return "Falta de memória no servidor de banco de dados"
+        
+        elif 'disk space' in error_message or 'no space' in error_message:
+            return "Espaço em disco insuficiente no servidor"
+        
+        else:
+            return "Erro interno do sistema - causa não identificada"
+    
     def _save_instituicao(self):
         """Salva a instituição no banco de dados"""
         # Validar formulário
@@ -463,8 +515,11 @@ class InstituicaoDialog(QDialog):
         if errors:
             QMessageBox.warning(
                 self,
-                "Erro de Validação",
-                "Por favor, corrija os seguintes erros:\n\n• " + "\n• ".join(errors)
+                "Dados Incompletos",
+                f"❌ Não foi possível cadastrar a instituição!\n\n"
+                f"📋 **Motivo:** Campos obrigatórios não preenchidos\n\n"
+                f"🔍 **Erros encontrados:**\n• " + "\n• ".join(errors) + "\n\n"
+                f"💡 **Solução:** Preencha todos os campos marcados com * (asterisco)"
             )
             return
         
@@ -491,8 +546,16 @@ class InstituicaoDialog(QDialog):
                 if existing:
                     QMessageBox.warning(
                         self,
-                        "CNPJ Duplicado",
-                        "Já existe uma instituição cadastrada com este CNPJ."
+                        "CNPJ Já Cadastrado",
+                        f"❌ Não foi possível cadastrar a instituição!\n\n"
+                        f"📋 **Motivo específico:** CNPJ já está em uso por outra instituição\n"
+                        f"🔍 **CNPJ duplicado:** {instituicao_data['cnpj']}\n"
+                        f"🏢 **Instituição existente:** {existing.get('nome', 'N/A')}\n"
+                        f"📅 **Cadastrada em:** {existing.get('data_cadastro', 'N/A')}\n\n"
+                        f"💡 **Soluções:**\n"
+                        f"• Verifique se o CNPJ está correto\n"
+                        f"• Se correto, entre em contato com o administrador\n"
+                        f"• Considere editar a instituição existente"
                     )
                     return
             
@@ -508,8 +571,21 @@ class InstituicaoDialog(QDialog):
                 else:
                     QMessageBox.critical(
                         self,
-                        "Erro",
-                        "Erro ao atualizar a instituição. Tente novamente."
+                        "Erro ao Atualizar",
+                        f"❌ Não foi possível atualizar a instituição!\n\n"
+                        f"📋 **Motivo específico:** Falha na operação de atualização no banco de dados\n"
+                        f"🏢 **Instituição:** {instituicao_data.get('nome', 'N/A')}\n"
+                        f"🆔 **ID:** {self.instituicao_data.get('id', 'N/A')}\n\n"
+                        f"🔍 **Possíveis causas:**\n"
+                        f"• Problema de conexão com o banco de dados\n"
+                        f"• Dados inválidos ou corrompidos\n"
+                        f"• Restrições de integridade do banco\n"
+                        f"• Instituição pode ter sido removida por outro usuário\n\n"
+                        f"💡 **Soluções:**\n"
+                        f"• Verifique sua conexão com a internet\n"
+                        f"• Tente novamente em alguns instantes\n"
+                        f"• Recarregue a página de instituições\n"
+                        f"• Entre em contato com o administrador"
                     )
             else:
                 instituicao_id = db_manager.create_instituicao(instituicao_data)
@@ -522,13 +598,41 @@ class InstituicaoDialog(QDialog):
                 else:
                     QMessageBox.critical(
                         self,
-                        "Erro",
-                        "Erro ao cadastrar a instituição. Tente novamente."
+                        "Erro ao Cadastrar",
+                        f"❌ Não foi possível cadastrar a instituição!\n\n"
+                        f"📋 **Motivo específico:** Falha na operação de inserção no banco de dados\n"
+                        f"🏢 **Instituição:** {instituicao_data.get('nome', 'N/A')}\n"
+                        f"🔍 **CNPJ:** {instituicao_data.get('cnpj', 'N/A')}\n\n"
+                        f"🔍 **Possíveis causas:**\n"
+                        f"• Problema de conexão com o banco de dados\n"
+                        f"• Dados inválidos ou em formato incorreto\n"
+                        f"• Restrições de integridade (CNPJ, nome único)\n"
+                        f"• Banco de dados temporariamente indisponível\n"
+                        f"• Limite de caracteres excedido em algum campo\n\n"
+                        f"💡 **Soluções:**\n"
+                        f"• Verifique sua conexão com a internet\n"
+                        f"• Confirme se todos os dados estão corretos\n"
+                        f"• Verifique se o CNPJ não está duplicado\n"
+                        f"• Tente novamente em alguns instantes\n"
+                        f"• Entre em contato com o administrador"
                     )
                 
         except Exception as e:
+            error_message = str(e).lower()
+            specific_reason = self._get_specific_error_reason(error_message)
+            
             QMessageBox.critical(
                 self,
-                "Erro",
-                f"Erro inesperado ao salvar a instituição:\n{str(e)}"
+                "Erro Inesperado",
+                f"❌ Ocorreu um erro inesperado!\n\n"
+                f"📋 **Operação:** {'Atualização' if self.is_editing else 'Cadastro'} de instituição\n"
+                f"🏢 **Instituição:** {instituicao_data.get('nome', 'N/A')}\n"
+                f"🔍 **CNPJ:** {instituicao_data.get('cnpj', 'N/A')}\n\n"
+                f"⚠️ **Motivo específico:** {specific_reason}\n\n"
+                f"🔧 **Detalhes técnicos:**\n{str(e)}\n\n"
+                f"💡 **O que fazer:**\n"
+                f"• Anote os detalhes técnicos acima\n"
+                f"• Tente novamente em alguns instantes\n"
+                f"• Entre em contato com o administrador do sistema\n"
+                f"• Verifique se todos os dados estão corretos"
             )

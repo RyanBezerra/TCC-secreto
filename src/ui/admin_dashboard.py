@@ -80,112 +80,134 @@ class AdminDashboard(QMainWindow):
         self._apply_styles()
 
     def _create_header(self, parent_layout):
-        """Cria o cabeçalho moderno"""
+        """Cria o cabeçalho moderno e profissional"""
         header_frame = QFrame()
         header_frame.setObjectName("headerFrame")
-        header_frame.setFixedHeight(80)
+        header_frame.setFixedHeight(90)
         
         header_layout = QHBoxLayout(header_frame)
-        header_layout.setContentsMargins(20, 15, 20, 15)
+        header_layout.setContentsMargins(25, 20, 25, 20)
         
-        # Logo e título
+        # Logo e título com design aprimorado
         title_layout = QHBoxLayout()
+        title_layout.setSpacing(15)
         
-        # Ícone do sistema
+        # Container do logo com fundo circular
+        logo_container = QFrame()
+        logo_container.setObjectName("logoContainer")
+        logo_container.setFixedSize(50, 50)
+        logo_layout = QHBoxLayout(logo_container)
+        logo_layout.setContentsMargins(0, 0, 0, 0)
+        logo_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # Ícone do sistema com tamanho maior
         icon_label = QLabel()
         if self.is_admin:
-            icon_label.setPixmap(qta.icon('fa5s.crown', color='#000000').pixmap(32, 32))
+            icon_label.setPixmap(qta.icon('fa5s.crown', color='#ffffff').pixmap(28, 28))
         else:
-            icon_label.setPixmap(qta.icon('fa5s.graduation-cap', color='#000000').pixmap(32, 32))
-        title_layout.addWidget(icon_label)
+            icon_label.setPixmap(qta.icon('fa5s.graduation-cap', color='#ffffff').pixmap(28, 28))
+        logo_layout.addWidget(icon_label)
+        title_layout.addWidget(logo_container)
         
-        # Título
+        # Título com design aprimorado
+        title_container = QVBoxLayout()
+        title_container.setSpacing(2)
+        
         title_label = QLabel()
         if self.is_admin:
             title_label.setText("Painel Administrativo")
-            title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold; margin-left: 10px;")
         else:
             title_label.setText("Painel do Educador")
-            title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold; margin-left: 10px;")
-        title_layout.addWidget(title_label)
+        title_label.setObjectName("mainTitle")
+        title_container.addWidget(title_label)
         
+        # Subtítulo
+        subtitle_label = QLabel()
+        subtitle_label.setText("EduAI - Sistema de Gestão Educacional")
+        subtitle_label.setObjectName("subtitle")
+        title_container.addWidget(subtitle_label)
+        
+        title_layout.addLayout(title_container)
         header_layout.addLayout(title_layout)
         header_layout.addStretch()
         
+        # Container de informações do usuário com design aprimorado
+        user_container = QFrame()
+        user_container.setObjectName("userContainer")
+        user_container.setFixedHeight(50)
+        
+        user_layout = QHBoxLayout(user_container)
+        user_layout.setContentsMargins(15, 8, 15, 8)
+        user_layout.setSpacing(12)
+        
+        # Avatar do usuário
+        avatar_frame = QFrame()
+        avatar_frame.setObjectName("avatarFrame")
+        avatar_frame.setFixedSize(34, 34)
+        avatar_layout = QHBoxLayout(avatar_frame)
+        avatar_layout.setContentsMargins(0, 0, 0, 0)
+        avatar_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        avatar_icon = QLabel()
+        if self.is_admin:
+            avatar_icon.setPixmap(qta.icon('fa5s.user-shield', color='#ffffff').pixmap(20, 20))
+        else:
+            avatar_icon.setPixmap(qta.icon('fa5s.user-graduate', color='#ffffff').pixmap(20, 20))
+        avatar_layout.addWidget(avatar_icon)
+        user_layout.addWidget(avatar_frame)
+        
         # Informações do usuário
         user_info_layout = QVBoxLayout()
-        user_info_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        user_info_layout.setSpacing(1)
         
         # Nome do usuário
-        user_name_label = QLabel()
-        if self.is_admin:
-            # Ícone de admin profissional
-            admin_icon = qta.icon('fa5s.user-shield', color='#000000')
-            user_name_label.setPixmap(admin_icon.pixmap(20, 20))
-            user_name_label.setText(f" {self.user_name}")
-            user_name_label.setStyleSheet("color: #000000; font-size: 16px; font-weight: bold;")
-        else:
-            # Ícone de educador profissional
-            educator_icon = qta.icon('fa5s.user-graduate', color='#000000')
-            user_name_label.setPixmap(educator_icon.pixmap(20, 20))
-            user_name_label.setText(f" {self.user_name}")
-            user_name_label.setStyleSheet("color: #000000; font-size: 16px; font-weight: bold;")
+        user_name_label = QLabel(self.user_name)
+        user_name_label.setObjectName("userName")
         user_info_layout.addWidget(user_name_label)
         
         # Perfil
         profile_label = QLabel()
         if self.is_admin:
-            profile_label.setText("Administrador do Sistema")
-            profile_label.setStyleSheet("color: #6b7280; font-size: 12px;")
+            profile_label.setText("Administrador")
         else:
             profile_label.setText("Educador")
-            profile_label.setStyleSheet("color: #6b7280; font-size: 12px;")
+        profile_label.setObjectName("userRole")
         user_info_layout.addWidget(profile_label)
         
-        header_layout.addLayout(user_info_layout)
+        user_layout.addLayout(user_info_layout)
+        user_layout.addStretch()
         
-        # Botões de ação
+        header_layout.addWidget(user_container)
+        
+        # Botões de ação com design aprimorado
         actions_layout = QHBoxLayout()
-        actions_layout.setSpacing(10)
+        actions_layout.setSpacing(8)
         
         # Botão de atualizar
         refresh_btn = QPushButton()
+        refresh_btn.setObjectName("refreshBtn")
         refresh_btn.setIcon(qta.icon('fa5s.sync-alt', color='#ffffff'))
         refresh_btn.setToolTip("Atualizar dados")
         refresh_btn.clicked.connect(self._refresh_data)
-        refresh_btn.setStyleSheet("""
-            QPushButton {
-                background: #6b7280;
-                border: none;
-                border-radius: 8px;
-                padding: 10px;
-                min-width: 40px;
-            }
-            QPushButton:hover {
-                background: #4b5563;
-            }
-        """)
+        refresh_btn.setFixedSize(40, 40)
         actions_layout.addWidget(refresh_btn)
         
+        # Botão de configurações
+        settings_btn = QPushButton()
+        settings_btn.setObjectName("settingsBtn")
+        settings_btn.setIcon(qta.icon('fa5s.cog', color='#ffffff'))
+        settings_btn.setToolTip("Configurações")
+        settings_btn.setFixedSize(40, 40)
+        actions_layout.addWidget(settings_btn)
+        
         # Botão de logout
-        logout_btn = QPushButton()
+        logout_btn = QPushButton("Sair")
+        logout_btn.setObjectName("logoutBtn")
         logout_btn.setIcon(qta.icon('fa5s.sign-out-alt', color='#ffffff'))
-        logout_btn.setText("Sair")
         logout_btn.setToolTip("Fazer logout")
         logout_btn.clicked.connect(self._logout)
-        logout_btn.setStyleSheet("""
-            QPushButton {
-                background: #000000;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 15px;
-                color: white;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: #333333;
-            }
-        """)
+        logout_btn.setFixedHeight(40)
+        logout_btn.setMinimumWidth(80)
         actions_layout.addWidget(logout_btn)
         
         header_layout.addLayout(actions_layout)
@@ -193,20 +215,43 @@ class AdminDashboard(QMainWindow):
         parent_layout.addWidget(header_frame)
 
     def _create_sidebar(self, parent_layout):
-        """Cria a sidebar de navegação"""
+        """Cria a sidebar de navegação com design profissional"""
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(250)
+        sidebar.setFixedWidth(280)
         
         sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(0, 20, 0, 20)
-        sidebar_layout.setSpacing(10)
+        sidebar_layout.setContentsMargins(0, 25, 0, 25)
+        sidebar_layout.setSpacing(0)
+        
+        # Cabeçalho da sidebar
+        sidebar_header = QFrame()
+        sidebar_header.setObjectName("sidebarHeader")
+        sidebar_header.setFixedHeight(60)
+        
+        header_layout = QVBoxLayout(sidebar_header)
+        header_layout.setContentsMargins(20, 10, 20, 10)
+        header_layout.setSpacing(5)
         
         # Título da sidebar
         sidebar_title = QLabel("Navegação")
-        sidebar_title.setStyleSheet("color: #000000; font-size: 14px; font-weight: bold; margin-bottom: 10px;")
-        sidebar_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sidebar_layout.addWidget(sidebar_title)
+        sidebar_title.setObjectName("sidebarTitle")
+        header_layout.addWidget(sidebar_title)
+        
+        # Linha divisória
+        divider = QFrame()
+        divider.setObjectName("sidebarDivider")
+        divider.setFixedHeight(1)
+        header_layout.addWidget(divider)
+        
+        sidebar_layout.addWidget(sidebar_header)
+        
+        # Container dos botões de navegação
+        nav_container = QFrame()
+        nav_container.setObjectName("navContainer")
+        nav_layout = QVBoxLayout(nav_container)
+        nav_layout.setContentsMargins(15, 10, 15, 10)
+        nav_layout.setSpacing(5)
         
         # Botões de navegação
         nav_buttons = [
@@ -226,64 +271,56 @@ class AdminDashboard(QMainWindow):
         self.nav_buttons = {}
         for icon, text, key in nav_buttons:
             btn = QPushButton()
+            btn.setObjectName(f"navBtn_{key}")
             btn.setIcon(qta.icon(icon, color='#6b7280'))
             btn.setText(text)
             btn.setCheckable(True)
             btn.clicked.connect(lambda checked, k=key: self._switch_page(k))
-            btn.setStyleSheet("""
-                QPushButton {
-                    text-align: left;
-                    padding: 12px 20px;
-                    border: none;
-                    border-radius: 8px;
-                    color: #6b7280;
-                    font-weight: 500;
-                }
-                QPushButton:hover {
-                    background: #f3f4f6;
-                    color: #000000;
-                }
-                QPushButton:checked {
-                    background: #000000;
-                    color: white;
-                }
-            """)
-            self.nav_buttons[key] = btn
-            sidebar_layout.addWidget(btn)
+            btn.setFixedHeight(50)
+            nav_layout.addWidget(btn)
         
-        # Marcar o primeiro botão como ativo
-        if self.nav_buttons:
-            self.nav_buttons["dashboard"].setChecked(True)
+        sidebar_layout.addWidget(nav_container)
+        
+        # Botões de navegação criados (sem seleção inicial)
         
         sidebar_layout.addStretch()
         
-        # Informações do sistema
-        system_info = QGroupBox("Informações do Sistema")
-        system_info.setStyleSheet("""
-            QGroupBox {
-                font-weight: bold;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-        """)
-        system_layout = QVBoxLayout(system_info)
+        # Informações do sistema com design aprimorado
+        system_container = QFrame()
+        system_container.setObjectName("systemContainer")
+        system_container.setFixedHeight(120)
+        
+        system_layout = QVBoxLayout(system_container)
+        system_layout.setContentsMargins(20, 15, 20, 15)
+        system_layout.setSpacing(8)
+        
+        # Título da seção
+        system_title = QLabel("Status do Sistema")
+        system_title.setObjectName("systemTitle")
+        system_layout.addWidget(system_title)
+        
+        # Status do sistema
+        status_container = QHBoxLayout()
+        status_container.setSpacing(8)
+        
+        # Indicador de status
+        status_indicator = QFrame()
+        status_indicator.setObjectName("statusIndicator")
+        status_indicator.setFixedSize(8, 8)
+        status_container.addWidget(status_indicator)
         
         self.system_status = QLabel("Sistema Online")
-        self.system_status.setStyleSheet("color: #000000; font-size: 12px;")
-        system_layout.addWidget(self.system_status)
+        self.system_status.setObjectName("systemStatus")
+        status_container.addWidget(self.system_status)
         
+        system_layout.addLayout(status_container)
+        
+        # Última atualização
         self.last_update = QLabel("Última atualização: --")
-        self.last_update.setStyleSheet("color: #6b7280; font-size: 11px;")
+        self.last_update.setObjectName("lastUpdate")
         system_layout.addWidget(self.last_update)
         
-        sidebar_layout.addWidget(system_info)
+        sidebar_layout.addWidget(system_container)
         
         parent_layout.addWidget(sidebar)
 
@@ -318,6 +355,7 @@ class AdminDashboard(QMainWindow):
     def _create_dashboard_page(self):
         """Cria a página do dashboard principal"""
         dashboard_widget = QWidget()
+        dashboard_widget.setObjectName("dashboardPage")
         layout = QVBoxLayout(dashboard_widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -362,81 +400,125 @@ class AdminDashboard(QMainWindow):
         self.content_stack.addWidget(dashboard_widget)
 
     def _create_kpi_card(self, title, value, color):
-        """Cria um card de KPI"""
+        """Cria um card de KPI com design profissional"""
         card = QFrame()
         card.setObjectName("kpiCard")
-        card.setStyleSheet(f"""
-            QFrame#kpiCard {{
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                padding: 20px;
-            }}
-            QFrame#kpiCard:hover {{
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            }}
-        """)
+        card.setFixedHeight(160)
         
         layout = QVBoxLayout(card)
-        layout.setSpacing(10)
+        layout.setContentsMargins(25, 20, 25, 20)
+        layout.setSpacing(15)
+        
+        # Cabeçalho do card com ícone
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(12)
+        
+        # Ícone do KPI
+        icon_frame = QFrame()
+        icon_frame.setObjectName("kpiIcon")
+        icon_frame.setFixedSize(40, 40)
+        icon_layout = QHBoxLayout(icon_frame)
+        icon_layout.setContentsMargins(0, 0, 0, 0)
+        icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # Ícones específicos para cada KPI
+        icon_map = {
+            "users": "fa5s.users",
+            "students": "fa5s.user-graduate", 
+            "searches": "fa5s.search",
+            "interactions": "fa5s.comments"
+        }
+        
+        icon_name = icon_map.get(title.lower().replace(" ", ""), "fa5s.chart-line")
+        icon_label = QLabel()
+        icon_label.setPixmap(qta.icon(icon_name, color='#ffffff').pixmap(20, 20))
+        icon_layout.addWidget(icon_label)
+        header_layout.addWidget(icon_frame)
         
         # Título
         title_label = QLabel(title)
-        title_label.setStyleSheet("color: #000000; font-size: 14px; font-weight: 500;")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title_label)
+        title_label.setObjectName("kpiTitle")
+        header_layout.addWidget(title_label)
         
-        # Valor
+        header_layout.addStretch()
+        layout.addLayout(header_layout)
+        
+        # Valor principal
         value_label = QLabel(value)
         value_label.setObjectName("kpiValue")
-        value_label.setStyleSheet(f"color: {color}; font-size: 32px; font-weight: bold;")
-        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        value_label.setStyleSheet(f"color: {color};")
         layout.addWidget(value_label)
         
-        # Progress bar (opcional)
+        # Progress bar com design aprimorado
+        progress_container = QVBoxLayout()
+        progress_container.setSpacing(5)
+        
+        # Label de progresso
+        progress_label = QLabel("75% do objetivo")
+        progress_label.setObjectName("progressLabel")
+        progress_container.addWidget(progress_label)
+        
         progress = QProgressBar()
+        progress.setObjectName("kpiProgress")
         progress.setRange(0, 100)
-        progress.setValue(75)  # Valor exemplo
-        progress.setStyleSheet(f"""
-            QProgressBar {{
-                border: none;
-                border-radius: 4px;
-                background: #f3f4f6;
-                height: 6px;
-            }}
-            QProgressBar::chunk {{
-                background: {color};
-                border-radius: 4px;
-            }}
-        """)
-        layout.addWidget(progress)
+        progress.setValue(75)
+        progress.setFixedHeight(6)
+        progress_container.addWidget(progress)
+        
+        layout.addLayout(progress_container)
         
         return card
 
     def _create_chart_widget(self, title, chart_type):
-        """Cria um widget de gráfico"""
+        """Cria um widget de gráfico com design profissional"""
         widget = QFrame()
         widget.setObjectName("chartWidget")
-        widget.setStyleSheet("""
-            QFrame#chartWidget {
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-            }
-        """)
+        widget.setFixedHeight(350)
         
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(20)
+        
+        # Cabeçalho do gráfico
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(15)
+        
+        # Ícone do gráfico
+        icon_frame = QFrame()
+        icon_frame.setObjectName("chartIcon")
+        icon_frame.setFixedSize(32, 32)
+        icon_layout = QHBoxLayout(icon_frame)
+        icon_layout.setContentsMargins(0, 0, 0, 0)
+        icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        icon_name = "fa5s.chart-pie" if chart_type == "pie" else "fa5s.chart-bar"
+        icon_label = QLabel()
+        icon_label.setPixmap(qta.icon(icon_name, color='#ffffff').pixmap(16, 16))
+        icon_layout.addWidget(icon_label)
+        header_layout.addWidget(icon_frame)
         
         # Título
         title_label = QLabel(title)
-        title_label.setStyleSheet("color: #000000; font-size: 18px; font-weight: bold; margin-bottom: 15px;")
-        layout.addWidget(title_label)
+        title_label.setObjectName("chartTitle")
+        header_layout.addWidget(title_label)
+        
+        header_layout.addStretch()
+        
+        # Botão de opções
+        options_btn = QPushButton()
+        options_btn.setObjectName("chartOptionsBtn")
+        options_btn.setIcon(qta.icon('fa5s.ellipsis-v', color='#6b7280'))
+        options_btn.setFixedSize(24, 24)
+        options_btn.setToolTip("Opções do gráfico")
+        header_layout.addWidget(options_btn)
+        
+        layout.addLayout(header_layout)
         
         # Gráfico
         chart_view = QChartView()
         from PySide6.QtGui import QPainter
         chart_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+        chart_view.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         
         if chart_type == "pie":
             chart = self._create_pie_chart()
@@ -449,32 +531,48 @@ class AdminDashboard(QMainWindow):
         return widget
 
     def _create_pie_chart(self):
-        """Cria um gráfico de pizza"""
+        """Cria um gráfico de pizza com design profissional"""
         chart = QChart()
-        chart.setTitle("Distribuição de Usuários")
+        chart.setTitle("")
         chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
+        chart.setBackgroundBrush(QColor("#ffffff"))
         
         series = QPieSeries()
+        series.setHoleSize(0.3)  # Gráfico de rosca
+        
+        # Adicionar dados com cores profissionais
         series.append("Alunos", 10)
         series.append("Educadores", 1)
         series.append("Administradores", 1)
         
+        # Configurar cores
+        colors = ["#000000", "#6b7280", "#374151"]
+        for i, slice in enumerate(series.slices()):
+            slice.setColor(QColor(colors[i % len(colors)]))
+            slice.setLabelVisible(True)
+            # PySide6 não tem setLabelFormat, usar setLabelFont para formatação
+            slice.setLabelFont(QFont("Segoe UI", 10))
+        
         chart.addSeries(series)
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignmentFlag.AlignBottom)
+        chart.legend().setFont(QFont("Segoe UI", 10))
         
         return chart
 
     def _create_bar_chart(self):
-        """Cria um gráfico de barras"""
+        """Cria um gráfico de barras com design profissional"""
         chart = QChart()
-        chart.setTitle("Atividade Mensal")
+        chart.setTitle("")
         chart.setAnimationOptions(QChart.AnimationOption.SeriesAnimations)
+        chart.setBackgroundBrush(QColor("#ffffff"))
         
         series = QBarSeries()
+        series.setBarWidth(0.6)
         
         set1 = QBarSet("Pesquisas")
         set1.append([120, 150, 180, 200, 160, 140])
+        set1.setColor(QColor("#000000"))
         series.append(set1)
         
         chart.addSeries(series)
@@ -482,126 +580,226 @@ class AdminDashboard(QMainWindow):
         categories = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"]
         axis = QBarCategoryAxis()
         axis.append(categories)
+        axis.setLabelsFont(QFont("Segoe UI", 10))
+        
+        value_axis = QValueAxis()
+        value_axis.setLabelsFont(QFont("Segoe UI", 10))
+        
         chart.createDefaultAxes()
         chart.setAxisX(axis, series)
+        chart.setAxisY(value_axis, series)
         
         return chart
 
     def _create_recent_activity_widget(self):
-        """Cria widget de atividade recente"""
+        """Cria widget de atividade recente com design profissional"""
         widget = QFrame()
         widget.setObjectName("activityWidget")
-        widget.setStyleSheet("""
-            QFrame#activityWidget {
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-            }
-        """)
+        widget.setFixedHeight(400)
         
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(25, 25, 25, 25)
+        layout.setSpacing(20)
+        
+        # Cabeçalho do widget
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(15)
+        
+        # Ícone
+        icon_frame = QFrame()
+        icon_frame.setObjectName("activityIcon")
+        icon_frame.setFixedSize(32, 32)
+        icon_layout = QHBoxLayout(icon_frame)
+        icon_layout.setContentsMargins(0, 0, 0, 0)
+        icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        icon_label = QLabel()
+        icon_label.setPixmap(qta.icon('fa5s.clock', color='#ffffff').pixmap(16, 16))
+        icon_layout.addWidget(icon_label)
+        header_layout.addWidget(icon_frame)
         
         # Título
         title_label = QLabel("Atividade Recente")
-        title_label.setStyleSheet("color: #000000; font-size: 18px; font-weight: bold; margin-bottom: 15px;")
-        layout.addWidget(title_label)
+        title_label.setObjectName("activityTitle")
+        header_layout.addWidget(title_label)
+        
+        header_layout.addStretch()
+        
+        # Botão de filtro
+        filter_btn = QPushButton()
+        filter_btn.setObjectName("activityFilterBtn")
+        filter_btn.setIcon(qta.icon('fa5s.filter', color='#6b7280'))
+        filter_btn.setFixedSize(24, 24)
+        filter_btn.setToolTip("Filtrar atividades")
+        header_layout.addWidget(filter_btn)
+        
+        layout.addLayout(header_layout)
         
         # Tabela de atividade
         self.activity_table = QTableWidget(0, 4)
+        self.activity_table.setObjectName("activityTable")
         self.activity_table.setHorizontalHeaderLabels(["Usuário", "Ação", "Data/Hora", "Status"])
         self.activity_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.activity_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.activity_table.setAlternatingRowColors(True)
+        self.activity_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.activity_table.setShowGrid(False)
         layout.addWidget(self.activity_table)
         
         return widget
 
     def _create_users_page(self):
-        """Cria a página de gerenciamento de usuários"""
+        """Cria a página de gerenciamento de usuários com design profissional"""
         users_widget = QWidget()
+        users_widget.setObjectName("usersPage")
         layout = QVBoxLayout(users_widget)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(25)
         
-        # Cabeçalho da página
-        header_layout = QHBoxLayout()
+        # Cabeçalho da página com design aprimorado
+        header_container = QFrame()
+        header_container.setObjectName("pageHeader")
+        header_container.setFixedHeight(80)
         
+        header_layout = QHBoxLayout(header_container)
+        header_layout.setContentsMargins(25, 20, 25, 20)
+        header_layout.setSpacing(20)
+        
+        # Título com ícone
+        title_layout = QHBoxLayout()
+        title_layout.setSpacing(15)
+        
+        # Ícone da página
+        page_icon = QFrame()
+        page_icon.setObjectName("pageIcon")
+        page_icon.setFixedSize(40, 40)
+        icon_layout = QHBoxLayout(page_icon)
+        icon_layout.setContentsMargins(0, 0, 0, 0)
+        icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        icon_label = QLabel()
+        icon_label.setPixmap(qta.icon('fa5s.users', color='#ffffff').pixmap(20, 20))
+        icon_layout.addWidget(icon_label)
+        title_layout.addWidget(page_icon)
+        
+        # Título
         title_label = QLabel("Gerenciamento de Usuários")
-        title_label.setStyleSheet("color: #000000; font-size: 24px; font-weight: bold;")
-        header_layout.addWidget(title_label)
+        title_label.setObjectName("pageTitle")
+        title_layout.addWidget(title_label)
         
+        header_layout.addLayout(title_layout)
         header_layout.addStretch()
         
         # Botões de ação
+        actions_layout = QHBoxLayout()
+        actions_layout.setSpacing(10)
+        
+        # Botão de filtro
+        filter_btn = QPushButton()
+        filter_btn.setObjectName("pageFilterBtn")
+        filter_btn.setIcon(qta.icon('fa5s.filter', color='#ffffff'))
+        filter_btn.setFixedSize(40, 40)
+        filter_btn.setToolTip("Filtrar usuários")
+        actions_layout.addWidget(filter_btn)
+        
+        # Botão de exportar
+        export_btn = QPushButton()
+        export_btn.setObjectName("pageExportBtn")
+        export_btn.setIcon(qta.icon('fa5s.download', color='#ffffff'))
+        export_btn.setFixedSize(40, 40)
+        export_btn.setToolTip("Exportar dados")
+        actions_layout.addWidget(export_btn)
+        
+        # Botão principal
         add_user_btn = QPushButton("Adicionar Usuário")
+        add_user_btn.setObjectName("primaryActionBtn")
         add_user_btn.setIcon(qta.icon('fa5s.plus', color='#ffffff'))
-        add_user_btn.setStyleSheet("""
-            QPushButton {
-                background: #000000;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 20px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: #333333;
-            }
-        """)
-        header_layout.addWidget(add_user_btn)
+        add_user_btn.setFixedHeight(40)
+        add_user_btn.setMinimumWidth(150)
+        actions_layout.addWidget(add_user_btn)
         
-        layout.addLayout(header_layout)
+        header_layout.addLayout(actions_layout)
+        layout.addWidget(header_container)
         
-        # Filtros
-        filters_layout = QHBoxLayout()
+        # Seção de filtros com design aprimorado
+        filters_container = QFrame()
+        filters_container.setObjectName("filtersContainer")
+        filters_container.setFixedHeight(70)
+        
+        filters_layout = QHBoxLayout(filters_container)
+        filters_layout.setContentsMargins(25, 15, 25, 15)
+        filters_layout.setSpacing(15)
         
         # Campo de busca
+        search_container = QFrame()
+        search_container.setObjectName("searchContainer")
+        search_layout = QHBoxLayout(search_container)
+        search_layout.setContentsMargins(15, 8, 15, 8)
+        search_layout.setSpacing(10)
+        
+        search_icon = QLabel()
+        search_icon.setPixmap(qta.icon('fa5s.search', color='#6b7280').pixmap(16, 16))
+        search_layout.addWidget(search_icon)
+        
         search_input = QLineEdit()
+        search_input.setObjectName("searchInput")
         search_input.setPlaceholderText("Buscar usuários...")
-        search_input.setStyleSheet("""
-            QLineEdit {
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
-                padding: 10px;
-                font-size: 14px;
-            }
-            QLineEdit:focus {
-                border-color: #000000;
-            }
-        """)
-        filters_layout.addWidget(search_input)
+        search_input.setFixedHeight(35)
+        search_layout.addWidget(search_input)
+        
+        filters_layout.addWidget(search_container)
         
         # Filtro por perfil
         profile_filter = QComboBox()
+        profile_filter.setObjectName("profileFilter")
         profile_filter.addItems(["Todos os perfis", "Alunos", "Educadores", "Administradores"])
-        profile_filter.setStyleSheet("""
-            QComboBox {
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
-                padding: 10px;
-                font-size: 14px;
-            }
-        """)
+        profile_filter.setFixedHeight(35)
+        profile_filter.setMinimumWidth(150)
         filters_layout.addWidget(profile_filter)
         
         filters_layout.addStretch()
-        layout.addLayout(filters_layout)
         
-        # Tabela de usuários
+        # Botão de limpar filtros
+        clear_btn = QPushButton("Limpar")
+        clear_btn.setObjectName("clearFiltersBtn")
+        clear_btn.setIcon(qta.icon('fa5s.times', color='#6b7280'))
+        clear_btn.setFixedHeight(35)
+        clear_btn.setMinimumWidth(80)
+        filters_layout.addWidget(clear_btn)
+        
+        layout.addWidget(filters_container)
+        
+        # Tabela de usuários com design aprimorado
+        table_container = QFrame()
+        table_container.setObjectName("tableContainer")
+        
+        table_layout = QVBoxLayout(table_container)
+        table_layout.setContentsMargins(0, 0, 0, 0)
+        
         self.users_table = QTableWidget(0, 6)
+        self.users_table.setObjectName("usersTable")
         self.users_table.setHorizontalHeaderLabels(["Nome", "Perfil", "Idade", "Último Acesso", "Status", "Ações"])
         self.users_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.users_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.users_table.setAlternatingRowColors(True)
         self.users_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        layout.addWidget(self.users_table)
+        self.users_table.setShowGrid(False)
+        self.users_table.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.users_table.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        
+        # Configurar altura das linhas
+        self.users_table.verticalHeader().setDefaultSectionSize(60)
+        self.users_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        
+        table_layout.addWidget(self.users_table)
+        layout.addWidget(table_container)
         
         self.content_stack.addWidget(users_widget)
 
     def _create_reports_page(self):
         """Cria a página de relatórios"""
         reports_widget = QWidget()
+        reports_widget.setObjectName("reportsPage")
         layout = QVBoxLayout(reports_widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -621,6 +819,7 @@ class AdminDashboard(QMainWindow):
     def _create_settings_page(self):
         """Cria a página de configurações"""
         settings_widget = QWidget()
+        settings_widget.setObjectName("settingsPage")
         layout = QVBoxLayout(settings_widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -640,6 +839,7 @@ class AdminDashboard(QMainWindow):
     def _create_instituicoes_page(self):
         """Cria a página de gerenciamento de instituições"""
         instituicoes_widget = QWidget()
+        instituicoes_widget.setObjectName("instituicoesPage")
         layout = QVBoxLayout(instituicoes_widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -764,6 +964,7 @@ class AdminDashboard(QMainWindow):
     def _create_security_page(self):
         """Cria a página de segurança (apenas para admins)"""
         security_widget = QWidget()
+        security_widget.setObjectName("securityPage")
         layout = QVBoxLayout(security_widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -783,6 +984,7 @@ class AdminDashboard(QMainWindow):
     def _create_database_page(self):
         """Cria a página de banco de dados (apenas para admins)"""
         database_widget = QWidget()
+        database_widget.setObjectName("databasePage")
         layout = QVBoxLayout(database_widget)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -850,160 +1052,653 @@ class AdminDashboard(QMainWindow):
         self.status_bar.addPermanentWidget(self.last_update_status)
 
     def _apply_styles(self):
-        """Aplica estilos CSS à interface com melhor portabilidade"""
-        self.setStyleSheet("""
+        """Aplica estilos CSS profissionais à interface"""
+        # Importar utilitários de fonte
+        from ..utils.font_utils import get_ui_font, setup_application_fonts
+        
+        # Configurar fontes da aplicação
+        setup_application_fonts()
+        
+        # Obter fonte otimizada para UI
+        ui_font = get_ui_font(11)
+        font_family = ui_font.family()
+        
+        self.setStyleSheet(f"""
             /* Estilos globais da aplicação */
-            QMainWindow {
-                background: #ffffff !important;
+            QMainWindow {{
+                background: #f8fafc !important;
+                background-color: #f8fafc !important;
                 color: #1e293b;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+                font-size: 11px;
+            }}
             
             /* Widget principal */
-            QWidget {
+            QWidget {{
                 background: #ffffff !important;
-            }
+                background-color: #ffffff !important;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
             
             /* Cabeçalho */
-            QFrame#headerFrame {
+            QFrame#headerFrame {{
                 background: #ffffff !important;
                 background-color: #ffffff !important;
                 border-bottom: 1px solid #e5e7eb;
-            }
+                border-radius: 0px;
+            }}
+            
+            /* Logo Container */
+            QFrame#logoContainer {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border-radius: 25px;
+                border: none;
+            }}
+            
+            /* Títulos do cabeçalho */
+            QLabel#mainTitle {{
+                color: #000000;
+                font-size: 20px;
+                font-weight: bold;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QLabel#subtitle {{
+                color: #6b7280;
+                font-size: 12px;
+                font-weight: normal;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            /* Container do usuário */
+            QFrame#userContainer {{
+                background: #f8fafc !important;
+                background-color: #f8fafc !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+            }}
+            
+            /* Avatar do usuário */
+            QFrame#avatarFrame {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border-radius: 17px;
+                border: none;
+            }}
+            
+            QLabel#userName {{
+                color: #000000;
+                font-size: 14px;
+                font-weight: bold;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QLabel#userRole {{
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: normal;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            /* Botões do cabeçalho */
+            QPushButton#refreshBtn, QPushButton#settingsBtn {{
+                background: #6b7280 !important;
+                background-color: #6b7280 !important;
+                border: none;
+                border-radius: 20px;
+                color: white;
+            }}
+            
+            QPushButton#refreshBtn:hover, QPushButton#settingsBtn:hover {{
+                background: #4b5563 !important;
+                background-color: #4b5563 !important;
+            }}
+            
+            QPushButton#logoutBtn {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border: none;
+                border-radius: 20px;
+                color: white;
+                font-weight: bold;
+                font-size: 12px;
+            }}
+            
+            QPushButton#logoutBtn:hover {{
+                background: #333333 !important;
+                background-color: #333333 !important;
+            }}
             
             /* Sidebar */
-            QFrame#sidebar {
+            QFrame#sidebar {{
                 background: #ffffff !important;
                 background-color: #ffffff !important;
                 border-right: 1px solid #e5e7eb;
-            }
+            }}
             
-            /* Cards de KPI - FORÇA BACKGROUND BRANCO */
-            QFrame#kpiCard {
+            /* Cabeçalho da sidebar */
+            QFrame#sidebarHeader {{
+                background: transparent !important;
+                background-color: transparent !important;
+                border: none;
+            }}
+            
+            QLabel#sidebarTitle {{
+                color: #000000;
+                font-size: 16px;
+                font-weight: bold;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QFrame#sidebarDivider {{
+                background: #e5e7eb !important;
+                background-color: #e5e7eb !important;
+                border: none;
+            }}
+            
+            /* Container de navegação */
+            QFrame#navContainer {{
+                background: transparent !important;
+                background-color: transparent !important;
+                border: none;
+            }}
+            
+            /* Botões de navegação */
+            QPushButton[objectName^="navBtn_"] {{
+                background: transparent !important;
+                background-color: transparent !important;
+                border: none;
+                border-radius: 12px;
+                color: #6b7280;
+                font-weight: 500;
+                font-size: 13px;
+                text-align: left;
+                padding: 12px 20px;
+            }}
+            
+            QPushButton[objectName^="navBtn_"]:hover {{
+                background: #f3f4f6 !important;
+                background-color: #f3f4f6 !important;
+                color: #000000;
+            }}
+            
+            
+            /* Container do sistema */
+            QFrame#systemContainer {{
+                background: #f8fafc !important;
+                background-color: #f8fafc !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+            }}
+            
+            QLabel#systemTitle {{
+                color: #000000;
+                font-size: 14px;
+                font-weight: bold;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QFrame#statusIndicator {{
+                background: #10b981 !important;
+                background-color: #10b981 !important;
+                border-radius: 4px;
+                border: none;
+            }}
+            
+            QLabel#systemStatus {{
+                color: #000000;
+                font-size: 12px;
+                font-weight: 500;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QLabel#lastUpdate {{
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: normal;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            /* Cards de KPI */
+            QFrame#kpiCard {{
                 background: #ffffff !important;
                 background-color: #ffffff !important;
                 border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                padding: 20px;
-            }
+                border-radius: 16px;
+                border-left: 4px solid #000000;
+            }}
             
-            /* Widgets de gráfico - FORÇA BACKGROUND BRANCO */
-            QFrame#chartWidget {
+            QFrame#kpiCard:hover {{
+                border-left: 4px solid #6b7280;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }}
+            
+            QFrame#kpiIcon {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border-radius: 20px;
+                border: none;
+            }}
+            
+            QLabel#kpiTitle {{
+                color: #6b7280;
+                font-size: 13px;
+                font-weight: 500;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QLabel#kpiValue {{
+                color: #000000;
+                font-size: 28px;
+                font-weight: bold;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QLabel#progressLabel {{
+                color: #6b7280;
+                font-size: 11px;
+                font-weight: normal;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QProgressBar#kpiProgress {{
+                background: #f3f4f6 !important;
+                background-color: #f3f4f6 !important;
+                border: none;
+                border-radius: 3px;
+            }}
+            
+            QProgressBar#kpiProgress::chunk {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border-radius: 3px;
+            }}
+            
+            /* Widgets de gráfico */
+            QFrame#chartWidget {{
                 background: #ffffff !important;
                 background-color: #ffffff !important;
                 border: 1px solid #e5e7eb;
-                border-radius: 12px;
-            }
+                border-radius: 16px;
+            }}
             
-            /* Widget de atividade - FORÇA BACKGROUND BRANCO */
-            QFrame#activityWidget {
+            QFrame#chartIcon {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border-radius: 16px;
+                border: none;
+            }}
+            
+            QLabel#chartTitle {{
+                color: #000000;
+                font-size: 16px;
+                font-weight: bold;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QPushButton#chartOptionsBtn {{
+                background: transparent !important;
+                background-color: transparent !important;
+                border: none;
+                border-radius: 12px;
+            }}
+            
+            QPushButton#chartOptionsBtn:hover {{
+                background: #f3f4f6 !important;
+                background-color: #f3f4f6 !important;
+            }}
+            
+            /* Widget de atividade */
+            QFrame#activityWidget {{
                 background: #ffffff !important;
                 background-color: #ffffff !important;
                 border: 1px solid #e5e7eb;
-                border-radius: 12px;
-            }
+                border-radius: 16px;
+            }}
             
-            /* Todos os QFrame devem ter background branco */
-            QFrame {
+            QFrame#activityIcon {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border-radius: 16px;
+                border: none;
+            }}
+            
+            QLabel#activityTitle {{
+                color: #000000;
+                font-size: 16px;
+                font-weight: bold;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QPushButton#activityFilterBtn {{
+                background: transparent !important;
+                background-color: transparent !important;
+                border: none;
+                border-radius: 12px;
+            }}
+            
+            QPushButton#activityFilterBtn:hover {{
+                background: #f3f4f6 !important;
+                background-color: #f3f4f6 !important;
+            }}
+            
+            /* Cabeçalhos de páginas */
+            QFrame#pageHeader {{
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-            }
+                border: 1px solid #e5e7eb;
+                border-radius: 16px;
+            }}
+            
+            QFrame#pageIcon {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border-radius: 20px;
+                border: none;
+            }}
+            
+            QLabel#pageTitle {{
+                color: #000000;
+                font-size: 18px;
+                font-weight: bold;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QPushButton#pageFilterBtn, QPushButton#pageExportBtn {{
+                background: #6b7280 !important;
+                background-color: #6b7280 !important;
+                border: none;
+                border-radius: 20px;
+                color: white;
+            }}
+            
+            QPushButton#pageFilterBtn:hover, QPushButton#pageExportBtn:hover {{
+                background: #4b5563 !important;
+                background-color: #4b5563 !important;
+            }}
+            
+            QPushButton#primaryActionBtn {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border: none;
+                border-radius: 20px;
+                color: white;
+                font-weight: bold;
+                font-size: 13px;
+            }}
+            
+            QPushButton#primaryActionBtn:hover {{
+                background: #333333 !important;
+                background-color: #333333 !important;
+            }}
+            
+            /* Container de filtros */
+            QFrame#filtersContainer {{
+                background: #f8fafc !important;
+                background-color: #f8fafc !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+            }}
+            
+            QFrame#searchContainer {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border: 1px solid #d1d5db;
+                border-radius: 18px;
+            }}
+            
+            QLineEdit#searchInput {{
+                background: transparent !important;
+                background-color: transparent !important;
+                border: none;
+                color: #1e293b;
+                font-size: 13px;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            QLineEdit#searchInput:focus {{
+                border: none;
+            }}
+            
+            QComboBox#profileFilter {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border: 1px solid #d1d5db;
+                border-radius: 18px;
+                color: #1e293b;
+                font-size: 13px;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+                padding: 0 15px;
+            }}
+            
+            QPushButton#clearFiltersBtn {{
+                background: #f3f4f6 !important;
+                background-color: #f3f4f6 !important;
+                border: 1px solid #d1d5db;
+                border-radius: 18px;
+                color: #6b7280;
+                font-size: 12px;
+                font-weight: 500;
+            }}
+            
+            QPushButton#clearFiltersBtn:hover {{
+                background: #e5e7eb !important;
+                background-color: #e5e7eb !important;
+            }}
+            
+            /* Container de tabelas */
+            QFrame#tableContainer {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 16px;
+            }}
             
             /* Labels padrão */
-            QLabel {
+            QLabel {{
                 color: #1e293b;
-                font-family: 'Segoe UI', Arial, sans-serif;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
                 background: transparent !important;
-            }
+                background-color: transparent !important;
+            }}
             
             /* Tabelas */
-            QTableWidget {
+            QTableWidget {{
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
+                border: none;
                 gridline-color: #f3f4f6;
-                selection-background-color: #dbeafe;
-            }
+                selection-background-color: #f3f4f6;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
             
-             QTableWidget::item {
-                 padding: 12px;
+             QTableWidget::item {{
+                 padding: 15px 12px;
                  border-bottom: 1px solid #f3f4f6;
                  background: #ffffff !important;
-                 min-height: 70px;
-             }
+                 background-color: #ffffff !important;
+                 min-height: 60px;
+                 color: #1e293b;
+                 font-size: 13px;
+             }}
             
-            QTableWidget::item:selected {
-                background: #dbeafe;
-                color: #1e40af;
-            }
+            QTableWidget::item:selected {{
+                background: #f3f4f6 !important;
+                background-color: #f3f4f6 !important;
+                color: #000000;
+            }}
             
-            QHeaderView::section {
-                background: #f9fafb;
+            /* Widgets dentro das células da tabela */
+            QTableWidget QWidget {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+            }}
+            
+            QTableWidget QWidget:selected {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+            }}
+            
+            /* Botões dentro das células da tabela */
+            QTableWidget QPushButton {{
+                background: inherit !important;
+                background-color: inherit !important;
+            }}
+            
+            QTableWidget QPushButton:hover {{
+                background: inherit !important;
+                background-color: inherit !important;
+            }}
+            
+            QTableWidget QPushButton:pressed {{
+                background: inherit !important;
+                background-color: inherit !important;
+            }}
+            
+            QHeaderView::section {{
+                background: #f8fafc !important;
+                background-color: #f8fafc !important;
                 color: #374151;
-                padding: 12px;
+                padding: 15px 12px;
                 border: none;
                 border-bottom: 1px solid #e5e7eb;
                 font-weight: bold;
-            }
+                font-size: 12px;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
             
             /* Áreas de scroll */
-            QScrollArea {
+            QScrollArea {{
                 border: none;
                 background: transparent !important;
-            }
+            }}
             
             /* Scrollbars personalizadas */
-            QScrollBar:vertical {
+            QScrollBar:vertical {{
                 background: #f1f5f9;
-                width: 12px;
-                border-radius: 6px;
+                width: 8px;
+                border-radius: 4px;
                 margin: 0px;
-            }
+            }}
             
-            QScrollBar::handle:vertical {
+            QScrollBar::handle:vertical {{
                 background: #cbd5e1;
-                border-radius: 6px;
+                border-radius: 4px;
                 min-height: 20px;
-            }
+            }}
             
-            QScrollBar::handle:vertical:hover {
+            QScrollBar::handle:vertical:hover {{
                 background: #94a3b8;
-            }
+            }}
             
             QScrollBar::add-line:vertical, 
-            QScrollBar::sub-line:vertical {
+            QScrollBar::sub-line:vertical {{
                 height: 0px;
-            }
+            }}
             
             QScrollBar::add-page:vertical, 
-            QScrollBar::sub-page:vertical {
+            QScrollBar::sub-page:vertical {{
                 background: none;
-            }
+            }}
             
             /* Botões padrão */
-            QPushButton {
-                font-family: 'Segoe UI', Arial, sans-serif;
+            QPushButton {{
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
                 font-weight: 600;
-                border-radius: 8px;
-                padding: 8px 16px;
-            }
+                border-radius: 12px;
+                padding: 10px 16px;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border: 1px solid #e5e7eb;
+                color: #1e293b;
+            }}
+            
+            QPushButton:hover {{
+                background: #f8fafc !important;
+                background-color: #f8fafc !important;
+            }}
             
             /* Inputs padrão */
-            QLineEdit, QTextEdit {
-                font-family: 'Segoe UI', Arial, sans-serif;
-                border-radius: 8px;
-                padding: 8px 12px;
+            QLineEdit, QTextEdit {{
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+                border-radius: 12px;
+                padding: 10px 15px;
                 background: #ffffff !important;
-            }
+                background-color: #ffffff !important;
+                border: 1px solid #d1d5db;
+                color: #1e293b;
+            }}
+            
+            QLineEdit:focus, QTextEdit:focus {{
+                border-color: #000000;
+            }}
             
             /* Comboboxes */
-            QComboBox {
-                font-family: 'Segoe UI', Arial, sans-serif;
-                border-radius: 8px;
-                padding: 8px 12px;
+            QComboBox {{
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+                border-radius: 12px;
+                padding: 10px 15px;
                 background: #ffffff !important;
-            }
+                background-color: #ffffff !important;
+                border: 1px solid #d1d5db;
+                color: #1e293b;
+            }}
+            
+            QComboBox:focus {{
+                border-color: #000000;
+            }}
+            
+            /* Progress bars */
+            QProgressBar {{
+                background: #f3f4f6 !important;
+                background-color: #f3f4f6 !important;
+                border: none;
+                border-radius: 6px;
+                height: 8px;
+            }}
+            
+            QProgressBar::chunk {{
+                background: #000000 !important;
+                background-color: #000000 !important;
+                border-radius: 6px;
+            }}
+            
+            /* Menu bar */
+            QMenuBar {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border-bottom: 1px solid #e5e7eb;
+                color: #1e293b;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            /* Status bar */
+            QStatusBar {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border-top: 1px solid #e5e7eb;
+                color: #6b7280;
+                font-family: '{font_family}', Arial, Helvetica, sans-serif;
+            }}
+            
+            /* Páginas específicas - FORÇA BACKGROUND BRANCO */
+            QWidget[objectName="dashboardPage"],
+            QWidget[objectName="usersPage"],
+            QWidget[objectName="reportsPage"],
+            QWidget[objectName="settingsPage"],
+            QWidget[objectName="instituicoesPage"],
+            QWidget[objectName="securityPage"],
+            QWidget[objectName="databasePage"] {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+            }}
+            
+            /* Área de conteúdo principal */
+            QStackedWidget {{
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+            }}
         """)
 
     def _switch_page(self, page_key):
@@ -1025,10 +1720,7 @@ class AdminDashboard(QMainWindow):
         if page_key in page_map:
             self.content_stack.setCurrentIndex(page_map[page_key])
             
-            # Atualizar botões de navegação
-            for btn in self.nav_buttons.values():
-                btn.setChecked(False)
-            self.nav_buttons[page_key].setChecked(True)
+            # Navegação sem marcação visual
 
     def _load_data(self):
         """Carrega os dados iniciais"""
@@ -1192,6 +1884,13 @@ class AdminDashboard(QMainWindow):
                 
                 # Botões de ação
                 actions_widget = QWidget()
+                actions_widget.setStyleSheet("""
+                    QWidget {
+                        background: #ffffff !important;
+                        background-color: #ffffff !important;
+                        border: none;
+                    }
+                """)
                 actions_layout = QHBoxLayout(actions_widget)
                 actions_layout.setContentsMargins(1, 1, 1, 1)
                 actions_layout.setSpacing(1)
@@ -1203,7 +1902,8 @@ class AdminDashboard(QMainWindow):
                 edit_btn.setToolTip("Editar Instituição")
                 edit_btn.setStyleSheet("""
                     QPushButton {
-                        background: #000000;
+                        background: #000000 !important;
+                        background-color: #000000 !important;
                         color: white;
                         border: none;
                         border-radius: 8px;
@@ -1212,10 +1912,12 @@ class AdminDashboard(QMainWindow):
                         padding: 2px;
                     }
                     QPushButton:hover {
-                        background: #333333;
+                        background: #333333 !important;
+                        background-color: #333333 !important;
                     }
                     QPushButton:pressed {
-                        background: #1a1a1a;
+                        background: #1a1a1a !important;
+                        background-color: #1a1a1a !important;
                     }
                 """)
                 edit_btn.clicked.connect(lambda checked, data=instituicao: self._open_instituicao_dialog(data))
@@ -1228,7 +1930,8 @@ class AdminDashboard(QMainWindow):
                 delete_btn.setToolTip("Excluir Instituição")
                 delete_btn.setStyleSheet("""
                     QPushButton {
-                        background: #6b7280;
+                        background: #6b7280 !important;
+                        background-color: #6b7280 !important;
                         color: white;
                         border: none;
                         border-radius: 8px;
@@ -1237,10 +1940,12 @@ class AdminDashboard(QMainWindow):
                         padding: 2px;
                     }
                     QPushButton:hover {
-                        background: #4b5563;
+                        background: #4b5563 !important;
+                        background-color: #4b5563 !important;
                     }
                     QPushButton:pressed {
-                        background: #374151;
+                        background: #374151 !important;
+                        background-color: #374151 !important;
                     }
                 """)
                 delete_btn.clicked.connect(lambda checked, data=instituicao: self._delete_instituicao(data))
@@ -1325,6 +2030,13 @@ class AdminDashboard(QMainWindow):
                 
                 # Botões de ação
                 actions_widget = QWidget()
+                actions_widget.setStyleSheet("""
+                    QWidget {
+                        background: #ffffff !important;
+                        background-color: #ffffff !important;
+                        border: none;
+                    }
+                """)
                 actions_layout = QHBoxLayout(actions_widget)
                 actions_layout.setContentsMargins(1, 1, 1, 1)
                 actions_layout.setSpacing(1)
@@ -1336,7 +2048,8 @@ class AdminDashboard(QMainWindow):
                 edit_btn.setToolTip("Editar Instituição")
                 edit_btn.setStyleSheet("""
                     QPushButton {
-                        background: #000000;
+                        background: #000000 !important;
+                        background-color: #000000 !important;
                         color: white;
                         border: none;
                         border-radius: 8px;
@@ -1345,10 +2058,12 @@ class AdminDashboard(QMainWindow):
                         padding: 2px;
                     }
                     QPushButton:hover {
-                        background: #333333;
+                        background: #333333 !important;
+                        background-color: #333333 !important;
                     }
                     QPushButton:pressed {
-                        background: #1a1a1a;
+                        background: #1a1a1a !important;
+                        background-color: #1a1a1a !important;
                     }
                 """)
                 edit_btn.clicked.connect(lambda checked, data=instituicao: self._open_instituicao_dialog(data))
@@ -1361,7 +2076,8 @@ class AdminDashboard(QMainWindow):
                 delete_btn.setToolTip("Excluir Instituição")
                 delete_btn.setStyleSheet("""
                     QPushButton {
-                        background: #6b7280;
+                        background: #6b7280 !important;
+                        background-color: #6b7280 !important;
                         color: white;
                         border: none;
                         border-radius: 8px;
@@ -1370,10 +2086,12 @@ class AdminDashboard(QMainWindow):
                         padding: 2px;
                     }
                     QPushButton:hover {
-                        background: #4b5563;
+                        background: #4b5563 !important;
+                        background-color: #4b5563 !important;
                     }
                     QPushButton:pressed {
-                        background: #374151;
+                        background: #374151 !important;
+                        background-color: #374151 !important;
                     }
                 """)
                 delete_btn.clicked.connect(lambda checked, data=instituicao: self._delete_instituicao(data))
