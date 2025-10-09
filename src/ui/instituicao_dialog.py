@@ -250,16 +250,31 @@ class InstituicaoDialog(QDialog):
         parent_layout.addLayout(buttons_layout)
     
     def _apply_styles(self):
-        """Aplica estilos CSS ao dialog"""
+        """Aplica estilos CSS ao dialog com melhor portabilidade"""
         self.setStyleSheet("""
+            /* Estilos globais do dialog */
             QDialog {
-                background: #f9fafb;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 color: #1f2937;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            
+            /* Widget principal */
+            QWidget {
+                background: #ffffff !important;
             }
             
             QFrame#headerFrame {
-                background: white;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 border-bottom: 1px solid #e5e7eb;
+            }
+            
+            /* Todos os QFrame devem ter background branco */
+            QFrame {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
             }
             
             QLineEdit {
@@ -267,8 +282,10 @@ class InstituicaoDialog(QDialog):
                 border-radius: 4px;
                 padding: 8px;
                 font-size: 14px;
-                background: white;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 color: #1f2937;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }
             QLineEdit:focus {
                 border-color: #3b82f6;
@@ -279,8 +296,10 @@ class InstituicaoDialog(QDialog):
                 border-radius: 4px;
                 padding: 8px;
                 font-size: 14px;
-                background: white;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 color: #1f2937;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }
             QComboBox:focus {
                 border-color: #3b82f6;
@@ -291,8 +310,10 @@ class InstituicaoDialog(QDialog):
                 border-radius: 4px;
                 padding: 8px;
                 font-size: 14px;
-                background: white;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 color: #1f2937;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }
             QDateEdit:focus {
                 border-color: #3b82f6;
@@ -300,7 +321,8 @@ class InstituicaoDialog(QDialog):
             
             QScrollArea {
                 border: 1px solid #e5e7eb;
-                background: white;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 border-radius: 4px;
             }
             
@@ -308,6 +330,14 @@ class InstituicaoDialog(QDialog):
                 color: #374151;
                 font-size: 14px;
                 font-weight: 500;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: transparent !important;
+            }
+            
+            /* Botões padrão */
+            QPushButton {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-weight: 600;
             }
         """)
     

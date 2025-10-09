@@ -693,15 +693,21 @@ class ProfileWindow(QMainWindow):
         self.setStyleSheet("""
             /* Estilos globais da aplicação */
             QMainWindow {
-                background-color: #ffffff;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 color: #1e293b;
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
             }
             
-            /* Cards de seção com design moderno */
+            /* Widget principal */
+            QWidget {
+                background: #ffffff !important;
+            }
+            
+            /* Cards de seção com design moderno - FORÇA BACKGROUND BRANCO */
             QFrame#infoCard, QFrame#statsCard, QFrame#actionsCard, QFrame#feedbackCard {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #ffffff, stop:1 #f8f9fa);
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 border-radius: 16px;
                 padding: 24px;
                 border: 1px solid rgba(52, 152, 219, 0.1);
@@ -715,10 +721,17 @@ class ProfileWindow(QMainWindow):
                 transform: translateY(-2px);
             }
             
+            /* Todos os QFrame devem ter background branco */
+            QFrame {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+            }
+            
             /* Labels padrão */
             QLabel {
                 color: #111827;
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+                background: transparent !important;
             }
             
             /* Botões padrão */
@@ -730,10 +743,23 @@ class ProfileWindow(QMainWindow):
             }
             
             /* Inputs padrão */
-            QLineEdit {
+            QLineEdit, QTextEdit {
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
                 border-radius: 8px;
                 padding: 8px 12px;
+                background: #ffffff !important;
+            }
+            
+            /* Comboboxes */
+            QComboBox {
+                font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+                background: #ffffff !important;
+            }
+            
+            /* Áreas de scroll */
+            QScrollArea {
+                border: none;
+                background: transparent !important;
             }
             
             /* Scrollbars personalizadas */

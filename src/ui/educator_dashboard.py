@@ -839,24 +839,76 @@ class EducatorDashboard(QMainWindow):
         self.status_bar.addPermanentWidget(self.last_update_status)
 
     def _apply_styles(self):
-        """Aplica estilos CSS à interface"""
+        """Aplica estilos CSS à interface com melhor portabilidade"""
         self.setStyleSheet("""
+            /* Estilos globais da aplicação */
             QMainWindow {
-                background: #f9fafb;
+                background: #ffffff !important;
+                color: #1e293b;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }
             
+            /* Widget principal */
+            QWidget {
+                background: #ffffff !important;
+            }
+            
+            /* Cabeçalho */
             QFrame#headerFrame {
-                background: white;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 border-bottom: 1px solid #e5e7eb;
             }
             
+            /* Sidebar */
             QFrame#sidebar {
-                background: white;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 border-right: 1px solid #e5e7eb;
             }
             
+            /* Cards de KPI - FORÇA BACKGROUND BRANCO */
+            QFrame#kpiCard {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 20px;
+            }
+            
+            /* Widgets de gráfico - FORÇA BACKGROUND BRANCO */
+            QFrame#chartWidget {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+            }
+            
+            /* Widget de atividade - FORÇA BACKGROUND BRANCO */
+            QFrame#activityWidget {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+            }
+            
+            /* Todos os QFrame devem ter background branco */
+            QFrame {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+            }
+            
+            /* Labels padrão */
+            QLabel {
+                color: #1e293b;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: transparent !important;
+            }
+            
+            /* Tabelas */
             QTableWidget {
-                background: white;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 border: 1px solid #e5e7eb;
                 border-radius: 8px;
                 gridline-color: #f3f4f6;
@@ -866,6 +918,7 @@ class EducatorDashboard(QMainWindow):
             QTableWidget::item {
                 padding: 12px;
                 border-bottom: 1px solid #f3f4f6;
+                background: #ffffff !important;
             }
             
             QTableWidget::item:selected {
@@ -882,20 +935,62 @@ class EducatorDashboard(QMainWindow):
                 font-weight: bold;
             }
             
+            /* Áreas de scroll */
+            QScrollArea {
+                border: none;
+                background: transparent !important;
+            }
+            
+            /* Scrollbars personalizadas */
             QScrollBar:vertical {
-                background: #f3f4f6;
+                background: #f1f5f9;
                 width: 12px;
                 border-radius: 6px;
+                margin: 0px;
             }
             
             QScrollBar::handle:vertical {
-                background: #d1d5db;
+                background: #cbd5e1;
                 border-radius: 6px;
                 min-height: 20px;
             }
             
             QScrollBar::handle:vertical:hover {
-                background: #9ca3af;
+                background: #94a3b8;
+            }
+            
+            QScrollBar::add-line:vertical, 
+            QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            
+            QScrollBar::add-page:vertical, 
+            QScrollBar::sub-page:vertical {
+                background: none;
+            }
+            
+            /* Botões padrão */
+            QPushButton {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-weight: 600;
+                border-radius: 8px;
+                padding: 8px 16px;
+            }
+            
+            /* Inputs padrão */
+            QLineEdit, QTextEdit {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                border-radius: 8px;
+                padding: 8px 12px;
+                background: #ffffff !important;
+            }
+            
+            /* Comboboxes */
+            QComboBox {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                border-radius: 8px;
+                padding: 8px 12px;
+                background: #ffffff !important;
             }
         """)
 

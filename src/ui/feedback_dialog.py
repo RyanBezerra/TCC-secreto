@@ -166,13 +166,51 @@ class FeedbackDialog(QDialog):
         
         layout.addWidget(button_box)
         
-        # Aplicar estilo geral moderno
+        # Aplicar estilo geral moderno com melhor portabilidade
         self.setStyleSheet("""
+            /* Estilos globais do dialog */
             QDialog {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #ffffff, stop:1 #f8f9fa);
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 color: #2c3e50;
                 border-radius: 16px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+            }
+            
+            /* Widget principal */
+            QWidget {
+                background: #ffffff !important;
+            }
+            
+            /* Todos os QFrame devem ter background branco */
+            QFrame {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+            }
+            
+            /* Labels padrão */
+            QLabel {
+                color: #2c3e50;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: transparent !important;
+            }
+            
+            /* Inputs padrão */
+            QLineEdit, QTextEdit {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: #ffffff !important;
+            }
+            
+            /* Comboboxes */
+            QComboBox {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: #ffffff !important;
+            }
+            
+            /* Botões padrão */
+            QPushButton {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-weight: 600;
             }
         """)
         

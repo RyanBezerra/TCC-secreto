@@ -590,29 +590,78 @@ class AuthWindow(QMainWindow):
         return signup_widget
     
     def _apply_styles(self):
-        """Aplica estilos globais"""
+        """Aplica estilos globais com melhor portabilidade"""
         self.setStyleSheet("""
+            /* Estilos globais da aplicação */
             QMainWindow {
-                background-color: #ffffff;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+                color: #1e293b;
+                font-family: 'Segoe UI', Arial, sans-serif;
             }
+            
+            /* Widget principal */
+            QWidget {
+                background: #ffffff !important;
+            }
+            
             QFrame#mainContainer {
-                background-color: #ffffff;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
             }
+            
             QFrame#leftPanel {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
-                    stop:0 #2c2c2c, stop:1 #1a1a1a);
+                    stop:0 #2c2c2c, stop:1 #1a1a1a) !important;
                 border-radius: 0px;
             }
+            
             QFrame#rightPanel {
-                background-color: #ffffff;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
             }
+            
             QFrame#formContainer {
-                background-color: #ffffff;
+                background: #ffffff !important;
+                background-color: #ffffff !important;
                 border-radius: 0px;
             }
-            QLabel { color: #111827; }
-            QLineEdit { color: #111827; }
-            QLineEdit::placeholder { color: #6b7280; }
+            
+            /* Todos os QFrame devem ter background branco por padrão */
+            QFrame {
+                background: #ffffff !important;
+                background-color: #ffffff !important;
+            }
+            
+            /* Labels padrão */
+            QLabel { 
+                color: #111827; 
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: transparent !important;
+            }
+            
+            /* Inputs padrão */
+            QLineEdit { 
+                color: #111827; 
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: #ffffff !important;
+            }
+            
+            QLineEdit::placeholder { 
+                color: #6b7280; 
+            }
+            
+            /* Comboboxes */
+            QComboBox {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: #ffffff !important;
+            }
+            
+            /* Botões padrão */
+            QPushButton {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-weight: 600;
+            }
         """)
     
     def _setup_animations(self):
