@@ -1,0 +1,21 @@
+# EduAI - Plataforma de Ensino Inteligente
+# Dependencias do projeto
+
+# PySide6 - Framework moderno para interface grafica
+PySide6>=6.4.0
+
+# QtAwesome - Icones Font Awesome para PySide6
+qtawesome>=1.4.0
+
+# PostgreSQL - Driver para conexao com banco de dados
+psycopg2-binary>=2.9.0
+
+# Bcrypt - Para hash seguro de senhas
+bcrypt>=4.0.0
+
+# Dependencias adicionais para funcionalidades melhoradas
+dataclasses>=0.6; python_version<"3.7"
+typing-extensions>=4.0.0
+
+# OpenAI - Embeddings para busca semantica
+openai>=1.42.0
