@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  eduai:
+    build: .
+    container_name: eduai-app
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=eduai
+      - DB_USER=eduai_user
+      - DB_PASSWORD=eduai_password
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+    depends_on:
+      - postgres
+    networks:
+      - eduai-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: eduai-postgres
+    environment:
+      - POSTGRES_DB=eduai
+      - POSTGRES_USER=eduai_user
+      - POSTGRES_PASSWORD=eduai_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - eduai-network
+
+volumes:
+  postgres_data:
+
+networks:
+  eduai-network:
+    driver: bridge

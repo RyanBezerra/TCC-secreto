@@ -17,6 +17,7 @@ from ..ui.profile_widget import ProfileWidget
 from ..config import config, constants
 from ..utils import get_logger, search_validator, LogOperation
 from ..utils.logger import logger_manager
+from ..utils.embeddings import search_similar_aulas, ensure_aula_embeddings
 # Removido para evitar importação circular - será importado quando necessário
 
 class EduAIApp(QMainWindow):
@@ -50,7 +51,6 @@ class EduAIApp(QMainWindow):
         # Armazenar referência ao layout principal para navegação
         self.main_layout = main_layout
         self.central_widget = central_widget
-        
         # Aplicar estilo
         self._apply_styles()
 
@@ -1059,7 +1059,6 @@ Para mais informações, entre em contato conosco!"""
             }
         """)
         msg.exec()
-    
 
 class EduAIManager:
     """Gerenciador principal da aplicação EduAI"""
