@@ -1,9 +1,24 @@
 # EduAI - Plataforma de Ensino Inteligente
-# Dependências do projeto
+# Dependências obrigatórias para execução
 
-# PyQt6 - Framework moderno para interface gráfica
-PyQt6>=6.4.0
+# PySide6 - Framework para interface gráfica (versão mais recente)
+PySide6>=6.8.0
 
-# Para desenvolvimento (opcional)
-# pip install pillow  # Para manipulação de imagens (se necessário no futuro)
-# pip install requests  # Para requisições HTTP (se integrar com APIs)
+# QtAwesome - Ícones Font Awesome (versão mais recente)
+qtawesome>=1.4.0
+
+# PostgreSQL - Driver para banco de dados (versão mais recente)
+psycopg2-binary>=2.9.9
+
+# Bcrypt - Hash seguro de senhas (versão mais recente)
+bcrypt>=4.2.0
+
+# OpenAI - Embeddings para busca semântica (versão mais recente)
+openai>=1.58.0
+
+# Dependências adicionais para melhor portabilidade
+# Pillow - Processamento de imagens
+Pillow>=10.4.0
+
+# NumPy - Computação numérica (pode ser necessário para gráficos)
+numpy>=1.26.0
