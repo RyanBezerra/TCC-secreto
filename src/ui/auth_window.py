@@ -662,31 +662,6 @@ class AuthWindow(QMainWindow):
                 font-family: 'Segoe UI', Arial, sans-serif;
                 font-weight: 600;
             }
-=======
-        """Aplica estilos globais"""
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #ffffff;
-            }
-            QFrame#mainContainer {
-                background-color: #ffffff;
-            }
-            QFrame#leftPanel {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
-                    stop:0 #2c2c2c, stop:1 #1a1a1a);
-                border-radius: 0px;
-            }
-            QFrame#rightPanel {
-                background-color: #ffffff;
-            }
-            QFrame#formContainer {
-                background-color: #ffffff;
-                border-radius: 0px;
-            }
-            QLabel { color: #111827; }
-            QLineEdit { color: #111827; }
-            QLineEdit::placeholder { color: #6b7280; }
->>>>>>> cb92bdc227fedb421f652c42690a23afeabd76d8
         """)
     
     def _setup_animations(self):

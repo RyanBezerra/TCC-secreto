@@ -333,22 +333,32 @@ class DatabaseManager:
             conditions.append("(titulo ILIKE %s OR descricao ILIKE %s OR tags ILIKE %s OR legendas ILIKE %s)")
             params.extend([like_pattern, like_pattern, like_pattern, like_pattern])
         
-        # Query final com cálculo de relevância melhorado
-        query = f"""
+        # Preparar palavras para bonus
+        specific_words = [w for w in words if len(w) > 4]
+        very_specific_words = [w for w in words if len(w) > 6]
+        
+        # Construir query de forma mais segura
+        base_score_query = f"""
             SELECT *, 
                    (
                        -- Score base por campo
                        (CASE WHEN titulo ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 10 ELSE 0 END) +
                        (CASE WHEN descricao ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 3 ELSE 0 END) +
                        (CASE WHEN tags ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 5 ELSE 0 END) +
-                       (CASE WHEN legendas ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 2 ELSE 0 END) +
-                       -- Bonus para palavras específicas no título (mais de 4 caracteres)
-                       (CASE WHEN titulo ILIKE ANY(ARRAY[{','.join(['%s'] * len([w for w in words if len(w) > 4]))}]) THEN 5 ELSE 0 END) +
-                       -- Bonus extra para palavras muito específicas (mais de 6 caracteres)
-                       (CASE WHEN titulo ILIKE ANY(ARRAY[{','.join(['%s'] * len([w for w in words if len(w) > 6]))}]) THEN 10 ELSE 0 END)
+                       (CASE WHEN legendas ILIKE ANY(ARRAY[{','.join(['%s'] * len(words))}]) THEN 2 ELSE 0 END)
+        """
+        
+        # Adicionar bonus para palavras específicas se existirem
+        if specific_words:
+            base_score_query += f" + (CASE WHEN titulo ILIKE ANY(ARRAY[{','.join(['%s'] * len(specific_words))}]) THEN 5 ELSE 0 END)"
+        
+        if very_specific_words:
+            base_score_query += f" + (CASE WHEN titulo ILIKE ANY(ARRAY[{','.join(['%s'] * len(very_specific_words))}]) THEN 10 ELSE 0 END)"
+        
+        base_score_query += """
                    ) as relevance_score
             FROM aulas 
-            WHERE {' OR '.join(conditions)}
+            WHERE """ + ' OR '.join(conditions) + """
             ORDER BY relevance_score DESC, titulo
             LIMIT %s
         """
@@ -359,27 +369,19 @@ class DatabaseManager:
             like_pattern = f"%{word}%"
             relevance_params.extend([like_pattern, like_pattern, like_pattern, like_pattern])
         
-        # Adicionar parâmetros para palavras específicas (bonus)
-        specific_words = [w for w in words if len(w) > 4]
+        # Adicionar parâmetros para palavras específicas (bonus) se existirem
         for word in specific_words:
             like_pattern = f"%{word}%"
             relevance_params.append(like_pattern)
         
-        # Adicionar parâmetros para palavras muito específicas (bonus extra)
-        very_specific_words = [w for w in words if len(w) > 6]
+        # Adicionar parâmetros para palavras muito específicas (bonus extra) se existirem
         for word in very_specific_words:
             like_pattern = f"%{word}%"
             relevance_params.append(like_pattern)
         
-        # Se não há palavras específicas, adicionar um placeholder para evitar array vazio
-        if not specific_words:
-            relevance_params.append('%')
-        if not very_specific_words:
-            relevance_params.append('%')
-        
         params = relevance_params + params + [limit]
         
-        return self.execute_query(query, params)
+        return self.execute_query(base_score_query, params)
     
     # Métodos específicos para histórico
     
@@ -940,8 +942,6 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Erro ao verificar/criar tabela usuario: {e}")
             raise
-=======
->>>>>>> cb92bdc227fedb421f652c42690a23afeabd76d8
 
 # Instância global do gerenciador de banco de dados
 db_manager = DatabaseManager()
