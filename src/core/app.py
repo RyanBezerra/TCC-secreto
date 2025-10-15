@@ -7,7 +7,7 @@ from typing import List, Dict
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QTextEdit, QFrame, QScrollArea, QGridLayout, QGraphicsDropShadowEffect,
-                             QSizePolicy, QMessageBox)
+                             QSizePolicy, QMessageBox, QStackedWidget)
 from PySide6.QtCore import Qt, QThread, Signal, QSize
 from PySide6.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
 import json
@@ -291,28 +291,28 @@ class EduAIApp(QMainWindow):
         class_layout.setSpacing(8)
         
         # Ícone de monitor (Font Awesome)
-        monitor_label = QLabel()
-        monitor_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        monitor_label.setPixmap(qta.icon('fa5s.book', color="#000000").pixmap(36, 36))
-        monitor_label.setStyleSheet("margin: 20px 0;")
-        class_layout.addWidget(monitor_label)
+        self.monitor_label = QLabel()
+        self.monitor_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.monitor_label.setPixmap(qta.icon('fa5s.book', color="#000000").pixmap(36, 36))
+        self.monitor_label.setStyleSheet("margin: 20px 0;")
+        class_layout.addWidget(self.monitor_label)
         
         # Texto de nenhuma aula selecionada
-        no_class_label = QLabel("Nenhuma aula selecionada")
+        self.no_class_label = QLabel("Nenhuma aula selecionada")
         no_class_font = QFont("Segoe UI", 12, QFont.Weight.Bold)
-        no_class_label.setFont(no_class_font)
-        no_class_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        no_class_label.setStyleSheet("color: #7f8c8d; margin-bottom: 10px;")
-        class_layout.addWidget(no_class_label)
+        self.no_class_label.setFont(no_class_font)
+        self.no_class_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.no_class_label.setStyleSheet("color: #7f8c8d; margin-bottom: 10px;")
+        class_layout.addWidget(self.no_class_label)
         
         # Instrução
-        instruction_label = QLabel("Faça uma pergunta para que nossa IA encontre a aula ideal para você")
+        self.instruction_label = QLabel("Faça uma pergunta para que nossa IA encontre a aula ideal para você")
         instruction_font = QFont("Segoe UI", 10)
-        instruction_label.setFont(instruction_font)
-        instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        instruction_label.setStyleSheet("color: #95a5a6;")
-        instruction_label.setWordWrap(True)
-        class_layout.addWidget(instruction_label)
+        self.instruction_label.setFont(instruction_font)
+        self.instruction_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.instruction_label.setStyleSheet("color: #95a5a6;")
+        self.instruction_label.setWordWrap(True)
+        class_layout.addWidget(self.instruction_label)
         
         # Área de resultado (inicialmente oculta)
         self.result_text = QTextEdit()
@@ -328,6 +328,67 @@ class EduAIApp(QMainWindow):
         """)
         self.result_text.setVisible(False)
         class_layout.addWidget(self.result_text)
+
+        # Container para conteúdo de aula com navegação (inicialmente oculto)
+        self.lesson_container = QFrame()
+        self.lesson_container.setObjectName("lessonContainer")
+        lc_layout = QVBoxLayout(self.lesson_container)
+        lc_layout.setContentsMargins(8, 8, 8, 8)
+        lc_layout.setSpacing(8)
+        try:
+            lc_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        except Exception:
+            pass
+
+        # Barra de progresso superior
+        from PySide6.QtWidgets import QProgressBar
+        self.lesson_progress = QProgressBar()
+        self.lesson_progress.setRange(0, 100)
+        self.lesson_progress.setValue(0)
+        self.lesson_progress.setFixedHeight(10)
+        self.lesson_progress.setTextVisible(False)
+        self.lesson_progress.setObjectName("lessonProgress")
+        lc_layout.addWidget(self.lesson_progress)
+
+        # Stack de cartões (fica no topo, logo abaixo do progresso)
+        self.lesson_stack = QStackedWidget()
+        try:
+            self.lesson_stack.setContentsMargins(0, 0, 0, 0)
+        except Exception:
+            pass
+        # Forçar não expandir verticalmente para evitar espaço vazio acima
+        try:
+            self.lesson_stack.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        except Exception:
+            pass
+        try:
+            lc_layout.addWidget(self.lesson_stack, 0, Qt.AlignmentFlag.AlignTop)
+        except Exception:
+            lc_layout.addWidget(self.lesson_stack)
+
+        # Navegação (em um card separado) abaixo do conteúdo
+        nav_frame = QFrame()
+        nav_frame.setObjectName("navFrame")
+        nav_frame.setStyleSheet("QFrame#navFrame{background:#ffffff;border:1px solid #e5e7eb;border-radius:8px}")
+        nav_row = QHBoxLayout(nav_frame)
+        nav_row.setContentsMargins(12, 8, 12, 8)
+        nav_row.setSpacing(8)
+        self.prev_btn = QPushButton("← Anterior")
+        self.prev_btn.setFixedHeight(32)
+        self.prev_btn.clicked.connect(self._prev_card)
+        nav_row.addWidget(self.prev_btn)
+        nav_row.addStretch()
+        self.progress_label = QLabel("1 de 1")
+        self.progress_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        nav_row.addWidget(self.progress_label)
+        nav_row.addStretch()
+        self.next_btn = QPushButton("Próximo →")
+        self.next_btn.setFixedHeight(32)
+        self.next_btn.clicked.connect(self._next_card)
+        nav_row.addWidget(self.next_btn)
+        lc_layout.addWidget(nav_frame)
+        self.lesson_container.setVisible(False)
+        class_layout.addWidget(self.lesson_container)
         
         # Sombra
         self._apply_card_shadow(class_card)
@@ -470,6 +531,16 @@ class EduAIApp(QMainWindow):
                 padding: 14px;
                 border: 1px solid #d1d5db;
             }
+            /* Barra de progresso da aula */
+            QProgressBar#lessonProgress {
+                background: #e5e7eb;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+            }
+            QProgressBar#lessonProgress::chunk {
+                background: #111111;
+                border-radius: 6px;
+            }
             /* Texto padrão preto para (quase) tudo */
             QWidget { color: #111827; }
             QLabel { color: #111827; }
@@ -497,6 +568,17 @@ class EduAIApp(QMainWindow):
             QPushButton { letter-spacing: 0.2px; }
             QPushButton[style*="background-color: #000000"], QPushButton[style*="background: #000000"],
             QPushButton[style*="background-color:#000000"] { color: #ffffff; }
+            /* Botões de navegação brancos com texto preto */
+            QFrame#navFrame QPushButton {
+                background: #ffffff;
+                color: #111111;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 6px 12px;
+            }
+            QFrame#navFrame QPushButton:hover {
+                background: #f9fafb;
+            }
         """)
 
     def _apply_card_shadow(self, widget: QWidget) -> None:
@@ -608,7 +690,11 @@ class EduAIApp(QMainWindow):
                 # Formatar resposta com IA
                 conteudo = self._format_ai_response(suggestions, analysis, query)
                 self.result_text.setPlainText(conteudo)
-                self.result_text.setVisible(True)
+                # Construir cartões de conteúdo da aula a partir de 'descricao' ou 'legendas'
+                # guardar última sugestão para 'rever aula'
+                self._last_suggestion = suggestions[0]
+                self._build_lesson_cards_from_suggestion(self._last_suggestion)
+                self._show_lesson_view()
                 
                 # Salvar no histórico
                 try:
@@ -632,6 +718,156 @@ class EduAIApp(QMainWindow):
         self.search_button.setEnabled(True)
         self.search_button.setIcon(qta.icon('fa5s.search', color="#ffffff"))
         self.search_button.setText("Buscar")
+
+    def _show_lesson_view(self):
+        """Mostra o visualizador de aula e oculta o placeholder."""
+        try:
+            self.monitor_label.setVisible(False)
+            self.no_class_label.setVisible(False)
+            self.instruction_label.setVisible(False)
+            self.result_text.setVisible(False)
+            self.lesson_container.setVisible(True)
+        except Exception:
+            pass
+
+    def _build_lesson_cards_from_suggestion(self, suggestion: Dict):
+        """Cria cartões de conteúdo (passos) a partir da aula sugerida.
+        REGRAS:
+        1) Primeiro card: 'descricao' (resumo da aula), se existir
+        2) Depois: dividir 'legendas' em passos (prioridade por separador '|',
+           se ausente usa quebras de linha duplas; se nada, um único card com o texto)
+        """
+        # Limpar stack anterior
+        while self.lesson_stack.count():
+            w = self.lesson_stack.widget(0)
+            self.lesson_stack.removeWidget(w)
+            w.deleteLater()
+        steps = []
+        # Primeiro card: descrição
+        desc = (suggestion.get('descricao') or '').strip()
+        if desc:
+            steps.append(('Conteúdo', desc))
+
+        # Em seguida, quebrar legendas em passos
+        text = (suggestion.get('legendas') or '').strip()
+        legend_steps: List[str] = []
+        if text:
+            if '|' in text:
+                legend_steps = [s.strip() for s in text.split('|') if s.strip()]
+            elif '\n---\n' in text:
+                legend_steps = [s.strip() for s in text.split('\n---\n') if s.strip()]
+            elif '\n\n' in text:
+                chunks = [c.strip() for c in text.split('\n\n') if c.strip()]
+                # agrupar de 2 em 2 para não ficar excessivamente picado
+                for i in range(0, len(chunks), 2):
+                    legend_steps.append('\n\n'.join(chunks[i:i+2]))
+
+        if not desc and not legend_steps:
+            legend_steps = ["Conteúdo não disponível para esta aula."]
+
+        # Adicionar passos numerados após o conteúdo
+        for i, st in enumerate(legend_steps, 1):
+            steps.append((f"Passo {i}", st))
+
+        # Criar widgets para cada passo
+        for title_text, step in steps:
+            card = QFrame()
+            v = QVBoxLayout(card)
+            v.setContentsMargins(0, 0, 0, 0)
+            v.setSpacing(2)
+            title = QLabel(title_text)
+            title.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+            title.setStyleSheet("margin-top:0;margin-bottom:2px;")
+            try:
+                v.addWidget(title, 0, Qt.AlignmentFlag.AlignTop)
+            except Exception:
+                v.addWidget(title)
+            body = QTextEdit()
+            body.setReadOnly(True)
+            body.setPlainText(step)
+            body.setStyleSheet("QTextEdit{background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;padding:10px}")
+            try:
+                body.setFixedHeight(150)
+            except Exception:
+                pass
+            try:
+                v.addWidget(body, 0, Qt.AlignmentFlag.AlignTop)
+            except Exception:
+                v.addWidget(body)
+            self.lesson_stack.addWidget(card)
+        self._update_lesson_nav()
+
+    def _update_lesson_nav(self):
+        total = max(1, self.lesson_stack.count())
+        current = self.lesson_stack.currentIndex() + 1 if total else 1
+        self.progress_label.setText(f"{current} de {total}")
+        self.prev_btn.setEnabled(current > 1)
+        # No último passo, botão vira 'Finalizar'
+        if current >= total:
+            self.next_btn.setText("Finalizar")
+        else:
+            self.next_btn.setText("Próximo →")
+        self.next_btn.setEnabled(True)
+        # Atualizar barra de progresso
+        pct = int((current - 1) / total * 100) if total else 0
+        self.lesson_progress.setValue(pct)
+
+    def _next_card(self):
+        idx = self.lesson_stack.currentIndex()
+        total = self.lesson_stack.count()
+        if idx < total - 1:
+            self.lesson_stack.setCurrentIndex(idx + 1)
+            self._update_lesson_nav()
+        else:
+            self._finalize_lesson()
+
+    def _prev_card(self):
+        idx = self.lesson_stack.currentIndex()
+        if idx > 0:
+            self.lesson_stack.setCurrentIndex(idx - 1)
+            self._update_lesson_nav()
+
+    def _finalize_lesson(self):
+        """Conclui a aula: completa progresso e mostra mensagem de finalização."""
+        try:
+            self.lesson_progress.setValue(100)
+            # Ocultar conteúdo e mostrar conclusão com opção de rever
+            while self.lesson_stack.count():
+                w = self.lesson_stack.widget(0)
+                self.lesson_stack.removeWidget(w)
+                w.deleteLater()
+            finished = QFrame()
+            v = QVBoxLayout(finished)
+            v.setContentsMargins(12, 12, 12, 12)
+            msg = QLabel("Concluído")
+            msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            msg.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+            v.addWidget(msg)
+            review_btn = QPushButton("Rever aula")
+            review_btn.setFixedHeight(34)
+            review_btn.setStyleSheet("QPushButton{background:#ffffff;color:#111111;border:1px solid #e5e7eb;border-radius:8px;padding:6px 12px} QPushButton:hover{background:#f9fafb}")
+            review_btn.clicked.connect(self._review_lesson)
+            v.addWidget(review_btn, 0, Qt.AlignmentFlag.AlignCenter)
+            self.lesson_stack.addWidget(finished)
+            self.prev_btn.setVisible(False)
+            self.next_btn.setVisible(False)
+            self.progress_label.setText("Concluído")
+        except Exception:
+            pass
+
+    def _review_lesson(self):
+        """Reconstroi os cards para rever a aula (mantém última sugestão carregada)."""
+        try:
+            # Volta ao início da aula atual reconstruindo os cartões a partir do último suggestion usado
+            # Armazenar suggestion usada na busca
+            if hasattr(self, '_last_suggestion') and self._last_suggestion:
+                self._build_lesson_cards_from_suggestion(self._last_suggestion)
+                self.lesson_stack.setCurrentIndex(0)
+                self._update_lesson_nav()
+            self.prev_btn.setVisible(True)
+            self.next_btn.setVisible(True)
+        except Exception:
+            pass
     
     def _format_ai_response(self, suggestions: List[Dict], analysis: Dict, query: str) -> str:
         """Formata a resposta da IA com as sugestões de aulas"""
@@ -1101,9 +1337,12 @@ class EduAIManager:
         user = db_manager.get_user_by_name(user_name)
         perfil = (user or {}).get('perfil')
 
-        if perfil == 'educador' or perfil == 'admin':
+        if perfil == 'admin':
             from ..ui.admin_dashboard import AdminDashboard
             window = AdminDashboard(user_name)
+        elif perfil == 'educador':
+            from ..ui.educator_dashboard import EducatorDashboard
+            window = EducatorDashboard(user_name)
         else:
             window = EduAIApp(user_name)
 
