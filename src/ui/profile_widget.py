@@ -7,7 +7,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QLineEdit, QPushButton, QFrame, QGridLayout,
                              QSizePolicy, QMessageBox, QTextEdit, QComboBox, 
                              QScrollArea, QListWidget, QListWidgetItem, QDialog,
-                             QDialogButtonBox, QFormLayout, QSpinBox, QCheckBox)
+                             QDialogButtonBox, QFormLayout, QSpinBox, QCheckBox,
+                             QTabWidget)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPixmap, QCursor
 import qtawesome as qta
@@ -80,16 +81,17 @@ class ProfileWidget(QWidget):
             logo_icon.setPixmap(logo_pixmap)
         else:
             # Fallback para ícone do qtawesome se a imagem não for encontrada
-            logo_icon.setPixmap(qta.icon('fa5s.graduation-cap', color="#2c3e50").pixmap(32, 32))
+            logo_icon.setPixmap(qta.icon('fa5s.graduation-cap', color="#000000").pixmap(32, 32))
         logo_container.addWidget(logo_icon)
         
-        # Título com gradiente
-        logo_label = QLabel("EduAI - Meu Perfil")
-        logo_label.setFont(get_portable_font("Segoe UI", 20, QFont.Weight.Bold))
+        # Título com design SpaceX
+        logo_label = QLabel("EDUAI - PERFIL")
+        logo_label.setFont(get_portable_font("Segoe UI", 24, QFont.Weight.Bold))
         logo_label.setStyleSheet("""
-            color: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
-                                  stop:0 #3498db, stop:1 #2c3e50);
+            color: #000000;
             background: transparent;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         """)
         logo_container.addWidget(logo_label)
         
@@ -98,31 +100,29 @@ class ProfileWidget(QWidget):
         # Espaçador
         top_row.addStretch()
         
-        # Botão de voltar com design moderno
-        back_button = QPushButton("Voltar ao Dashboard")
-        back_button.setIcon(qta.icon('fa5s.arrow-left', color="#ffffff"))
+        # Botão de voltar com design SpaceX
+        back_button = QPushButton("VOLTAR")
+        back_button.setIcon(qta.icon('fa5s.arrow-left', color="#000000"))
         back_button.setFont(get_portable_font("Segoe UI", 11, QFont.Weight.Bold))
         back_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #34495e, stop:1 #2c3e50);
-                color: #ffffff;
+                background-color: #ffffff;
+                color: #000000;
                 padding: 10px 20px;
-                border: none;
+                border: 2px solid #000000;
                 border-radius: 12px;
                 font-size: 12px;
                 min-width: 160px;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                letter-spacing: 1px;
+                text-transform: uppercase;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #2c3e50, stop:1 #34495e);
-                transform: translateY(-2px);
+                background-color: #000000;
+                color: #ffffff;
             }
             QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #1b2631, stop:1 #2c3e50);
-                transform: translateY(0px);
+                background-color: #333333;
+                color: #ffffff;
             }
         """)
         back_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -131,17 +131,19 @@ class ProfileWidget(QWidget):
         
         header_layout.addLayout(top_row)
         
-        # Subtítulo com design elegante
-        subtitle_label = QLabel("Visualize e edite suas informações pessoais")
+        # Subtítulo com design SpaceX
+        subtitle_label = QLabel("VISUALIZE E EDITE SUAS INFORMAÇÕES PESSOAIS")
         subtitle_label.setFont(get_portable_font("Segoe UI", 12, QFont.Weight.Normal))
         subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle_label.setStyleSheet("""
-            color: #7f8c8d; 
+            color: #666666; 
             margin-bottom: 20px;
             padding: 8px 16px;
-            background-color: rgba(52, 152, 219, 0.1);
+            background-color: transparent;
             border-radius: 20px;
-            border: 1px solid rgba(52, 152, 219, 0.2);
+            border: 1px solid #cccccc;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         """)
         subtitle_label.setWordWrap(True)
         header_layout.addWidget(subtitle_label)
@@ -149,25 +151,173 @@ class ProfileWidget(QWidget):
         parent_layout.addWidget(header_widget)
     
     def _create_profile_content(self, parent_layout):
-        """Cria o conteúdo principal do perfil"""
+        """Cria o conteúdo principal do perfil com abas navegáveis"""
         # Container principal
-        content_widget = QWidget()
-        content_layout = QHBoxLayout(content_widget)
-        content_layout.setSpacing(20)
+        main_container = QWidget()
+        main_layout = QVBoxLayout(main_container)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        # Barra de navegação superior (estilo SpaceX)
+        nav_bar = QFrame()
+        nav_bar.setStyleSheet("""
+            QFrame {
+                background-color: #f8f9fa;
+                border: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+        """)
+        nav_bar.setFixedHeight(70)
+        
+        # Layout da barra de navegação
+        nav_layout = QHBoxLayout(nav_bar)
+        nav_layout.setContentsMargins(40, 0, 40, 0)
+        nav_layout.setSpacing(0)
+        
+        # Criar botões de navegação customizados
+        self.nav_buttons = []
+        nav_items = [
+            ("GERAL", qta.icon('fa5s.user-circle', color="#6c757d"), 0),
+            ("FEEDBACK", qta.icon('fa5s.comments', color="#6c757d"), 1),
+            ("CONFIGURAÇÕES", qta.icon('fa5s.cog', color="#6c757d"), 2)
+        ]
+        
+        for text, icon, index in nav_items:
+            nav_button = QPushButton(text)
+            nav_button.setIcon(icon)
+            nav_button.setCheckable(True)
+            nav_button.setProperty("tabIndex", index)
+            nav_button.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    color: #6c757d;
+                    border: none;
+                    padding: 20px 30px;
+                    font-weight: 500;
+                    font-size: 14px;
+                    letter-spacing: 1.2px;
+                    text-transform: uppercase;
+                    border-bottom: 2px solid transparent;
+                }
+                QPushButton:hover {
+                    background-color: rgba(255, 255, 255, 0.5);
+                    color: #495057;
+                    border-bottom: 2px solid #dee2e6;
+                }
+                QPushButton:checked {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border-bottom: 2px solid #000000;
+                    font-weight: 600;
+                }
+                QPushButton:checked:hover {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border-bottom: 2px solid #000000;
+                }
+            """)
+            nav_button.clicked.connect(lambda checked, idx=index: self._switch_tab(idx))
+            nav_layout.addWidget(nav_button)
+            self.nav_buttons.append(nav_button)
+        
+        # Marcar primeiro botão como selecionado
+        if self.nav_buttons:
+            self.nav_buttons[0].setChecked(True)
+        
+        # Container principal com abas (sem barra de abas visível)
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setStyleSheet("""
+            QTabWidget::pane {
+                border: none;
+                background-color: #ffffff;
+                margin-top: 0px;
+            }
+            QTabWidget::tab-bar {
+                alignment: center;
+            }
+            QTabBar {
+                background-color: transparent;
+                border: none;
+                height: 0px;
+            }
+            QTabBar::tab {
+                background-color: transparent;
+                border: none;
+                padding: 0px;
+                margin: 0px;
+                width: 0px;
+                height: 0px;
+            }
+        """)
+        
+        # Aba 1: Geral
+        geral_tab = self._create_geral_tab()
+        geral_icon = qta.icon('fa5s.user-circle', color="#6b7280")
+        self.tab_widget.addTab(geral_tab, geral_icon, "GERAL")
+        
+        # Aba 2: Feedback
+        feedback_tab = self._create_feedback_tab()
+        feedback_icon = qta.icon('fa5s.comments', color="#6b7280")
+        self.tab_widget.addTab(feedback_tab, feedback_icon, "FEEDBACK")
+        
+        # Aba 3: Configurações
+        actions_tab = self._create_actions_tab()
+        actions_icon = qta.icon('fa5s.cog', color="#6b7280")
+        self.tab_widget.addTab(actions_tab, actions_icon, "CONFIGURAÇÕES")
+        
+        # Conectar sinal de mudança de aba para atualizar ícones
+        self.tab_widget.currentChanged.connect(self._on_tab_changed)
+        
+        # Adicionar componentes ao layout principal
+        main_layout.addWidget(nav_bar)
+        main_layout.addWidget(self.tab_widget, 1)
+        
+        parent_layout.addWidget(main_container, 1)
+    
+    def _switch_tab(self, index):
+        """Alterna para a aba especificada e atualiza os botões de navegação"""
+        self.tab_widget.setCurrentIndex(index)
+        self._update_nav_buttons(index)
+    
+    def _update_nav_buttons(self, active_index):
+        """Atualiza o estado dos botões de navegação"""
+        for i, button in enumerate(self.nav_buttons):
+            button.setChecked(i == active_index)
+            # Atualizar ícones
+            if i == 0:  # Geral
+                icon = qta.icon('fa5s.user-circle', color="#000000" if i == active_index else "#6c757d")
+            elif i == 1:  # Feedback
+                icon = qta.icon('fa5s.comments', color="#000000" if i == active_index else "#6c757d")
+            elif i == 2:  # Configurações
+                icon = qta.icon('fa5s.cog', color="#000000" if i == active_index else "#6c757d")
+            button.setIcon(icon)
+    
+    def _on_tab_changed(self, index):
+        """Atualiza os botões de navegação quando a aba muda"""
+        self._update_nav_buttons(index)
+    
+    def _create_geral_tab(self):
+        """Cria a aba Geral com informações pessoais e estatísticas"""
+        # Container da aba geral
+        geral_widget = QWidget()
+        geral_layout = QVBoxLayout(geral_widget)
+        geral_layout.setSpacing(24)
+        geral_layout.setContentsMargins(32, 32, 32, 32)
+        
+        # Layout horizontal para informações e estatísticas
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(32)
         
         # Coluna esquerda - Informações pessoais
         left_column = self._create_personal_info_section()
         content_layout.addWidget(left_column, 1)
         
-        # Coluna central - Estatísticas e ações
-        center_column = self._create_stats_section()
-        content_layout.addWidget(center_column, 1)
-        
-        # Coluna direita - Feedback
-        right_column = self._create_feedback_section()
+        # Coluna direita - Estatísticas
+        right_column = self._create_stats_section()
         content_layout.addWidget(right_column, 1)
         
-        parent_layout.addWidget(content_widget, 1)
+        geral_layout.addLayout(content_layout)
+        return geral_widget
     
     def _create_personal_info_section(self):
         """Cria a seção de informações pessoais"""
@@ -181,39 +331,40 @@ class ProfileWidget(QWidget):
         title_icon = QLabel()
         title_icon.setPixmap(qta.icon('fa5s.user', color="#000000").pixmap(20, 20))
         title_row.addWidget(title_icon)
-        title_label = QLabel("Informações Pessoais")
-        title_font = QFont("Segoe UI", 14, QFont.Weight.Bold)
+        title_label = QLabel("INFORMAÇÕES")
+        title_font = QFont("Segoe UI", 16, QFont.Weight.Bold)
         title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #2c3e50;")
+        title_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
         title_row.addWidget(title_label)
         title_row.addStretch()
         
-        # Botão de editar com design moderno
-        self.edit_button = QPushButton("Editar")
-        self.edit_button.setIcon(qta.icon('fa5s.edit', color="#ffffff"))
+        # Botão de editar com design SpaceX
+        self.edit_button = QPushButton("EDITAR")
+        self.edit_button.setIcon(qta.icon('fa5s.edit', color="#000000"))
         self.edit_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         self.edit_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #3498db, stop:1 #2980b9);
-                color: #ffffff;
+                background-color: #ffffff;
+                color: #000000;
                 padding: 8px 16px;
-                border: none;
+                border: 2px solid #000000;
                 border-radius: 8px;
                 font-size: 11px;
                 min-width: 90px;
-                box-shadow: 0 2px 6px rgba(52, 152, 219, 0.3);
+                letter-spacing: 1px;
+                text-transform: uppercase;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #2980b9, stop:1 #21618c);
-                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-                transform: translateY(-1px);
+                background-color: #000000;
+                color: #ffffff;
             }
             QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #21618c, stop:1 #1b4f72);
-                transform: translateY(0px);
+                background-color: #333333;
+                color: #ffffff;
             }
         """)
         self.edit_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -245,9 +396,13 @@ class ProfileWidget(QWidget):
         fields_layout.setSpacing(12)
         
         # Nome
-        name_label = QLabel("Nome:")
+        name_label = QLabel("NOME:")
         name_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-        name_label.setStyleSheet("color: #2c3e50;")
+        name_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
         fields_layout.addWidget(name_label, 0, 0)
         
         self.name_input = QLineEdit()
@@ -255,29 +410,31 @@ class ProfileWidget(QWidget):
         self.name_input.setStyleSheet("""
             QLineEdit {
                 padding: 10px 12px;
-                border: 2px solid rgba(236, 240, 241, 0.8);
+                border: 1px solid #666666;
                 border-radius: 8px;
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #ffffff, stop:1 #f8f9fa);
+                background: #ffffff;
                 font-size: 12px;
-                color: #2c3e50;
+                color: #000000;
             }
             QLineEdit:focus {
-                border-color: #3498db;
-                background-color: white;
-                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+                border: 2px solid #000000;
+                background-color: #ffffff;
             }
             QLineEdit:hover {
-                border-color: rgba(52, 152, 219, 0.3);
+                border-color: #999999;
             }
         """)
         self.name_input.setReadOnly(True)
         fields_layout.addWidget(self.name_input, 0, 1)
         
         # Idade
-        age_label = QLabel("Idade:")
+        age_label = QLabel("IDADE:")
         age_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-        age_label.setStyleSheet("color: #2c3e50;")
+        age_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
         fields_layout.addWidget(age_label, 1, 0)
         
         self.age_input = QLineEdit()
@@ -285,29 +442,31 @@ class ProfileWidget(QWidget):
         self.age_input.setStyleSheet("""
             QLineEdit {
                 padding: 10px 12px;
-                border: 2px solid rgba(236, 240, 241, 0.8);
+                border: 1px solid #666666;
                 border-radius: 8px;
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #ffffff, stop:1 #f8f9fa);
+                background: #ffffff;
                 font-size: 12px;
-                color: #2c3e50;
+                color: #000000;
             }
             QLineEdit:focus {
-                border-color: #3498db;
-                background-color: white;
-                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+                border: 2px solid #000000;
+                background-color: #ffffff;
             }
             QLineEdit:hover {
-                border-color: rgba(52, 152, 219, 0.3);
+                border-color: #999999;
             }
         """)
         self.age_input.setReadOnly(True)
         fields_layout.addWidget(self.age_input, 1, 1)
         
         # Nota
-        grade_label = QLabel("Nota Média:")
+        grade_label = QLabel("NOTA MÉDIA:")
         grade_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-        grade_label.setStyleSheet("color: #2c3e50;")
+        grade_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
         fields_layout.addWidget(grade_label, 2, 0)
         
         self.grade_input = QLineEdit()
@@ -315,29 +474,31 @@ class ProfileWidget(QWidget):
         self.grade_input.setStyleSheet("""
             QLineEdit {
                 padding: 10px 12px;
-                border: 2px solid rgba(236, 240, 241, 0.8);
+                border: 1px solid #666666;
                 border-radius: 8px;
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #ffffff, stop:1 #f8f9fa);
+                background: #ffffff;
                 font-size: 12px;
-                color: #2c3e50;
+                color: #000000;
             }
             QLineEdit:focus {
-                border-color: #3498db;
-                background-color: white;
-                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+                border: 2px solid #000000;
+                background-color: #ffffff;
             }
             QLineEdit:hover {
-                border-color: rgba(52, 152, 219, 0.3);
+                border-color: #999999;
             }
         """)
         self.grade_input.setReadOnly(True)
         fields_layout.addWidget(self.grade_input, 2, 1)
         
         # Data de cadastro
-        date_label = QLabel("Membro desde:")
+        date_label = QLabel("MEMBRO DESDE:")
         date_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-        date_label.setStyleSheet("color: #2c3e50;")
+        date_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
         fields_layout.addWidget(date_label, 3, 0)
         
         self.date_input = QLineEdit()
@@ -345,19 +506,24 @@ class ProfileWidget(QWidget):
         self.date_input.setStyleSheet("""
             QLineEdit {
                 padding: 8px;
-                border: 2px solid #ecf0f1;
+                border: 1px solid #666666;
                 border-radius: 6px;
-                background-color: #f8f9fa;
+                background-color: #ffffff;
                 font-size: 12px;
+                color: #000000;
             }
         """)
         self.date_input.setReadOnly(True)
         fields_layout.addWidget(self.date_input, 3, 1)
         
         # Último acesso
-        last_access_label = QLabel("Último acesso:")
+        last_access_label = QLabel("ÚLTIMO ACESSO:")
         last_access_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
-        last_access_label.setStyleSheet("color: #2c3e50;")
+        last_access_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
         fields_layout.addWidget(last_access_label, 4, 0)
         
         self.last_access_input = QLineEdit()
@@ -365,10 +531,11 @@ class ProfileWidget(QWidget):
         self.last_access_input.setStyleSheet("""
             QLineEdit {
                 padding: 8px;
-                border: 2px solid #ecf0f1;
+                border: 1px solid #666666;
                 border-radius: 6px;
-                background-color: #f8f9fa;
+                background-color: #ffffff;
                 font-size: 12px;
+                color: #000000;
             }
         """)
         self.last_access_input.setReadOnly(True)
@@ -455,9 +622,13 @@ class ProfileWidget(QWidget):
         stats_icon = QLabel()
         stats_icon.setPixmap(qta.icon('fa5s.chart-bar', color="#000000").pixmap(20, 20))
         stats_title_row.addWidget(stats_icon)
-        stats_title = QLabel("Estatísticas")
-        stats_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
-        stats_title.setStyleSheet("color: #2c3e50;")
+        stats_title = QLabel("ESTATÍSTICAS")
+        stats_title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        stats_title.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
         stats_title_row.addWidget(stats_title)
         stats_title_row.addStretch()
         stats_card_layout.addLayout(stats_title_row)
@@ -468,31 +639,6 @@ class ProfileWidget(QWidget):
         # Sombra
         self._apply_card_shadow(stats_card)
         stats_layout.addWidget(stats_card)
-        
-        # Card de ações rápidas
-        actions_card = QFrame()
-        actions_card.setObjectName("actionsCard")
-        actions_card_layout = QVBoxLayout(actions_card)
-        actions_card_layout.setSpacing(15)
-        
-        # Título
-        actions_title_row = QHBoxLayout()
-        actions_icon = QLabel()
-        actions_icon.setPixmap(qta.icon('fa5s.cog', color="#000000").pixmap(20, 20))
-        actions_title_row.addWidget(actions_icon)
-        actions_title = QLabel("Ações Rápidas")
-        actions_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
-        actions_title.setStyleSheet("color: #2c3e50;")
-        actions_title_row.addWidget(actions_title)
-        actions_title_row.addStretch()
-        actions_card_layout.addLayout(actions_title_row)
-        
-        # Botões de ação
-        self._create_quick_actions(actions_card_layout)
-        
-        # Sombra
-        self._apply_card_shadow(actions_card)
-        stats_layout.addWidget(actions_card)
         
         return stats_widget
     
@@ -539,34 +685,32 @@ class ProfileWidget(QWidget):
     def _create_quick_actions(self, parent_layout):
         """Cria os botões de ações rápidas"""
         actions_layout = QVBoxLayout()
-        actions_layout.setSpacing(10)
+        actions_layout.setSpacing(8)
         
-        # Botão de histórico com design moderno
-        history_button = QPushButton("Ver Histórico de Aulas")
-        history_button.setIcon(qta.icon('fa5s.history', color="#ffffff"))
-        history_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        # Botão de histórico com design SpaceX
+        history_button = QPushButton("VER HISTÓRICO DE AULAS")
+        history_button.setIcon(qta.icon('fa5s.history', color="#000000"))
+        history_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         history_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #9b59b6, stop:1 #8e44ad);
-                color: #ffffff;
-                padding: 12px 18px;
-                border: none;
-                border-radius: 10px;
-                font-size: 12px;
+                background-color: #ffffff;
+                color: #000000;
+                padding: 10px 16px;
+                border: 2px solid #000000;
+                border-radius: 8px;
+                font-size: 11px;
                 text-align: left;
-                box-shadow: 0 3px 8px rgba(155, 89, 182, 0.3);
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                min-height: 20px;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #8e44ad, stop:1 #7d3c98);
-                box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
-                transform: translateY(-2px);
+                background-color: #000000;
+                color: #ffffff;
             }
             QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #7d3c98, stop:1 #6c3483);
-                transform: translateY(0px);
+                background-color: #333333;
+                color: #ffffff;
             }
         """)
         history_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -574,24 +718,29 @@ class ProfileWidget(QWidget):
         actions_layout.addWidget(history_button)
         
         # Botão de configurações
-        settings_button = QPushButton("Configurações da Conta")
-        settings_button.setIcon(qta.icon('fa5s.cog', color="#ffffff"))
-        settings_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        settings_button = QPushButton("CONFIGURAÇÕES DA CONTA")
+        settings_button.setIcon(qta.icon('fa5s.cog', color="#000000"))
+        settings_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         settings_button.setStyleSheet("""
             QPushButton {
-                background-color: #34495e;
-                color: #ffffff;
+                background-color: #ffffff;
+                color: #000000;
                 padding: 10px 16px;
-                border: none;
+                border: 2px solid #000000;
                 border-radius: 8px;
-                font-size: 12px;
+                font-size: 11px;
                 text-align: left;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                min-height: 20px;
             }
             QPushButton:hover {
-                background-color: #2c3e50;
+                background-color: #000000;
+                color: #ffffff;
             }
             QPushButton:pressed {
-                background-color: #1b2631;
+                background-color: #333333;
+                color: #ffffff;
             }
         """)
         settings_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -599,24 +748,29 @@ class ProfileWidget(QWidget):
         actions_layout.addWidget(settings_button)
         
         # Botão de ajuda
-        help_button = QPushButton("Central de Ajuda")
-        help_button.setIcon(qta.icon('fa5s.question-circle', color="#ffffff"))
-        help_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        help_button = QPushButton("CENTRAL DE AJUDA")
+        help_button.setIcon(qta.icon('fa5s.question-circle', color="#000000"))
+        help_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         help_button.setStyleSheet("""
             QPushButton {
-                background-color: #16a085;
-                color: #ffffff;
+                background-color: #ffffff;
+                color: #000000;
                 padding: 10px 16px;
-                border: none;
+                border: 2px solid #000000;
                 border-radius: 8px;
-                font-size: 12px;
+                font-size: 11px;
                 text-align: left;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                min-height: 20px;
             }
             QPushButton:hover {
-                background-color: #138d75;
+                background-color: #000000;
+                color: #ffffff;
             }
             QPushButton:pressed {
-                background-color: #117a65;
+                background-color: #333333;
+                color: #ffffff;
             }
         """)
         help_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -625,56 +779,60 @@ class ProfileWidget(QWidget):
         
         parent_layout.addLayout(actions_layout)
     
-    def _create_feedback_section(self):
-        """Cria a seção de feedback"""
+    def _create_feedback_tab(self):
+        """Cria a aba de feedback"""
         feedback_widget = QWidget()
         feedback_layout = QVBoxLayout(feedback_widget)
-        feedback_layout.setSpacing(20)
+        feedback_layout.setSpacing(16)
+        feedback_layout.setContentsMargins(24, 20, 24, 20)
         
         # Card de feedback
         feedback_card = QFrame()
         feedback_card.setObjectName("feedbackCard")
         feedback_card_layout = QVBoxLayout(feedback_card)
-        feedback_card_layout.setSpacing(15)
+        feedback_card_layout.setSpacing(12)
+        feedback_card_layout.setContentsMargins(20, 20, 20, 20)
         
         # Título
         feedback_title_row = QHBoxLayout()
         feedback_icon = QLabel()
         feedback_icon.setPixmap(qta.icon('fa5s.star', color="#000000").pixmap(20, 20))
         feedback_title_row.addWidget(feedback_icon)
-        feedback_title = QLabel("Meus Feedbacks")
-        feedback_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
-        feedback_title.setStyleSheet("color: #2c3e50;")
+        feedback_title = QLabel("MEUS FEEDBACKS")
+        feedback_title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        feedback_title.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
         feedback_title_row.addWidget(feedback_title)
         feedback_title_row.addStretch()
         feedback_card_layout.addLayout(feedback_title_row)
         
-        # Botão para adicionar feedback com design moderno
-        add_feedback_button = QPushButton("Deixar Feedback")
-        add_feedback_button.setIcon(qta.icon('fa5s.plus', color="#ffffff"))
-        add_feedback_button.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        # Botão para adicionar feedback com design SpaceX
+        add_feedback_button = QPushButton("ADICIONAR FEEDBACK")
+        add_feedback_button.setIcon(qta.icon('fa5s.plus', color="#000000"))
+        add_feedback_button.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         add_feedback_button.setStyleSheet("""
             QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #e67e22, stop:1 #d35400);
-                color: #ffffff;
-                padding: 12px 18px;
-                border: none;
-                border-radius: 10px;
-                font-size: 12px;
+                background-color: #ffffff;
+                color: #000000;
+                padding: 10px 16px;
+                border: 2px solid #000000;
+                border-radius: 8px;
+                font-size: 11px;
                 text-align: left;
-                box-shadow: 0 3px 8px rgba(230, 126, 34, 0.3);
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                min-height: 20px;
             }
             QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #d35400, stop:1 #c0392b);
-                box-shadow: 0 5px 15px rgba(230, 126, 34, 0.4);
-                transform: translateY(-2px);
+                background-color: #000000;
+                color: #ffffff;
             }
             QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #c0392b, stop:1 #a93226);
-                transform: translateY(0px);
+                background-color: #333333;
+                color: #ffffff;
             }
         """)
         add_feedback_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -685,35 +843,29 @@ class ProfileWidget(QWidget):
         self.feedback_list = QListWidget()
         self.feedback_list.setStyleSheet("""
             QListWidget {
-                border: 1px solid rgba(52, 152, 219, 0.2);
-                border-radius: 12px;
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 #ffffff, stop:1 #f8f9fa);
-                padding: 8px;
-                box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                background-color: #ffffff;
+                padding: 6px;
             }
             QListWidget::item {
-                padding: 10px;
-                border-bottom: 1px solid rgba(229, 231, 235, 0.5);
-                border-radius: 8px;
-                margin: 3px;
-                background-color: rgba(255, 255, 255, 0.7);
+                padding: 8px 12px;
+                border-bottom: 1px solid #f3f4f6;
+                border-radius: 6px;
+                margin: 2px;
+                background-color: #ffffff;
+                font-size: 12px;
             }
             QListWidget::item:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 rgba(52, 152, 219, 0.1), 
-                                          stop:1 rgba(52, 152, 219, 0.05));
-                border: 1px solid rgba(52, 152, 219, 0.2);
-                transform: translateX(2px);
+                background-color: #f9fafb;
+                border: 1px solid #e5e7eb;
             }
             QListWidget::item:selected {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
-                                          stop:0 rgba(52, 152, 219, 0.2), 
-                                          stop:1 rgba(52, 152, 219, 0.1));
-                border: 1px solid rgba(52, 152, 219, 0.3);
+                background-color: #f3f4f6;
+                border: 1px solid #d1d5db;
             }
         """)
-        self.feedback_list.setMaximumHeight(200)
+        self.feedback_list.setMaximumHeight(300)
         feedback_card_layout.addWidget(self.feedback_list)
         
         # Carregar feedbacks existentes
@@ -724,6 +876,128 @@ class ProfileWidget(QWidget):
         feedback_layout.addWidget(feedback_card)
         
         return feedback_widget
+    
+    def _create_actions_tab(self):
+        """Cria a aba de ações rápidas"""
+        # Container da aba ações
+        actions_widget = QWidget()
+        actions_layout = QVBoxLayout(actions_widget)
+        actions_layout.setSpacing(16)
+        actions_layout.setContentsMargins(24, 20, 24, 20)
+        
+        # Card de ações rápidas
+        actions_card = QFrame()
+        actions_card.setObjectName("actionsCard")
+        actions_card_layout = QVBoxLayout(actions_card)
+        actions_card_layout.setSpacing(12)
+        actions_card_layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Título do card
+        actions_title_row = QHBoxLayout()
+        actions_icon = QLabel()
+        actions_icon.setPixmap(qta.icon('fa5s.cog', color="#000000").pixmap(20, 20))
+        actions_title_row.addWidget(actions_icon)
+        actions_title = QLabel("CONFIGURAÇÕES")
+        actions_title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        actions_title.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
+        actions_title_row.addWidget(actions_title)
+        actions_title_row.addStretch()
+        actions_card_layout.addLayout(actions_title_row)
+        
+        # Botões de ação
+        self._create_quick_actions(actions_card_layout)
+        
+        # Sombra
+        self._apply_card_shadow(actions_card)
+        actions_layout.addWidget(actions_card)
+        
+        # Card de informações do sistema
+        info_card = QFrame()
+        info_card.setObjectName("infoCard")
+        info_card_layout = QVBoxLayout(info_card)
+        info_card_layout.setSpacing(12)
+        info_card_layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Título do card de informações
+        info_title_row = QHBoxLayout()
+        info_icon = QLabel()
+        info_icon.setPixmap(qta.icon('fa5s.info-circle', color="#000000").pixmap(20, 20))
+        info_title_row.addWidget(info_icon)
+        info_title = QLabel("INFORMAÇÕES DO SISTEMA")
+        info_title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        info_title.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
+        info_title_row.addWidget(info_title)
+        info_title_row.addStretch()
+        info_card_layout.addLayout(info_title_row)
+        
+        # Informações do sistema
+        self._create_system_info(info_card_layout)
+        
+        # Sombra
+        self._apply_card_shadow(info_card)
+        actions_layout.addWidget(info_card)
+        
+        return actions_widget
+    
+    def _create_system_info(self, parent_layout):
+        """Cria as informações do sistema"""
+        info_layout = QGridLayout()
+        info_layout.setSpacing(12)
+        
+        # Versão do sistema
+        version_label = QLabel("VERSÃO:")
+        version_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        version_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
+        info_layout.addWidget(version_label, 0, 0)
+        
+        version_value = QLabel("1.0.0")
+        version_value.setFont(QFont("Segoe UI", 10))
+        version_value.setStyleSheet("color: #6b7280;")
+        info_layout.addWidget(version_value, 0, 1)
+        
+        # Última atualização
+        update_label = QLabel("ÚLTIMA ATUALIZAÇÃO:")
+        update_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        update_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
+        info_layout.addWidget(update_label, 1, 0)
+        
+        update_value = QLabel("15/10/2025")
+        update_value.setFont(QFont("Segoe UI", 10))
+        update_value.setStyleSheet("color: #6b7280;")
+        info_layout.addWidget(update_value, 1, 1)
+        
+        # Status do sistema
+        status_label = QLabel("STATUS:")
+        status_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        status_label.setStyleSheet("""
+            color: #000000;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        """)
+        info_layout.addWidget(status_label, 2, 0)
+        
+        status_value = QLabel("ONLINE")
+        status_value.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        status_value.setStyleSheet("color: #10b981;")
+        info_layout.addWidget(status_value, 2, 1)
+        
+        parent_layout.addLayout(info_layout)
     
     def _create_footer(self, parent_layout):
         """Cria o rodapé"""
@@ -743,30 +1017,30 @@ class ProfileWidget(QWidget):
         parent_layout.addWidget(footer_widget)
     
     def _apply_styles(self):
-        """Aplica estilos globais com melhor portabilidade"""
+        """Aplica estilos globais com tema SpaceX-inspired branco e preto"""
         self.setStyleSheet("""
-            /* Estilos globais da aplicação */
+            /* Estilos globais da aplicação - Tema SpaceX */
             QWidget {
                 background: #ffffff !important;
                 background-color: #ffffff !important;
-                color: #1e293b;
+                color: #000000;
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
             }
             
-            /* Cards de seção com design moderno - FORÇA BACKGROUND BRANCO */
+            /* Cards de seção com design SpaceX - FORÇA BACKGROUND BRANCO */
             QFrame#infoCard, QFrame#statsCard, QFrame#actionsCard, QFrame#feedbackCard {
                 background: #ffffff !important;
                 background-color: #ffffff !important;
                 border-radius: 16px;
                 padding: 24px;
-                border: 1px solid rgba(52, 152, 219, 0.1);
+                border: 2px solid #000000;
                 margin: 6px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             }
             
             QFrame#infoCard:hover, QFrame#statsCard:hover, 
             QFrame#actionsCard:hover, QFrame#feedbackCard:hover {
-                box-shadow: 0 8px 24px rgba(52, 152, 219, 0.15);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
                 transform: translateY(-2px);
             }
             
@@ -778,7 +1052,7 @@ class ProfileWidget(QWidget):
             
             /* Labels padrão */
             QLabel {
-                color: #111827;
+                color: #000000;
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
                 background: transparent !important;
             }
@@ -789,6 +1063,19 @@ class ProfileWidget(QWidget):
                 font-weight: 600;
                 border-radius: 8px;
                 padding: 8px 16px;
+                background-color: #ffffff;
+                color: #000000;
+                border: 2px solid #000000;
+            }
+            
+            QPushButton:hover {
+                background-color: #000000;
+                color: #ffffff;
+            }
+            
+            QPushButton:pressed {
+                background-color: #333333;
+                color: #ffffff;
             }
             
             /* Inputs padrão */
@@ -797,12 +1084,62 @@ class ProfileWidget(QWidget):
                 border-radius: 8px;
                 padding: 8px 12px;
                 background: #ffffff !important;
+                color: #000000;
+                border: 1px solid #666666;
+            }
+            
+            QLineEdit:focus, QTextEdit:focus {
+                border: 2px solid #000000;
             }
             
             /* Comboboxes */
             QComboBox {
                 font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
                 background: #ffffff !important;
+                color: #000000;
+                border: 1px solid #666666;
+            }
+            
+            QComboBox:focus {
+                border: 2px solid #000000;
+            }
+            
+            /* ScrollBar */
+            QScrollBar:vertical {
+                background: #ffffff;
+                width: 12px;
+                border-radius: 6px;
+            }
+            
+            QScrollBar::handle:vertical {
+                background: #000000;
+                border-radius: 6px;
+                min-height: 20px;
+            }
+            
+            QScrollBar::handle:vertical:hover {
+                background: #333333;
+            }
+            
+            /* ListWidget */
+            QListWidget {
+                background: #ffffff;
+                color: #000000;
+                border: 1px solid #666666;
+                border-radius: 8px;
+            }
+            
+            QListWidget::item {
+                color: #000000;
+                border-bottom: 1px solid #cccccc;
+            }
+            
+            QListWidget::item:hover {
+                background: #f0f0f0;
+            }
+            
+            QListWidget::item:selected {
+                background: #e0e0e0;
             }
         """)
     
