@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  eduai:
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: eduai-app
+    restart: unless-stopped
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=eduai
+      - DB_USER=eduai_user
+      - DB_PASSWORD=eduai_password
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+      - QT_QPA_PLATFORM=offscreen
+      - QT_X11_NO_MITSHM=1
+      - DISPLAY=:99
+      - QT_AUTO_SCREEN_SCALE_FACTOR=1
+      - QT_SCALE_FACTOR=1
+      - QT_FONT_DPI=96
+      - QT_STYLE_OVERRIDE=
+      - QT_QPA_PLATFORMTHEME=
+      - QT_LOGGING_RULES="*=false"
+      - QT_ASSUME_STDERR_HAS_CONSOLE=1
+      - QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+      - MESA_GL_VERSION_OVERRIDE=3.3
+      - MESA_GLSL_VERSION_OVERRIDE=330
+    volumes:
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+      - ./assets:/app/assets
+      # Para desenvolvimento, descomente a linha abaixo:
+      # - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - eduai-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: eduai-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=eduai
+      - POSTGRES_USER=eduai_user
+      - POSTGRES_PASSWORD=eduai_password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - eduai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eduai_user -d eduai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Serviço opcional para desenvolvimento com X11 forwarding
+  xvfb:
+    image: selenium/standalone-chrome:latest
+    container_name: eduai-xvfb
+    restart: unless-stopped
+    environment:
+      - DISPLAY=:99
+    networks:
+      - eduai-network
+    profiles:
+      - gui
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  eduai-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
