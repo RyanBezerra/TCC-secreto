@@ -12,15 +12,15 @@ from pathlib import Path
 class DatabaseConfig:
     """Configurações do banco de dados"""
     # Configuração para SQLite (desenvolvimento local)
-    use_sqlite: bool = True
+    use_sqlite: bool = False
     sqlite_path: str = "database/eduai_local.db"
     
-    # Configuração para PostgreSQL (produção)
-    host: str = "centerbeam.proxy.rlwy.net"
-    port: int = 38802
-    database: str = "railway"
-    user: str = "postgres"
-    password: str = "wQzRPlMlCdkfNjwMkZHyfabrZubqFKPC"
+    # Configuração para MySQL (produção)
+    host: str = "auth-db1524.hstgr.io"
+    port: int = 3306
+    database: str = "u359247811_biocalculadora"
+    user: str = "u359247811_admin2"
+    password: str = "cP$6nHI6Pmm"
     max_connections: int = 10
     connection_timeout: int = 30
 
@@ -89,7 +89,7 @@ class Config:
     
     def get_database_url(self) -> str:
         """Retorna a URL de conexão do banco de dados"""
-        return f"postgresql://{self.database.user}:{self.database.password}@{self.database.host}:{self.database.port}/{self.database.database}"
+        return f"mysql://{self.database.user}:{self.database.password}@{self.database.host}:{self.database.port}/{self.database.database}"
     
     def get_app_info(self) -> Dict[str, str]:
         """Retorna informações da aplicação"""

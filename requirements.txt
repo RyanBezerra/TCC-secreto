@@ -7,8 +7,9 @@ PySide6>=6.8.0
 # QtAwesome - Ícones Font Awesome (versão mais recente)
 qtawesome>=1.4.0
 
-# PostgreSQL - Driver para banco de dados (versão mais recente)
-psycopg2-binary>=2.9.9
+# MySQL - Driver para banco de dados (versão mais recente)
+PyMySQL>=1.1.0
+mysql-connector-python>=8.2.0
 
 # Bcrypt - Hash seguro de senhas (versão mais recente)
 bcrypt>=4.2.0

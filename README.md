@@ -80,8 +80,6 @@ TCC-secreto/
 ├── setup.py                         # Configuração do pacote Python
 ├── requirements.txt                 # Dependências
 ├── env.example                      # Exemplo de variáveis de ambiente
-├── Dockerfile                       # Configuração Docker
-├── docker-compose.yml               # Orquestração Docker
 └── README.md                        # Este arquivo
 ```
 
