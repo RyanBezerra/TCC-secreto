@@ -1,0 +1,28 @@
+# EduAI - Plataforma de Ensino Inteligente
+# Dependências obrigatórias para execução
+
+# PySide6 - Framework para interface gráfica (versão mais recente)
+PySide6>=6.8.0
+
+# QtAwesome - Ícones Font Awesome (versão mais recente)
+qtawesome>=1.4.0
+
+# PostgreSQL - Driver para banco de dados (versão mais recente)
+psycopg2-binary>=2.9.9
+
+# Bcrypt - Hash seguro de senhas (versão mais recente)
+bcrypt>=4.2.0
+
+# OpenAI - Embeddings para busca semântica (versão mais recente)
+openai>=1.58.0
+
+# Dependências adicionais para melhor portabilidade
+# Pillow - Processamento de imagens
+Pillow>=10.4.0
+
+# NumPy - Computação numérica (pode ser necessário para gráficos)
+numpy>=1.26.0
+
+# Dependências adicionais para funcionalidades melhoradas
+dataclasses>=0.6; python_version<"3.7"
+typing-extensions>=4.0.0
